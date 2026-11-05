@@ -689,7 +689,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.3.0 · AIS+ AIRAC/Mapa/METAR/OCR/Diff/Marca de agua</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.3.1 · edición de texto fiel al formato + AIS+</div>
   </div>
 </div>
 
@@ -2817,12 +2817,13 @@ function ttsInitVoices(){
 // ── Detectar encabezado/pie de página por posición Y ──
 function ttsIsHeaderFooter(item,vp,items){
   if(!items||!items.length)return false;
-  var ys=items.map(function(it){var tx=pdfjsLib.Util.transform(vp.transform,it.transform);return vp.height-tx[5];}).filter(function(y){return y>0;}).sort(function(a,b){return a-b;});
+  // v2.3.1 — tx[5] ya es top-down (antes espejado con vp.height-tx[5])
+  var ys=items.map(function(it){var tx=pdfjsLib.Util.transform(vp.transform,it.transform);return tx[5];}).filter(function(y){return y>0;}).sort(function(a,b){return a-b;});
   if(ys.length<3)return false;
   var minY=ys[0],maxY=ys[ys.length-1],range=maxY-minY;
   if(range<50)return false;
   var tx=pdfjsLib.Util.transform(vp.transform,item.transform);
-  var y=vp.height-tx[5];
+  var y=tx[5];
   return(y-minY<range*0.09)||(maxY-y<range*0.09);
 }
 
@@ -3006,59 +3007,44 @@ async function peFindParagraphAtClick(slot,cv,pos){
   var tc=await page.getTextContent();
   if(!tc.items.length)return null;
 
-  // Agrupar items en líneas por proximidad Y
-  var YSNAP=4; // px — items dentro de este rango Y = misma línea
-  var lines=[];
+  // v2.3.1 — specs geométricos puros para el agrupador por columnas:
+  // y = parte superior de la caja (baseline - fh), igual que el text-layer.
+  var list=[];
   tc.items.forEach(function(item){
     if(!item.str.trim())return;
     var tx=pdfjsLib.Util.transform(vp.transform,item.transform);
-    var iy=vp.height-tx[5];var ix=tx[4];var ih=Math.abs(tx[3]);var iw=item.width*scale||ih*0.6;
-    var matched=false;
-    for(var l=0;l<lines.length;l++){
-      if(Math.abs(lines[l].y-iy)<YSNAP){
-        lines[l].items.push({item:item,x:ix,y:iy,w:iw,h:ih});
-        lines[l].x1=Math.min(lines[l].x1,ix);lines[l].x2=Math.max(lines[l].x2,ix+iw);
-        lines[l].y1=Math.min(lines[l].y1,iy-ih);lines[l].y2=Math.max(lines[l].y2,iy+2);
-        matched=true;break;
-      }
-    }
-    if(!matched)lines.push({y:iy,x1:ix,x2:ix+iw,y1:iy-ih,y2:iy+2,items:[{item:item,x:ix,y:iy,w:iw,h:ih}]});
+    // v2.3.1 — tx[5] ya es top-down; antes se espejaba (vp.height-tx[5])
+    var ix=tx[4];var iy=tx[5];var ih=Math.abs(tx[3]);
+    var iw=(item.width?item.width*scale:0)||ih*0.6;
+    list.push({x:ix,y:iy-ih,w:iw,fh:ih,el:item});
   });
-  lines.sort(function(a,b){return a.y-b.y;});
+  if(!list.length)return null;
+  var specs=list;
 
-  // Encontrar línea bajo el clic
-  var clickedLine=-1;
-  for(var i=0;i<lines.length;i++){
-    var L=lines[i];
-    if(pos.y>=L.y1-4&&pos.y<=L.y2+4&&pos.x>=L.x1-10&&pos.x<=L.x2+10){clickedLine=i;break;}
+  // item más cercano al clic (máx ~30 px); si no hay texto cerca → sin párrafo
+  var ci=-1,bd=1e18;
+  for(var i=0;i<specs.length;i++){
+    var sp=specs[i];
+    var dx=Math.max(0,Math.max(sp.x-pos.x,pos.x-(sp.x+sp.w)));
+    var dy=Math.max(0,Math.max(sp.y-pos.y,pos.y-(sp.y+sp.fh)));
+    var d=dx*dx+dy*dy;
+    if(d<bd){bd=d;ci=i;}
   }
-  if(clickedLine<0)return null;
+  if(ci<0||bd>900)return null;
 
-  // Expandir a párrafo: agrupa líneas consecutivas con gap menor al interlineado normal
-  var lineH=(lines[clickedLine].y2-lines[clickedLine].y1)||16;
-  var gapThreshold=lineH*2.2; // gap mayor = nuevo párrafo
-  var paraStart=clickedLine,paraEnd=clickedLine;
-  // Expandir hacia arriba
-  for(var i=clickedLine-1;i>=0;i--){
-    if(lines[i+1].y1-lines[i].y2<gapThreshold)paraStart=i;else break;
-  }
-  // Expandir hacia abajo
-  for(var i=clickedLine+1;i<lines.length;i++){
-    if(lines[i].y1-lines[i-1].y2<gapThreshold)paraEnd=i;else break;
-  }
-
-  // Calcular bounding box del párrafo
-  var x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
-  var paraItems=[];
-  for(var i=paraStart;i<=paraEnd;i++){
-    lines[i].items.forEach(function(it){
-      x1=Math.min(x1,it.x);y1=Math.min(y1,it.y-it.h);
-      x2=Math.max(x2,it.x+it.w);y2=Math.max(y2,it.y+2);
-      paraItems.push(it.item);
-    });
-  }
+  var g=_paraGroupSpecs(specs,ci);
+  var paraItems=[];var x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  g.spans.forEach(function(si){
+    var s=specs[si];
+    x1=Math.min(x1,s.x);y1=Math.min(y1,s.y);
+    x2=Math.max(x2,s.x+s.w);y2=Math.max(y2,s.y+s.fh);
+    paraItems.push(s.el);
+  });
   var PAD=4;
-  return{x:x1-PAD,y:y1-PAD,w:(x2-x1)+PAD*2,h:(y2-y1)+PAD*2,slot:slot,page:page,vp:vp,tc:tc,items:paraItems};
+  return{x:x1-PAD,y:y1-PAD,w:(x2-x1)+PAD*2,h:(y2-y1)+PAD*2,slot:slot,page:page,vp:vp,tc:tc,items:paraItems,
+    lines:g.lines.map(function(L){
+      return{x:L.x0,y:L.y,size:L.size,items:L.run.map(function(si){return specs[si].el;})};
+    })};
 }
 
 // Hover highlight — muestra qué párrafo se va a seleccionar
@@ -3100,10 +3086,21 @@ async function openParagraphEditor(slot,cv,para){
   var items=para.items||tc.items.filter(function(item){
     if(!item.str.trim())return false;
     var tx=pdfjsLib.Util.transform(vp.transform,item.transform);
-    var ix=tx[4];var iy=vp.height-tx[5]-Math.abs(tx[3]);
+    // v2.3.1 — sin espejo vertical (tx[5] ya es top-down)
+    var ix=tx[4];var iy=tx[5]-Math.abs(tx[3]);
     return ix>=rect.x-4&&ix<=rect.x+rect.w+4&&iy>=rect.y-Math.abs(tx[3])*2&&iy<=rect.y+rect.h+4;
   });
-  var extractedText=items.map(function(it){return it.str;}).join(' ').replace(/\s+/g,' ').trim();
+  // v2.3.1 — texto POR LÍNEAS si hay mapa de líneas (estructura preservada)
+  var extractedText;
+  if(para.lines&&para.lines.length){
+    extractedText=para.lines.map(function(L){
+      return (L.items||[]).map(function(it){return it.str;}).join(' ').replace(/\s+/g,' ').trim();
+    }).join('\n');
+    if(!extractedText.trim())
+      extractedText=items.map(function(it){return it.str;}).join(' ').replace(/\s+/g,' ').trim();
+  } else {
+    extractedText=items.map(function(it){return it.str;}).join(' ').replace(/\s+/g,' ').trim();
+  }
   // Detectar fuente dominante
   var fontSize=12,fontFamily='Arial,sans-serif';
   if(items.length){
@@ -3112,6 +3109,7 @@ async function openParagraphEditor(slot,cv,para){
     var style=tc.styles&&tc.styles[items[0].fontName]||{};
     fontFamily=style.fontFamily||'Arial,sans-serif';
   }
+  if(para.lines&&para.lines[0]&&para.lines[0].size)fontSize=Math.round(para.lines[0].size);
   peRect=Object.assign({},para,{_page:page,_vp:vp,_cv:cv});
   document.getElementById('peText').value=extractedText||'';
   document.getElementById('peFontSize').value=fontSize||11;
@@ -3177,10 +3175,14 @@ function peUpdatePreview(){
   ctx.fillStyle=color;
   ctx.font=(bold?'bold ':'')+(italic?'italic ':'')+fs+'px '+ff;
   ctx.textAlign=align==='justify'?'left':align;
-  var lineH=fs*lh;var lines=wrapTextCtx(ctx,text,rw-8);var ty=ry+fs+4;
-  lines.forEach(function(line){
-    var tx2=align==='center'?rx+rw/2:align==='right'?rx+rw-4:rx+4;
-    ctx.fillText(line,tx2,ty,rw-8);ty+=lineH;
+  var lineH=fs*lh;var ty=ry+fs+4;
+  // v2.3.1 — respetar los saltos de línea del texto editado
+  text.split('\n').forEach(function(seg){
+    var lines=wrapTextCtx(ctx,seg,rw-8);
+    lines.forEach(function(line){
+      var tx2=align==='center'?rx+rw/2:align==='right'?rx+rw-4:rx+4;
+      ctx.fillText(line,tx2,ty,rw-8);ty+=lineH;
+    });
   });
   ctx.restore();
 }
@@ -3252,7 +3254,8 @@ function closeParagraphEditor(apply){
         x:peRect.x,y:peRect.y,w:peRect.w,h:peRect.h,
         text:text,fontFamily:ff,fontSize:fs,bold:bold,italic:italic,under:under,
         color:color,bgColor:bgColor,align:align,lineHeight:lh,
-        spanItems:spanItemsForRect(slot,peRect.x,peRect.y,peRect.w,peRect.h)
+        spanItems:spanItemsForRect(slot,peRect.x,peRect.y,peRect.w,peRect.h),
+        lines:(peRect.lines||[]).map(function(l){return{x:l.x,y:l.y,size:l.size};})
       });
       redraw(slot,cv);
       toast('Párrafo aplicado al PDF · doble clic para volver a editar','ok');scheduleAutosave();
@@ -3274,47 +3277,122 @@ var _paraHoverSpans=[];
 var _paraInlineEl=null;
 var _paraInlineData=null; // {slot, x, y, w, h, spans, origText, fontSize, fontFamily, bold, italic, color, lineHeight}
 
-// ── Group spans into paragraph by Y proximity ──
-function _getParaSpans(clickedSpan){
-  var tl=clickedSpan.closest('.pdf-text-layer');
-  if(!tl)return[clickedSpan];
-  var all=Array.from(tl.querySelectorAll('span'));
-  var cy=parseFloat(clickedSpan.style.top);
-  var fh=parseFloat(clickedSpan.dataset.fontHeight||clickedSpan.style.fontSize||12);
-  var lineGap=fh*2.5; // max gap between lines of same paragraph
-
-  // Collect all spans with similar Y (same line) or adjacent lines
+// ════ v2.3.1 — AGRUPADOR DE PÁRRAFOS POR COLUMNA (formatos/formularios) ════
+// Antes (v2.2.0): solo cercanía vertical → en formularios (FPL, FAA 7233-4)
+// fusionaba TODA la página en un bloque: el rect blanco tapaba el formato
+// original y el texto quedaba re-fluído sin estructura. Ahora:
+//  · dentro de cada línea solo se toma el run contiguo alrededor del clic
+//    (la misma casilla del formulario, no toda la fila),
+//  · el encadenado vertical exige interlineado ajustado (<=1.75·fh),
+//    solape de columna >=45% y tamaño de fuente similar.
+// _paraGroupSpecs es geometría pura (unit-testeable); los dos flujos
+// (clic en span y herramienta "Edit. párr.") comparten el mismo núcleo.
+function _paraGroupSpecs(specs,ci){
+  if(!specs||!specs.length||ci==null||ci<0||ci>=specs.length)
+    return{spans:[ci],lines:[{y:specs&&specs[ci]?specs[ci].y:0,size:specs&&specs[ci]?specs[ci].fh:10,x0:specs&&specs[ci]?specs[ci].x:0,x1:specs&&specs[ci]?(specs[ci].x+specs[ci].w):0,run:[ci]}]};
   var lines=[];
-  all.forEach(function(s){
-    var sy=parseFloat(s.style.top);
-    var sfh=parseFloat(s.dataset.fontHeight||s.style.fontSize||fh);
-    var matched=false;
-    for(var i=0;i<lines.length;i++){
-      if(Math.abs(lines[i].y-sy)<sfh*0.6){lines[i].spans.push(s);matched=true;break;}
+  specs.forEach(function(sp,spi){
+    var tol=Math.max(3,(sp.fh||10)*0.6);
+    var m=false;
+    for(var l=0;l<lines.length;l++){
+      if(Math.abs(lines[l].y-sp.y)<tol){lines[l].idx.push(spi);m=true;break;}
     }
-    if(!matched)lines.push({y:sy,spans:[s]});
+    if(!m)lines.push({y:sp.y,idx:[spi]});
+  });
+  lines.forEach(function(L){
+    L.idx.sort(function(a,b){return specs[a].x-specs[b].x;});
+    L.size=specs[L.idx[0]].fh||10;
   });
   lines.sort(function(a,b){return a.y-b.y;});
-
-  // Find clicked line
+  var cli=-1;
+  for(var l=0;l<lines.length;l++){if(lines[l].idx.indexOf(ci)>=0){cli=l;break;}}
+  if(cli<0)return{spans:[ci],lines:[{y:specs[ci].y,size:specs[ci].fh,x0:specs[ci].x,x1:specs[ci].x+specs[ci].w,run:[ci]}]};
+  var fh=specs[ci].fh||10;
+  var GAPX=Math.max(6,fh*1.5);   // hueco horizontal dentro de la misma línea
+  var PITCH=fh*1.75;             // interlineado máximo para encadenar líneas
+  // run inicial: contiguo alrededor del span clicado (su propia casilla)
+  var arr=lines[cli].idx;
+  var k=arr.indexOf(ci);if(k<0)k=0;
+  var lo=k,hi=k;
+  while(lo>0&&(specs[arr[lo]].x-(specs[arr[lo-1]].x+specs[arr[lo-1]].w))<=GAPX)lo--;
+  while(hi<arr.length-1&&(specs[arr[hi+1]].x-(specs[arr[hi]].x+specs[arr[hi]].w))<=GAPX)hi++;
+  var run0=arr.slice(lo,hi+1);
+  var px0=specs[run0[0]].x,px1=specs[run0[run0.length-1]].x+specs[run0[run0.length-1]].w;
+  var groups=[{line:cli,run:run0}];
+  function chain(step){
+    var last=cli,cx0=px0,cx1=px1;
+    var i=cli+step;
+    while(step>0?i<lines.length:i>=0){
+      if(groups.length>=60)break;
+      var L=lines[i];
+      var pitch=Math.abs(L.y-lines[last].y);
+      if(pitch<=0.01||pitch>PITCH)break;
+      // candidatos: items de la línea que intersecan la columna actual
+      var cand=[];
+      L.idx.forEach(function(si){
+        var a=specs[si].x,b=a+specs[si].w;
+        if(b>=cx0-1&&a<=cx1+1)cand.push(si);
+      });
+      if(!cand.length)break;
+      var runs=[];var cur=[cand[0]];
+      for(var q=1;q<cand.length;q++){
+        var prev=cur[cur.length-1];
+        if(specs[cand[q]].x-(specs[prev].x+specs[prev].w)>GAPX*2){runs.push(cur);cur=[cand[q]];}
+        else cur.push(cand[q]);
+      }
+      runs.push(cur);
+      var best=null,bestOv=-1;
+      runs.forEach(function(r){
+        var a=specs[r[0]].x,b=specs[r[r.length-1]].x+specs[r[r.length-1]].w;
+        var ov=Math.min(b,cx1)-Math.max(a,cx0);
+        if(ov>bestOv){bestOv=ov;best=r;}
+      });
+      if(!best||bestOv<=0)break;
+      var c0=specs[best[0]].x,c1=specs[best[best.length-1]].x+specs[best[best.length-1]].w;
+      var ov2=Math.min(c1,cx1)-Math.max(c0,cx0);
+      if(ov2<=0.45*Math.min(cx1-cx0,c1-c0))break;   // debe ser la MISMA columna
+      if(Math.abs(L.size-fh)>fh*0.35)break;          // tamaño de fuente similar
+      groups.push({line:i,run:best});
+      last=i;cx0=Math.min(cx0,c0);cx1=Math.max(cx1,c1);
+      i+=step;
+    }
+  }
+  chain(1);chain(-1);
+  groups.sort(function(a,b){return a.line-b.line;});
+  var spans=[],lns=[];
+  groups.forEach(function(g){
+    spans=spans.concat(g.run);
+    var a=specs[g.run[0]].x,b=specs[g.run[g.run.length-1]].x+specs[g.run[g.run.length-1]].w;
+    lns.push({y:lines[g.line].y,size:lines[g.line].size,x0:a,x1:b,run:g.run});
+  });
+  return{spans:spans,lines:lns};
+}
+// Agrupación para el flujo de spans del text-layer (clic directo sobre el texto)
+function _groupParagraph(cs){
+  var tl=cs.closest?cs.closest('.pdf-text-layer'):null;
+  if(!tl){
+    var x0=parseFloat(cs.style.left)||0,y0=parseFloat(cs.style.top)||0;
+    var fh0=parseFloat(cs.dataset.fontHeight||cs.style.fontSize)||10;
+    return{spans:[cs],lines:[{y:y0,size:fh0,x:x0,x1:x0+120,spans:[cs]}]};
+  }
+  var list=[];
+  Array.from(tl.querySelectorAll('span')).forEach(function(s){
+    list.push({x:parseFloat(s.style.left)||0,y:parseFloat(s.style.top)||0,
+      w:s.offsetWidth||s.scrollWidth||40,fh:parseFloat(s.dataset.fontHeight||s.style.fontSize)||10,el:s});
+  });
+  var specs=list;
   var ci=-1;
-  for(var i=0;i<lines.length;i++){
-    if(lines[i].spans.indexOf(clickedSpan)>=0){ci=i;break;}
-  }
-  if(ci<0)return[clickedSpan];
-
-  // Expand to paragraph: include adjacent lines within lineGap
-  var pStart=ci,pEnd=ci;
-  for(var i=ci-1;i>=0;i--){
-    if(lines[ci].y-lines[i].y<lineGap*(ci-i+1))pStart=i;else break;
-  }
-  for(var i=ci+1;i<lines.length;i++){
-    if(lines[i].y-lines[ci].y<lineGap*(i-ci+1))pEnd=i;else break;
-  }
-
-  var result=[];
-  for(var i=pStart;i<=pEnd;i++)result=result.concat(lines[i].spans);
-  return result;
+  for(var i=0;i<specs.length;i++){if(specs[i].el===cs){ci=i;break;}}
+  if(ci<0)return{spans:[cs],lines:[{y:parseFloat(cs.style.top)||0,size:10,x:parseFloat(cs.style.left)||0,x1:parseFloat(cs.style.left)||0+120,spans:[cs]}]};
+  var g=_paraGroupSpecs(specs,ci);
+  return{spans:g.spans.map(function(i2){return specs[i2].el;}),
+    lines:g.lines.map(function(L){
+      return{y:L.y,size:L.size,x:L.x0,x1:L.x1,spans:L.run.map(function(i2){return specs[i2].el;})};
+    })};
+}
+function _getParaSpans(clickedSpan){
+  var g=_groupParagraph(clickedSpan);
+  return g.spans;
 }
 
 // ── Hover: highlight full paragraph ──
@@ -3337,7 +3415,8 @@ function activateInlineEdit(clickedSpan){
   if(_paraInlineEl&&document.body.contains(_paraInlineEl)){
     _commitParaEdit();
   }
-  var spans=_getParaSpans(clickedSpan);
+  var grp=_groupParagraph(clickedSpan);
+  var spans=grp.spans;
   var slot=parseInt(clickedSpan.dataset.slot);
   var tl=clickedSpan.closest('.pdf-text-layer');
   var pw=document.getElementById('pw-'+slot);
@@ -3368,8 +3447,12 @@ function activateInlineEdit(clickedSpan){
   var color=clickedSpan.dataset.editColor||'#000000';
   var lineH=fontSize*1.4;
 
-  // Reconstruct paragraph text line by line
-  var paraText=texts.join(' ').replace(/\s+/g,' ').trim();
+  // v2.3.1 — texto POR LÍNEAS: cada línea en su sitio (estructura del
+  // formulario/párrafo preservada; antes era un bloque plano re-fluído)
+  var paraText=grp.lines.map(function(L){
+    return L.spans.map(function(s){return (s.textContent||s.dataset.origText||'');}).join(' ').replace(/\s+/g,' ').trim();
+  }).join('\n');
+  var lineMap=grp.lines.map(function(L){return{x:L.x,y:L.y,size:L.size};});
 
   // Dimensions with padding
   var PAD=4;
@@ -3408,7 +3491,7 @@ function activateInlineEdit(clickedSpan){
   el.textContent=paraText;
   pw.appendChild(el);
 
-  _paraInlineData={slot:slot,x:x,y:y,w:w,h:h,spans:spans,
+  _paraInlineData={slot:slot,x:x,y:y,w:w,h:h,spans:spans,lines:lineMap,
     origText:paraText,fontSize:fontSize,fontFamily:fontFamily,
     bold:bold,italic:italic,color:color,lineH:lineH,scaleX:scaleX,scaleY:scaleY};
 
@@ -3448,7 +3531,13 @@ function _commitParaEdit(){
     // v2.2.0 — re-edición: actualizar la anotación para-edit en el sitio
     pushUndo();
     var a=d.editAnn;
+    var prevFS=a.fontSize||d.fontSize||11;
     a.text=newText;a.color=curColor;a.fontFamily=curFF;a.fontSize=curFS||d.fontSize;
+    // v2.3.1 — si cambió el tamaño, re-escalar el mapa de líneas (sigue fiel)
+    if(a.lines&&curFS&&prevFS>0&&Math.abs(curFS-prevFS)>0.01){
+      var kk=curFS/prevFS;
+      a.lines.forEach(function(l){if(l.size)l.size*=kk;});
+    }
     a.bold=curBold;a.italic=curItalic;
     a.h=Math.max(d.h,newText.split('\n').length*(curFS||d.fontSize)*1.5+8);
     if((!a.spanItems||!a.spanItems.length)&&d.spans&&d.spans.length)
@@ -3465,7 +3554,8 @@ function _commitParaEdit(){
         text:newText,fontFamily:curFF,fontSize:curFS||d.fontSize,
         bold:curBold,italic:curItalic,under:false,
         color:curColor,bgColor:'#ffffff',align:'left',lineHeight:1.4,
-        spanItems:(d.spans||[]).map(function(s){return +s.dataset.item;}).filter(function(n){return!isNaN(n);})
+        spanItems:(d.spans||[]).map(function(s){return +s.dataset.item;}).filter(function(n){return!isNaN(n);}),
+        lines:(d.lines||null)
       });
       // Hide original spans (quedan registrados en spanItems para re-render)
       d.spans.forEach(function(s){s.classList.add('edited');s.style.opacity='0';s.style.pointerEvents='none';});
@@ -3514,7 +3604,8 @@ function openParaEditForAnn(slot,idx){
   pw.appendChild(el);
   _paraInlineData={slot:slot,x:a.x,y:a.y,w:a.w||120,h:a.h||24,spans:[],origText:a.text||'',
     fontSize:fontSize,fontFamily:a.fontFamily||'Arial,sans-serif',bold:!!a.bold,italic:!!a.italic,
-    color:a.color||'#000000',lineH:lineH,scaleX:scaleX,scaleY:scaleY,editAnn:a};
+    color:a.color||'#000000',lineH:lineH,scaleX:scaleX,scaleY:scaleY,editAnn:a,
+    lines:(a.lines?a.lines.map(function(l){return{x:l.x,y:l.y,size:l.size};}):null)};
   el.focus();
   try{var r=document.createRange();r.selectNodeContents(el);var s2=window.getSelection();s2.removeAllRanges();s2.addRange(r);}catch(e){}
   showInlineToolbar(el,{fontSize:fontSize,fontFamily:a.fontFamily||'Arial,sans-serif',bold:!!a.bold,italic:!!a.italic,color:a.color||'#000000'});
@@ -4134,7 +4225,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.3.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.3.1',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5320,7 +5411,9 @@ async function renderAllPages(){
         var tx=pdfjsLib.Util.transform(vpForText.transform,item.transform);
         var style=tcontent.styles[item.fontName]||{};
         var fontHeight=Math.abs(tx[3]);var fontWidth=item.width?item.width*scale:fontHeight*0.6;
-        var left=tx[4];var top=vpForText.height-tx[5]-fontHeight;
+        // v2.3.1 — tx[5] YA es top-down (viewport); la fórmula anterior
+        // (vp.height-tx[5]) espejaba la capa de texto verticalmente
+        var left=tx[4];var top=tx[5]-fontHeight;
         var span=document.createElement('span');
         span.dataset.slot=slot;span.dataset.item=itemIdx;
         span.dataset.origText=item.str;
@@ -5403,6 +5496,32 @@ function drawAnn(ctx,a,selected){
     ctx.save();ctx.globalAlpha=op||1;
     ctx.fillStyle=a.bgColor||'#ffffff';ctx.fillRect(a.x,a.y,a.w,a.h);
     ctx.fillStyle=a.color||'#000000';
+    if(a.lines&&a.lines.length){
+      // v2.3.1 — cada línea en su posición y tamaño originales:
+      // el formato del documento (casillas, columnas, filas) se respeta
+      ctx.textAlign='left';ctx.textBaseline='top';
+      var lls=(a.text||'').split('\n');
+      var lfs=a.fontSize||11;var llh=lfs*(a.lineHeight||1.4);
+      for(var li=0;li<lls.length;li++){
+        var lmE=a.lines[Math.min(li,a.lines.length-1)];
+        var ly2=lmE.y+(li>=a.lines.length?(li-a.lines.length+1)*llh:0);
+        ctx.font=(a.bold?'bold ':'')+(a.italic?'italic ':'')+((lmE.size||lfs))+'px '+(a.fontFamily||'Arial,sans-serif');
+        ctx.fillText(lls[li],lmE.x,ly2);
+      }
+      if(a.under){
+        for(var lu=0;lu<lls.length;lu++){
+          var lmU=a.lines[Math.min(lu,a.lines.length-1)];
+          var uy2=lmU.y+(lu>=a.lines.length?(lu-a.lines.length+1)*llh:0)+(lmU.size||lfs)+1;
+          ctx.font=(a.bold?'bold ':'')+(a.italic?'italic ':'')+((lmU.size||lfs))+'px '+(a.fontFamily||'Arial,sans-serif');
+          var uw2=ctx.measureText(lls[lu]).width;
+          ctx.strokeStyle=a.color||'#000';ctx.lineWidth=0.8;
+          ctx.beginPath();ctx.moveTo(lmU.x,uy2);ctx.lineTo(lmU.x+uw2,uy2);ctx.stroke();
+        }
+      }
+      ctx.restore();
+      if(selected){ctx.strokeStyle='rgba(79,142,247,.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.setLineDash([]);}
+    }
+    else{
     ctx.font=(a.bold?'bold ':'')+(a.italic?'italic ':'')+( a.fontSize||11)+'px '+(a.fontFamily||'Arial,sans-serif');
     ctx.textAlign=a.align==='center'?'center':a.align==='right'?'right':'left';
     ctx.textBaseline='top';
@@ -5416,6 +5535,7 @@ function drawAnn(ctx,a,selected){
     });
     ctx.restore();
     if(selected){ctx.strokeStyle='rgba(79,142,247,.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.setLineDash([]);}
+    }
   }
   else if(a.type==='stamp'){var fs2=a.size||14;ctx.font='bold '+fs2+'px Inter,sans-serif';var tw2=ctx.measureText(a.text||'').width;var pad=10;ctx.fillStyle=col+'22';ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(a.x-pad,a.y-20-pad,tw2+pad*2+(a.emoji?26:0),32+pad);ctx.fillRect(a.x-pad,a.y-20-pad,tw2+pad*2+(a.emoji?26:0),32+pad);ctx.fillStyle=col;if(a.emoji){ctx.font='20px serif';ctx.fillText(a.emoji,a.x-22,a.y);ctx.font='bold '+fs2+'px Inter,sans-serif';}ctx.fillText(a.text||'',a.x,a.y);}
   else if(a.type==='sello_recepcion'){
@@ -5677,7 +5797,32 @@ async function pmMovePage(dir){var s=curPage-1;var target=s+dir;if(target<0||tar
 // ── ZOOM/NAV ──
 function zoomIn(){setZoom(Math.min(scale+0.2,4));}
 function zoomOut(){setZoom(Math.max(scale-0.2,0.2));}
-function setZoom(z){scale=z;document.getElementById('zoomVal').textContent=Math.round(z*100)+'%';document.getElementById('sbZoom').textContent=Math.round(z*100)+'%';if(pdfDoc||pageOrder.length)renderAllPages().catch(function(e){console.error(e);});}
+// v2.3.1 — re-escala TODAS las anotaciones (y los snapshots undo/redo) al
+// cambiar el zoom: antes quedaban ancladas a píxeles de la escala anterior y
+// se dibujaban en un lugar equivocado de la página.
+function _rescaleAnns(k){
+  if(!k||Math.abs(k-1)<1e-9)return;
+  function rs(a){
+    if(a.x!=null)a.x*=k;if(a.y!=null)a.y*=k;
+    if(a.w!=null)a.w*=k;if(a.h!=null)a.h*=k;
+    if(a.size!=null)a.size*=k;if(a.fontSize!=null)a.fontSize*=k;
+    if(a.stroke!=null)a.stroke*=k;if(a.spacing!=null)a.spacing*=k;
+    if(a.pts)a.pts.forEach(function(p){p.x*=k;p.y*=k;});
+    if(a.lines)a.lines.forEach(function(l){l.x*=k;l.y*=k;if(l.size!=null)l.size*=k;});
+  }
+  function rsDict(d){
+    if(!d)return;
+    Object.keys(d).forEach(function(ks){(d[ks]||[]).forEach(rs);});
+  }
+  rsDict(annotations);
+  undoStack.forEach(function(s){if(s&&s.anns)rsDict(s.anns);});
+  redoStack.forEach(function(s){if(s&&s.anns)rsDict(s.anns);});
+}
+function setZoom(z){
+  var k=(z||scale)/scale;
+  if(k>0&&Math.abs(k-1)>1e-9)_rescaleAnns(k);
+  scale=z;document.getElementById('zoomVal').textContent=Math.round(z*100)+'%';document.getElementById('sbZoom').textContent=Math.round(z*100)+'%';if(pdfDoc||pageOrder.length)renderAllPages().catch(function(e){console.error(e);});
+}
 function promptZoom(){var v=prompt('Zoom % (20-400):',Math.round(scale*100));if(v&&+v>=20&&+v<=400)setZoom(+v/100);}
 function doRotate(){rotation=(rotation+90)%360;if(pdfDoc)renderAllPages().catch(function(e){console.error(e);});}
 function prevPage(){if(curPage>1){curPage--;scrollToPage(curPage);}}
@@ -5845,6 +5990,19 @@ async function saveToDrive(){
             var fz2=Math.max(4,(a.fontSize||11)*sY*0.85);
             var col2=hexToRgb01(a.color||'#000');
             var lh2=fz2*(a.lineHeight||1.5);
+            if(a.lines&&a.lines.length){
+              // v2.3.1 — cada línea en su posición/tamaño original (fiel)
+              var tls2=(a.text||'').split('\n');
+              var fs2l=a.fontSize||11;var lh2l=fs2l*(a.lineHeight||1.5);
+              for(var t2i=0;t2i<tls2.length;t2i++){
+                if(!tls2[t2i])continue;
+                var lmE3=a.lines[Math.min(t2i,a.lines.length-1)];
+                var lsz3=(lmE3.size||fs2l)*sY*0.85;
+                var lx3=lmE3.x*sX;
+                var lyB3=lh-(lmE3.y+(t2i>=a.lines.length?(t2i-a.lines.length+1)*lh2l:0))*sY-lsz3*0.8;
+                try{lPage.drawText(tls2[t2i],{x:lx3,y:lyB3,size:lsz3,font:fnt2,color:PDFLib.rgb(col2[0],col2[1],col2[2])});}catch(e){}
+              }
+            } else {
             var cpl=Math.max(1,Math.floor(aw/(fz2*0.55)));
             var flines=[];
             (a.text||'').split('\n').forEach(function(para){
@@ -5858,6 +6016,7 @@ async function saveToDrive(){
               try{lPage.drawText(l,{x:ax+4*sX,y:ty2,size:fz2,font:fnt2,color:PDFLib.rgb(col2[0],col2[1],col2[2]),maxWidth:aw-8*sX});}catch(e){}
               ty2-=lh2;
             });
+            } // fin else legacy (v2.3.1)
           }
         } else if(a.type==='highlight'){
           var hc=hexToRgb01(a.color||'#ffff00');
@@ -5960,6 +6119,19 @@ async function exportPDF(){
             var fz=Math.max(4,(a.fontSize||11)*scaleY*0.85);
             var col=hexToRgb01(a.color||'#000000');
             var lh=fz*(a.lineHeight||1.5);
+            if(a.lines&&a.lines.length){
+              // v2.3.1 — cada línea en su posición/tamaño original (fiel)
+              var tlss=(a.text||'').split('\n');
+              var fs0l=a.fontSize||11;var lh0l=fs0l*(a.lineHeight||1.5);
+              for(var tli=0;tli<tlss.length;tli++){
+                if(!tlss[tli])continue;
+                var lmE2=a.lines[Math.min(tli,a.lines.length-1)];
+                var lsz2=(lmE2.size||fs0l)*scaleY*0.85;
+                var lx2=lmE2.x*scaleX;
+                var lyB=ph-(lmE2.y+(tli>=a.lines.length?(tli-a.lines.length+1)*lh0l:0))*scaleY-lsz2*0.8;
+                try{pdfPage.drawText(tlss[tli],{x:lx2,y:lyB,size:lsz2,font:fnt,color:PDFLib.rgb(col[0],col[1],col[2])});}catch(e){}
+              }
+            } else {
             // Partir en líneas que caben en el ancho
             var words=(a.text||'').split(/\s+/);var lines=[];var cur='';
             var charsPerLine=Math.max(1,Math.floor(aw/(fz*0.55)));
@@ -5997,6 +6169,7 @@ async function exportPDF(){
               }catch(e){}
               ty-=lh;
             }
+            } // fin else legacy (v2.3.1)
           }
         } else if(a.type==='highlight'){
           var hcol=hexToRgb01(a.color||'#ffff00');

@@ -70,3 +70,36 @@ O desde el dashboard: New Project → Import Git Repository → Framework Preset
 
 - Las contraseñas se almacenan como hash **SHA-256** (pgcrypto) del lado servidor; los usuarios creados con el esquema anterior siguen autenticándose contra la función original respaldada (`login_user_v1_backup`)
 - La activación de planes se realiza exclusivamente vía RPC `activate_subscription` (SECURITY DEFINER) — el precio y la vigencia se leen de la tabla `plans` en el servidor, nunca del navegador
+
+## v2.3.1 — Edición de texto fiel al formato (fix formularios FPL/FAA 7233-4)
+
+**Problema reportado:** al editar el texto de un formato de plan de vuelo en PDF, el editor agrupaba
+TODA la página en un solo bloque: el rectángulo blanco tapaba el formato original (casillas, líneas,
+columnas) y al aplicar quedaba solo texto plano re-fluído sin estructura.
+
+**Causas (3 bugs):**
+1. El agrupador de párrafos (`_getParaSpans` / `peFindParagraphAtClick`) solo usaba cercanía
+   vertical: en formularios (texto repartido en casillas por toda la página) fusionaba toda la
+   página en un bloque.
+2. El texto se guardaba y dibujaba como un único bloque con re-flujo — perdía líneas, posiciones,
+   tamaños y fuentes originales.
+3. La capa de texto de PDF.js estaba **espejada verticalmente** (`top = vp.height - tx[5] - fh`
+   con `tx[5]` ya top-down): el clic editaba el texto equivocado (el de la posición espejada).
+
+**Fixes v2.3.1:**
+- Nuevo núcleo geométrico `_paraGroupSpecs` compartido por ambos flujos (clic en texto y
+  herramienta "Edit. párr."): run contiguo dentro de la línea (misma casilla) + encadenado
+  vertical exigente (interlineado ≤1.75·fuente, solape de columna ≥45%, tamaño similar).
+- Cada anotación `para-edit` lleva `lines:[{x,y,size}]` — mapa por línea: el render (canvas) y el
+  export (pdf-lib, ambos exportadores) dibujan cada línea en su posición y tamaño originales.
+  Retrocompatible con proyectos v2.2.0 guardados (render legacy sin mapa).
+- Capa de texto sin espejo (renderAllPages, peFindParagraphAtClick, openParagraphEditor,
+  ttsIsHeaderFooter).
+- `setZoom` re-escala TODAS las anotaciones (incluido `lines`) y los snapshots undo/redo.
+- Re-edición con cambio de tamaño re-escala el mapa de líneas.
+
+**Validación:** 18/18 tests unitarios del agrupador (Node) + E2E 35/35 con un formulario
+FAA 7233-4 real generado (filas 30pt, 3 columnas, celda ruta multi-línea): agrupación por celda,
+lineMap fiel (posición ±3px), cuadrícula intacta tras editar, export vectorial en posición
+original (x≈46, y≈682.9), zoom ×1.25 re-escala, undo/redo, re-edición en sitio y persistencia
+autosave→restauración con `lines`.
