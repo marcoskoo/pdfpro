@@ -8,6 +8,8 @@ Aplicación web **single-file** (HTML/JS) para la gestión documental y operacio
 
 ## Características principales
 
+- **Edición de texto del PDF persistente (v2.2.0)**: haz clic en cualquier párrafo con la herramienta cursor (o usa *Edit. párr.*) para reescribirlo; **doble clic** sobre una zona ya editada la vuelve a abrir. La edición se re-aplica tras zoom/rotación y **se guarda automáticamente por documento y usuario** (localStorage): al volver a cargar el mismo PDF la app ofrece restaurar la sesión completa. La exportación incrusta el texto nuevo como **texto vectorial real** (pdf-lib).
+
 - **Editor PDF** con PDF.js: visualización, reorganización/rotación de páginas, cifrado y limpieza de metadatos
 - **Herramientas AIS/ARO**: editor METAR/SPECI TAF, generador de NOTAMs (Doc 8126 OACI), calculadora de distancias declaradas (TORA/TODA/ASDA/LDA — Anexo 14), conversor de coordenadas y registro de turnos
 - **Gestión de usuarios y planes**: registro, login con bloqueo temporal (5 intentos / 5 min), cambio de contraseña, planes con activación de suscripción del lado servidor
@@ -16,7 +18,7 @@ Aplicación web **single-file** (HTML/JS) para la gestión documental y operacio
 ## Estructura del repositorio
 
 ```
-├── index.html                      ← la aplicación completa (v2.0.1)
+├── index.html                      ← la aplicación completa (v2.2.0)
 └── supabase/
     ├── FIX_registro_pdfpro.sql     ← script maestro v6 (idempotente)
     └── PARCHE_v6_sede.sql          ← parche rápido (si ya aplicaste v3/v4/v5)
