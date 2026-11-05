@@ -8,6 +8,12 @@ Aplicación web **single-file** (HTML/JS) para la gestión documental y operacio
 
 ## Características principales
 
+- **Gestor AIRAC (v2.3.0)**: ciclo vigente con cuenta regresiva, próximos ciclos con fecha de publicación (−42d Doc 8126) y consulta por fecha. Fechas verificadas 2024–2028.
+- **Mapa de aeródromos del Perú (v2.3.0)**: 30 aeródromos con coordenadas (OpenStreetMap/Leaflet), búsqueda por OACI/IATA/nombre, popup con datos, medición de distancia/rumbo entre puntos y salto a la sede del usuario.
+- **METAR gráfico (v2.3.0)**: rosa de vientos con flecha de dirección/velocidad, componentes de viento cruzado/cabeza vs rumbo de pista, visibilidad, capas de nubes (ft AGL), temperatura/punto de rocío, QNH y tiempo presente (Anexo 3/Doc 8896).
+- **OCR de escaneados (v2.3.0)**: Tesseract.js (spa/eng) sobre la página actual o todo el documento, con copiar / enviar al decodificador / insertar como anotación editable.
+- **Comparador de PDFs (v2.3.0)**: diff de texto por página con resaltado de añadidos/eliminados.
+- **Marca de agua (v2.3.0)**: texto configurable (tamaño/opacidad/color/rotación, centrada o en mosaico), exportada como texto vectorial y persistente con el autosave.
 - **Edición de texto del PDF persistente (v2.2.0)**: haz clic en cualquier párrafo con la herramienta cursor (o usa *Edit. párr.*) para reescribirlo; **doble clic** sobre una zona ya editada la vuelve a abrir. La edición se re-aplica tras zoom/rotación y **se guarda automáticamente por documento y usuario** (localStorage): al volver a cargar el mismo PDF la app ofrece restaurar la sesión completa. La exportación incrusta el texto nuevo como **texto vectorial real** (pdf-lib).
 
 - **Editor PDF** con PDF.js: visualización, reorganización/rotación de páginas, cifrado y limpieza de metadatos
@@ -18,7 +24,7 @@ Aplicación web **single-file** (HTML/JS) para la gestión documental y operacio
 ## Estructura del repositorio
 
 ```
-├── index.html                      ← la aplicación completa (v2.2.0)
+├── index.html                      ← la aplicación completa (v2.3.0)
 └── supabase/
     ├── FIX_registro_pdfpro.sql     ← script maestro v6 (idempotente)
     └── PARCHE_v6_sede.sql          ← parche rápido (si ya aplicaste v3/v4/v5)

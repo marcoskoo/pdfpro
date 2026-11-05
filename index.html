@@ -7,6 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{
@@ -272,6 +275,29 @@ button{font-family:"Inter",sans-serif;cursor:pointer}
 .pdf-text-layer span.edited{background:rgba(255,255,180,.25)}
 .pdf-text-layer span.tts-highlight{background:rgba(255,214,0,.5)!important}
 .pdf-text-layer span.tts-active{background:rgba(255,140,0,.75)!important;box-shadow:0 0 0 2px rgba(255,140,0,.4)}
+/* ── v2.3.0: AIRAC / Mapa / METAR gráfico / OCR / Diff / Marca de agua ── */
+.airac-cur{border:1px solid rgba(79,142,247,.45);background:rgba(79,142,247,.08);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.airac-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--bdr);border-radius:7px;margin-bottom:5px;font-size:12px}
+.airac-row.next{border-color:rgba(79,142,247,.35)}
+.airac-row .sub{font-size:10.5px;color:var(--t3);margin-top:2px}
+.airac-badge{font-family:JetBrains Mono,monospace;font-weight:700;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:2px 7px;font-size:12px}
+.pe-map-search{display:flex;gap:6px;margin-bottom:8px}
+.pe-map-search input{flex:1;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;color:var(--text);padding:6px 10px;font-size:12px;outline:none}
+.pe-apt-item{padding:7px 9px;border:1px solid var(--bdr);border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:11.5px;display:flex;justify-content:space-between;gap:6px}
+.pe-apt-item:hover{border-color:var(--acc);background:rgba(79,142,247,.08)}
+.leaflet-container{background:#0b0d16}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#1e2130;color:#e8eaf6}
+.leaflet-popup-content{font-size:12px}
+.diff-wrap{border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.diff-line{display:flex;font-family:JetBrains Mono,monospace;font-size:11px;line-height:1.6}
+.diff-line .ln{width:34px;flex-shrink:0;text-align:right;padding:0 6px;color:var(--t3);border-right:1px solid var(--bdr);user-select:none}
+.diff-line .ct{flex:1;padding:0 8px;white-space:pre-wrap;word-break:break-all}
+.diff-line.ins{background:rgba(46,204,113,.14)}.diff-line.ins .ct{color:#7ee2a8}
+.diff-line.del{background:rgba(231,76,60,.14)}.diff-line.del .ct{color:#f0948a}
+.diff-line.same .ct{color:var(--t2)}
+.wm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wm-field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--t3)}
+.wm-field input,.wm-field select{background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--text);padding:4px 7px;font-size:12px}
 /* Inline paragraph editor overlay */
 #paraInlineEditor{position:absolute;z-index:20;box-sizing:border-box;border:2px solid rgba(79,142,247,.8);border-radius:3px;background:rgba(255,255,255,.97);outline:none;overflow:hidden;resize:none;line-height:inherit;padding:0;margin:0;font-kerning:none;display:none;word-break:break-word;white-space:pre-wrap;box-shadow:0 4px 24px rgba(0,0,0,.3)}
 #paraInlineEditor:focus{border-color:var(--acc,#4f8ef7);box-shadow:0 0 0 3px rgba(79,142,247,.2),0 4px 24px rgba(0,0,0,.3)}
@@ -663,7 +689,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.2.0 · texto editable persistente</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.3.0 · AIS+ AIRAC/Mapa/METAR/OCR/Diff/Marca de agua</div>
   </div>
 </div>
 
@@ -1087,6 +1113,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         <div class="ertab" id="ert-sigs" onclick="showEditorTab('sigs')">Firmas</div>
         <div class="ertab" id="ert-export" onclick="showEditorTab('export')">Export</div>
         <div class="ertab" id="ert-aero" onclick="showEditorTab('aero')">AERO</div>
+        <div class="ertab" id="ert-airac" onclick="showEditorTab('airac')">AIS+</div>
         <div class="ertab" id="ert-tts" onclick="showEditorTab('tts')">Lector</div>
         <div class="ertab" id="ert-user" onclick="showEditorTab('user')">Cuenta</div>
       </div>
@@ -1186,6 +1213,78 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
 
+      <!-- ── v2.3.0: OCR / COMPARADOR / MARCA DE AGUA (Export) ── -->
+      <div class="ersec">
+        <div class="ersec-title">🔍 OCR — Texto escaneado (Tesseract)</div>
+        <div style="display:flex;gap:6px;margin-bottom:7px">
+          <select id="ocrPages" class="f-input" style="flex:1;font-size:11.5px;padding:4px 6px">
+            <option value="cur">Página actual</option>
+            <option value="all">Todas las páginas</option>
+          </select>
+          <select id="ocrLang" class="f-input" style="flex:1;font-size:11.5px;padding:4px 6px">
+            <option value="spa">Español</option>
+            <option value="eng">Inglés</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm btn-full" onclick="ocrRun()">▶ Ejecutar OCR</button>
+        <div id="ocrProg" style="display:none;margin-top:7px">
+          <div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div id="ocrBar" style="height:100%;width:0;background:var(--acc);transition:width .3s"></div></div>
+          <div id="ocrLbl" style="font-size:10.5px;color:var(--t3);margin-top:3px">Preparando…</div>
+        </div>
+        <textarea id="ocrOut" class="f-input" rows="6" style="display:none;margin-top:8px;font-size:11px;font-family:JetBrains Mono,monospace;resize:vertical" readonly></textarea>
+        <div id="ocrActs" style="display:none;gap:6px;margin-top:6px">
+          <button class="btn btn-ghost btn-xs" style="flex:1;font-size:11px" onclick="ocrCopy()">📋 Copiar</button>
+          <button class="btn btn-ghost btn-xs" style="flex:1;font-size:11px" onclick="ocrToDecoder()">✈️ Al decodificador</button>
+          <button class="btn btn-ghost btn-xs" style="flex:1;font-size:11px" onclick="ocrToTextbox()">📝 Anotar en PDF</button>
+        </div>
+      </div>
+
+      <div class="ersec">
+        <div class="ersec-title">🔀 Comparar dos PDFs</div>
+        <input type="file" id="diffFileA" accept=".pdf" class="f-input" style="font-size:11px;margin-bottom:5px;padding:4px">
+        <input type="file" id="diffFileB" accept=".pdf" class="f-input" style="font-size:11px;margin-bottom:7px;padding:4px">
+        <button class="btn btn-sm btn-full" onclick="diffRun()">Comparar texto</button>
+        <div id="diffOut" style="margin-top:8px"></div>
+      </div>
+
+      <div class="ersec">
+        <div class="ersec-title">💧 Marca de agua</div>
+        <input type="text" id="wmText" class="f-input" value="COPIA NO CONTROLADA" style="font-size:11.5px;margin-bottom:7px;padding:4px 7px" maxlength="60">
+        <div class="wm-grid">
+          <div class="wm-field">Tamaño px<input type="number" id="wmSize" value="42" min="10" max="200"></div>
+          <div class="wm-field">Opacidad %<input type="number" id="wmOpacity" value="14" min="3" max="100"></div>
+          <div class="wm-field">Rotación °<input type="number" id="wmRotate" value="45" min="0" max="359"></div>
+          <div class="wm-field">Color<input type="color" id="wmColor" value="#c0392b" style="padding:2px;height:28px"></div>
+          <div class="wm-field">Patrón<select id="wmPattern"><option value="center">Centrado</option><option value="tile">Mosaico diagonal</option></select></div>
+          <div class="wm-field">Páginas<select id="wmPages"><option value="all">Todas</option><option value="cur">Actual</option></select></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:9px">
+          <button class="btn btn-primary btn-sm" style="flex:2;font-size:11.5px" onclick="wmApply()">✓ Aplicar</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;font-size:11.5px;color:var(--err)" onclick="wmRemove()">Quitar</button>
+        </div>
+      </div>
+
+      <!-- ── v2.3.0: AIRAC MANAGER PANEL ── -->
+      <div id="etab-airac" class="hidden" style="display:flex;flex-direction:column;height:100%;padding:0;overflow:hidden">
+        <div style="padding:12px 14px 8px;border-bottom:1px solid var(--bdr);flex-shrink:0">
+          <div style="font-size:13px;font-weight:700;margin-bottom:1px">📅 Gestor AIRAC</div>
+          <div style="font-size:11px;color:var(--t3)">Ciclos de 28 días · Doc 8126 OACI</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:10px 12px">
+          <div id="airacBox"></div>
+          <div style="margin-top:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px">🔎 Consultar fecha</div>
+            <input type="date" id="airacDate" class="f-input" style="font-size:12px;padding:5px 8px" onchange="airacQuery()">
+            <div id="airacQueryOut" style="margin-top:6px"></div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <button class="btn btn-ghost btn-xs" style="flex:1;font-size:11px" onclick="openMapModal()">🗺️ Mapa de aeródromos</button>
+            <button class="btn btn-ghost btn-xs" style="flex:1;font-size:11px" onclick="openMetarVis()">📊 METAR gráfico</button>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:10px;line-height:1.5">Fechas de vigencia AIRAC verificadas 2024–2028 (OACI/AIP). Publicación = vigencia − 42 días (mín. Doc 8126). Fuera del rango verificado se estima con el ciclo de 28 días.</div>
+        </div>
+      </div>
+
       <!-- USER tab -->
       <!-- ── TTS READER PANEL ── -->
       <!-- ── AERO DECODER PANEL ── -->
@@ -1214,6 +1313,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
           <div style="display:flex;gap:6px;margin-top:6px">
             <button class="btn btn-ghost btn-xs" onclick="aeroFromPDF()" style="font-size:11px">📄 Extraer del PDF</button>
             <button class="btn btn-ghost btn-xs" onclick="aeroFromClipboard()" style="font-size:11px">📋 Pegar</button>
+            <button class="btn btn-ghost btn-xs" onclick="openMetarVis(true)" style="font-size:11px">📊 Gráfico</button>
+            <button class="btn btn-ghost btn-xs" onclick="openMapModal()" style="font-size:11px">🗺️ Mapa</button>
             <button class="btn btn-ghost btn-xs" onclick="aeroClear()" style="font-size:11px;color:var(--err)">✕ Limpiar</button>
           </div>
         </div>
@@ -2626,6 +2727,7 @@ function showEditorTab(name){
   if(name==='export')updateDrivePathLabel();
   if(name==='aero'){}
   if(name==='tts')ttsInitVoices();
+  if(name==='airac')airacInit();
 }
 
 // ════ TTS READER ENGINE v2 — word highlight + floating bar ════
@@ -3659,6 +3761,582 @@ function ttsHighlightWordInLayer(word,pageIdx){
 }
 
 // ════ END TEXT LAYER ════
+
+// ════════════════════ v2.3.0 — MÓDULO AIS+ ════════════════════
+// Gestor AIRAC · Mapa de aeródromos (OpenStreetMap/Leaflet) · METAR gráfico
+// OCR (Tesseract.js) · Comparador de PDFs · Marca de agua
+
+// ── GESTOR AIRAC ──────────────────────────────────────────────
+// Fechas de vigencia verificadas 2024–2028 (tabla OACI/AIP; ciclo de 28 días).
+var AIRAC_TABLE={
+  2024:['2024-01-25','2024-02-22','2024-03-21','2024-04-18','2024-05-16','2024-06-13','2024-07-11','2024-08-08','2024-09-05','2024-10-03','2024-10-31'],
+  2025:['2025-01-23','2025-02-20','2025-03-20','2025-04-17','2025-05-15','2025-06-12','2025-07-10','2025-08-07','2025-09-04','2025-10-02','2025-10-30'],
+  2026:['2026-01-22','2026-02-19','2026-03-19','2026-04-16','2026-05-14','2026-06-11','2026-07-09','2026-08-06','2026-09-03','2026-10-01','2026-10-29','2026-11-26','2026-12-24'],
+  2027:['2027-01-21','2027-02-18','2027-03-18','2027-04-15','2027-05-13','2027-06-10','2027-07-08','2027-08-05','2027-09-02','2027-09-30','2027-10-28'],
+  2028:['2028-01-20','2028-02-17','2028-03-16','2028-04-13','2028-05-11','2028-06-08','2028-07-06','2028-08-03','2028-08-31','2028-09-28','2028-10-26']
+};
+function airacList(){
+  var out=[];
+  Object.keys(AIRAC_TABLE).sort().forEach(function(y){
+    AIRAC_TABLE[y].forEach(function(d,i){out.push({y:+y,n:i+1,eff:new Date(d+'T00:00:00'),est:false});});
+  });
+  return out;
+}
+function airacAfter(dateObj){
+  // Ciclo vigente en dateObj (extrapola 28d más allá de la tabla verificada)
+  var list=airacList();
+  var d=new Date(dateObj);d.setHours(0,0,0,0);
+  var cur=null;
+  for(var i=0;i<list.length;i++){if(list[i].eff<=d)cur=list[i];else break;}
+  if(!cur)return null;
+  var last=list[list.length-1];
+  if(cur===last&&d>last.eff){
+    // extrapolación: continúa la numeración del año con pasos de 28 días.
+    // El ciclo vigente en d es el ÚLTIMO inicio ≤ d (no el primero > d).
+    var e=new Date(last.eff);var y=last.y,n=last.n;
+    var pe=new Date(e),py=y,pn=n;
+    while(e<=d){
+      pe=new Date(e);py=y;pn=n;
+      e=new Date(e.getTime()+28*864e5);
+      if(e.getFullYear()>y){y=e.getFullYear();n=1;}else n++;
+    }
+    return {y:py,n:pn,eff:new Date(pe),est:true};
+  }
+  return cur;
+}
+function airacFmt(dt){return dt.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase().replace('.','');}
+function airacPub(eff){return new Date(eff.getTime()-42*864e5);}
+function airacEnd(eff){return new Date(eff.getTime()+28*864e5);}
+var _airacInited=false;
+function airacInit(){if(_airacInited)return;_airacInited=true;airacRender();}
+function airacRender(){
+  var box=document.getElementById('airacBox');if(!box)return;
+  var today=new Date();today.setHours(0,0,0,0);
+  var cur=airacAfter(today);
+  if(!cur){box.innerHTML='<div style="color:var(--t3);font-size:12px">Sin datos AIRAC para la fecha actual.</div>';return;}
+  var end=airacEnd(cur.eff);var days=Math.ceil((end-today)/864e5);
+  var next=airacAfter(end);
+  var html='<div class="airac-cur">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+    '<span style="font-size:11px;color:var(--t3)">CICLO VIGENTE</span>'+
+    '<span class="airac-badge" style="font-size:14px;color:var(--acc);border-color:rgba(79,142,247,.5)">'+cur.y+String(cur.n).padStart(2,'0')+'</span></div>'+
+    '<div style="font-size:12px">Vigente desde <strong>'+airacFmt(cur.eff)+'</strong></div>'+
+    '<div style="font-size:12px">Vence <strong>'+airacFmt(end)+'</strong> · <span style="color:var(--acc);font-weight:700">'+days+' día'+(days===1?'':'s')+'</span></div>'+
+    (cur.est?'<div style="font-size:10px;color:var(--err);margin-top:3px">⚠ Fuera de tabla verificada — estimado (28d)</div>':'')+
+    '</div>';
+  html+='<div style="font-size:11px;font-weight:700;color:var(--t2);margin:10px 0 6px">PRÓXIMOS CICLOS</div>';
+  var b=end;
+  for(var k=0;k<6;k++){
+    var c2=airacAfter(b);
+    if(!c2)break;
+    var d2=Math.ceil((c2.eff-today)/864e5);
+    html+='<div class="airac-row next"><div><div><strong>'+airacFmt(c2.eff)+'</strong></div>'+
+      '<div class="sub">Publicación: '+airacFmt(airacPub(c2.eff))+' (−42d)'+(c2.est?' · estimado':'')+'</div></div>'+
+      '<div style="text-align:right"><span class="airac-badge">'+c2.y+String(c2.n).padStart(2,'0')+'</span>'+
+      (d2>0?'<div class="sub">en '+d2+' d</div>':'')+'</div></div>';
+    b=airacEnd(c2.eff);
+  }
+  box.innerHTML=html;
+}
+function airacQuery(){
+  var v=document.getElementById('airacDate').value;
+  var out=document.getElementById('airacQueryOut');
+  if(!v){out.innerHTML='';return;}
+  var c=airacAfter(new Date(v+'T00:00:00'));
+  if(!c){out.innerHTML='<div style="font-size:12px;color:var(--t3)">La fecha es anterior al primer ciclo verificado (25 ENE 2024).</div>';return;}
+  var end=airacEnd(c.eff);
+  out.innerHTML='<div style="border:1px solid rgba(79,142,247,.4);border-radius:8px;padding:9px 11px;font-size:12px;background:rgba(79,142,247,.07)">'+
+    'El <strong>'+airacFmt(new Date(v+'T00:00:00'))+'</strong> rige el ciclo '+
+    '<strong style="color:var(--acc)">'+c.y+String(c.n).padStart(2,'0')+'</strong> '+
+    '(desde '+airacFmt(c.eff)+' hasta '+airacFmt(end)+')'+
+    (c.est?' <span style="color:var(--err);font-size:10.5px">⚠ estimado</span>':'')+'</div>';
+}
+
+// ── AERÓDROMOS DEL PERÚ (coordenadas OurAirports, dominio público) ──────────
+var APT_PE=[
+  {icao:'SPJC',iata:'LIM',nom:'Jorge Chávez Intl',ciu:'Callao / Lima',lat:-12.0219,lon:-77.1143,elev:113},
+  {icao:'SPHI',iata:'CIX',nom:'Cap. FAP José A. Quiñones',ciu:'Chiclayo',lat:-6.7892,lon:-79.8283,elev:97},
+  {icao:'SPQU',iata:'AQP',nom:'Rodríguez Ballón Intl',ciu:'Arequipa',lat:-16.3408,lon:-71.5695,elev:8405},
+  {icao:'SPZO',iata:'CUZ',nom:'Alejandro Velasco Astete Intl',ciu:'Cusco',lat:-13.5357,lon:-71.9388,elev:10860},
+  {icao:'SPQT',iata:'IQT',nom:'Crl. FAP Francisco Secada Vignetta Intl',ciu:'Iquitos',lat:-3.7847,lon:-73.3088,elev:306},
+  {icao:'SPJL',iata:'JUL',nom:'Inca Manco Cápac Intl',ciu:'Juliaca',lat:-15.4677,lon:-70.1565,elev:12552},
+  {icao:'SPUR',iata:'PIU',nom:'Cap. FAP Guillermo Concha Ibérico',ciu:'Piura',lat:-5.2058,lon:-80.6164,elev:120},
+  {icao:'SPCL',iata:'PCL',nom:'Cap. FAP David Abensur Rengifo Intl',ciu:'Pucallpa',lat:-8.3781,lon:-74.5745,elev:513},
+  {icao:'SPTU',iata:'PEM',nom:'Padre Aldamiz Intl',ciu:'Puerto Maldonado',lat:-12.6136,lon:-69.2286,elev:659},
+  {icao:'SPYL',iata:'TYL',nom:'Cap. FAP Víctor Montes Arias Intl',ciu:'Talara',lat:-4.5766,lon:-81.2541,elev:282},
+  {icao:'SPTN',iata:'TCQ',nom:'Crl. FAP Carlos Ciriani Santa Rosa Intl',ciu:'Tacna',lat:-18.0533,lon:-70.2758,elev:1538},
+  {icao:'SPRU',iata:'TRU',nom:'Cap. FAP Carlos Martínez de Pinillos Intl',ciu:'Trujillo',lat:-8.0824,lon:-79.1088,elev:106},
+  {icao:'SPHY',iata:'ANS',nom:'Andahuaylas',ciu:'Andahuaylas',lat:-13.7064,lon:-73.3504,elev:11300},
+  {icao:'SPHO',iata:'AYP',nom:'Crl. FAP Alfredo Mendívil Duarte',ciu:'Ayacucho',lat:-13.1548,lon:-74.2044,elev:8917},
+  {icao:'SPEO',iata:'CHM',nom:'Tnte. FAP Jaime Montreuil Morales',ciu:'Chimbote',lat:-9.1496,lon:-78.5238,elev:69},
+  {icao:'SPHZ',iata:'ATA',nom:'Comandante FAP Germán Arias Graziani',ciu:'Huaraz',lat:-9.3474,lon:-77.5984,elev:9097},
+  {icao:'SPPY',iata:'CHH',nom:'Chachapoyas',ciu:'Chachapoyas',lat:-6.2019,lon:-77.8562,elev:8333},
+  {icao:'SPJR',iata:'CJA',nom:'Mayor Gral. FAP Armando Revoredo Iglesias',ciu:'Cajamarca',lat:-7.1392,lon:-78.4894,elev:8781},
+  {icao:'SPJE',iata:'JAE',nom:'Shumba',ciu:'Jaén',lat:-5.5925,lon:-78.7740,elev:2477},
+  {icao:'SPNC',iata:'HUU',nom:'Alf. FAP David Figueroa Fernandini',ciu:'Huánuco',lat:-9.8788,lon:-76.2048,elev:6070},
+  {icao:'SPGM',iata:'TGI',nom:'Tingo María',ciu:'Tingo María',lat:-9.2897,lon:-76.0051,elev:2146},
+  {icao:'SPSO',iata:'PIO',nom:'Cap. FAP Renán Elías Olivera Intl',ciu:'Pisco',lat:-13.7449,lon:-76.2203,elev:39},
+  {icao:'SPJJ',iata:'JAU',nom:'Francisco Carlé',ciu:'Jauja',lat:-11.7831,lon:-75.4734,elev:11034},
+  {icao:'SPST',iata:'TPP',nom:'Cadete FAP Guillermo del Castillo Paredes',ciu:'Tarapoto',lat:-6.5087,lon:-76.3732,elev:869},
+  {icao:'SPME',iata:'TBP',nom:'Cap. FAP Pedro Canga Rodríguez Intl',ciu:'Tumbes',lat:-3.5521,lon:-80.3811,elev:115},
+  {icao:'SPLO',iata:'ILQ',nom:'Ilo',ciu:'Ilo',lat:-17.6950,lon:-71.3440,elev:72},
+  {icao:'SPWB',iata:'PTL',nom:'Walter Braedt Segú',ciu:'Punta Sal',lat:-4.0869,lon:-81.0258,elev:30},
+  {icao:'SPJN',iata:'SJA',nom:'San Juan de Marcona',ciu:'Marcona',lat:-15.3575,lon:-75.1350,elev:144},
+  {icao:'SPLP',iata:'',nom:'Base Aérea Las Palmas',ciu:'Lima',lat:-12.1607,lon:-76.9989,elev:250},
+  {icao:'SPID',iata:'',nom:'Tnte. Bergerie',ciu:'Iquitos (FAP)',lat:-3.7422,lon:-73.2604,elev:384}
+];
+function gcDistNm(a,b){
+  var R=3440.065;var la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180,dla=(b.lat-a.lat)*Math.PI/180,dlo=(b.lon-a.lon)*Math.PI/180;
+  var h=Math.sin(dla/2)*Math.sin(dla/2)+Math.cos(la1)*Math.cos(la2)*Math.sin(dlo/2)*Math.sin(dlo/2);
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function gcBearing(a,b){
+  var la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180,dlo=(b.lon-a.lon)*Math.PI/180;
+  var y=Math.sin(dlo)*Math.cos(la2),x=Math.cos(la1)*Math.sin(la2)-Math.sin(la1)*Math.cos(la2)*Math.cos(dlo);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+var _peMap=null,_mapMeasure=false,_measurePts=[];
+function openMapModal(){
+  document.getElementById('mapModal').style.display='block';
+  if(!window.L){toast('Leaflet no disponible (sin conexión)','err');return;}
+  if(!_peMap){
+    _peMap=L.map('peMap',{center:[-9.19,-75.01],zoom:5,zoomControl:true});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:18}).addTo(_peMap);
+    APT_PE.forEach(function(a){
+      var mk=L.circleMarker([a.lat,a.lon],{radius:6,color:'#4f8ef7',weight:2,fillColor:'#4f8ef7',fillOpacity:.85});
+      mk.bindPopup('<div style="min-width:170px"><b>'+a.nom+'</b><br>'+
+        '<span style="color:#9aa3b8">'+a.ciu+'</span><br>'+
+        '<b style="font-family:monospace">'+a.icao+'</b>'+(a.iata?' / '+a.iata:'')+' · '+a.elev+' ft<br>'+
+        '<span style="font-family:monospace;font-size:10.5px">'+a.lat.toFixed(4)+', '+a.lon.toFixed(4)+'</span><br>'+
+        '<button onclick="navigator.clipboard.writeText(\''+a.lat.toFixed(4)+','+a.lon.toFixed(4)+'\').then(function(){})" style="margin-top:5px;background:#252840;border:1px solid #3a4160;border-radius:5px;color:#7bb3ff;padding:3px 9px;cursor:pointer;font-size:11px">📋 Copiar coord.</button></div>');
+      mk.addTo(_peMap);a._mk=mk;
+    });
+    _peMap.on('click',function(e){
+      if(!_mapMeasure)return;
+      _measurePts.push(e.latlng);
+      if(_measurePts.length===2){
+        var A={lat:_measurePts[0].lat,lon:_measurePts[0].lng},B={lat:_measurePts[1].lat,lon:_measurePts[1].lng};
+        var nm=gcDistNm(A,B),brg=gcBearing(A,B);
+        L.polyline(_measurePts,{color:'#4f8ef7',weight:2,dashArray:'6 5'}).addTo(_peMap)
+          .bindTooltip(nm.toFixed(1)+' NM · '+nm.toFixed(1)+' NM = '+(nm*1.852).toFixed(1)+' km · rumbo '+brg.toFixed(0)+'°',{permanent:true}).openTooltip();
+        var mo=document.getElementById('mapMeasureOut');
+        mo.style.display='block';
+        mo.innerHTML='📏 '+nm.toFixed(1)+' NM ('+(nm*1.852).toFixed(1)+' km) · rumbo inicial '+brg.toFixed(0)+'°<br><span style="font-size:10px;color:var(--t3)">Clic para nueva medición</span>';
+        _measurePts=[];
+      }
+    });
+  }
+  setTimeout(function(){if(_peMap)_peMap.invalidateSize();},90);
+  mapSearchRender();
+}
+function closeMapModal(){document.getElementById('mapModal').style.display='none';}
+function mapSearchRender(){
+  var q=(document.getElementById('mapSearch').value||'').trim().toLowerCase();
+  var box=document.getElementById('mapAptList');if(!box)return;
+  var list=APT_PE.filter(function(a){
+    return !q||a.icao.toLowerCase().includes(q)||String(a.iata).toLowerCase().includes(q)||a.nom.toLowerCase().includes(q)||a.ciu.toLowerCase().includes(q);
+  });
+  box.innerHTML=list.map(function(a){
+    return '<div class="pe-apt-item" onclick="mapFlyTo(\''+a.icao+'\')">'+
+      '<div><b style="font-family:monospace;color:var(--acc)">'+a.icao+'</b>'+(a.iata?' <span style="color:var(--t3)">'+a.iata+'</span>':'')+
+      '<div style="font-size:10.5px;color:var(--t2)">'+a.nom+'</div></div>'+
+      '<div style="text-align:right;font-size:10px;color:var(--t3)">'+a.ciu+'<br>'+a.elev+' ft</div></div>';
+  }).join('')||'<div style="color:var(--t3);font-size:11.5px;padding:6px">Sin coincidencias</div>';
+}
+function mapFlyTo(icao){
+  var a=APT_PE.find(function(x){return x.icao===icao;});if(!a||!_peMap)return;
+  _peMap.flyTo([a.lat,a.lon],12,{duration:.8});
+  setTimeout(function(){if(a._mk)a._mk.openPopup();},900);
+}
+function mapMeasureToggle(){
+  _mapMeasure=!_mapMeasure;_measurePts=[];
+  document.getElementById('measureBtn').style.background=_mapMeasure?'rgba(79,142,247,.3)':'';
+  if(!_mapMeasure){document.getElementById('mapMeasureOut').style.display='none';}
+  else{toast('Modo medir: haz clic en 2 puntos del mapa','ok');}
+}
+function mapGotoSede(){
+  var sede=null;
+  try{var s=getSession();sede=s&&(s.sede_code||s.sedeCode||null);}catch(e){}
+  var a=sede?APT_PE.find(function(x){return x.icao===sede;}):null;
+  if(!a){a=APT_PE[0];}
+  if(_peMap){_peMap.flyTo([a.lat,a.lon],12,{duration:.8});setTimeout(function(){if(a._mk)a._mk.openPopup();},900);}
+}
+
+// ── METAR GRÁFICO ─────────────────────────────────────────────
+function metarParseObj(raw){
+  var t=(raw||'').trim().replace(/\s+/g,' ');
+  if(!t)return null;
+  var o={station:null,time:null,dir:null,vrb:false,spd:null,gust:null,varEnd:null,visM:null,cavok:false,wx:[],clouds:[],temp:null,dew:null,qnh:null,nosig:t.includes('NOSIG'),speci:/^SPECI/.test(t)};
+  var m=t.match(/(?:METAR|SPECI)\s+(?:COR\s+)?([A-Z]{4})\s+(\d{6})Z/);
+  if(m){o.station=m[1];o.time=m[2];}
+  else{var m2=t.match(/^([A-Z]{4})\s+(\d{6})Z/);if(m2){o.station=m2[1];o.time=m2[2];}}
+  var w=t.match(/\b(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT(?:\s+(\d{3})V(\d{3}))?/);
+  if(w){o.vrb=w[1]==='VRB';if(!o.vrb)o.dir=+w[1];o.spd=+w[2];if(w[3])o.gust=+w[3];
+    if(w[4])o.varEnd=[+w[4],+w[5]];}
+  if(t.includes('CAVOK'))o.cavok=true;
+  else{var v=t.match(/\s(\d{4}|9999)\s/);if(v)o.visM=+v[1];}
+  var wx=t.match(/\b(?:\+|-|VC)?(?:MI|BC|PR|DR|BL|SH|TS|FZ)?(?:DZ|RA|SN|SG|IC|PL|GR|GS|UP|FG|VA|BR|SA|DU|HZ|PO|SQ|FC|PY|FU)+\b/g);
+  if(wx)o.wx=wx;
+  var SKY=t.match(/\b(?:NSC|NCD|SKC|CLR)\b/);
+  if(SKY)o.clouds.push({t:SKY[1],ft:0});
+  var cl=t.match(/\b(FEW|SCT|BKN|OVC|VV)(\d{3})(CB|TCU)?\b/g);
+  if(cl)cl.forEach(function(c){
+    var mm=c.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3})(CB|TCU)?$/);
+    if(mm)o.clouds.push({t:mm[1],ft:+mm[2]*100,cb:mm[3]||null});
+  });
+  var td=t.match(/\b(M?\d{2})\/(M?\d{2})\b/);
+  if(td){o.temp=+td[1].replace('M','-');o.dew=+td[2].replace('M','-');}
+  var q=t.match(/\bQ(\d{4})\b/);
+  if(q)o.qnh=+q[1];
+  return (o.station||o.spd!=null||o.clouds.length||o.temp!=null)?o:null;
+}
+function openMetarVis(fromDecoder){
+  document.getElementById('metarVisModal').style.display='block';
+  var inp=document.getElementById('mvInput');
+  if(fromDecoder){
+    var t=document.getElementById('aeroInput');
+    if(t&&t.value.trim())inp.value=t.value.trim().split('\n')[0];
+  }
+  if(!inp.value.trim())inp.value='METAR SPJC 051200Z 14012G25KT 9999 SCT025 BKN040 18/15 Q1016 NOSIG';
+  metarVisRender();
+}
+function closeMetarVis(){document.getElementById('metarVisModal').style.display='none';}
+function metarVisRender(){
+  var cv=document.getElementById('mvCanvas'),ctx=cv.getContext('2d');
+  var err=document.getElementById('mvError'),wrap=document.getElementById('mvCanvasWrap');
+  var o=metarParseObj(document.getElementById('mvInput').value);
+  if(!o){wrap.style.display='none';err.style.display='block';err.textContent='No se reconoció un METAR válido. Ej: SPJC 051200Z 14012G25KT 9999 SCT025 BKN040 18/15 Q1016 NOSIG';return;}
+  err.style.display='none';wrap.style.display='block';
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var bg=getComputedStyle(document.documentElement).getPropertyValue('--s2')||'#161a2b';
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  var t1='#e8eaf6',t2='#9aa3b8',acc='#4f8ef7';
+  ctx.textBaseline='top';
+  // Título
+  ctx.fillStyle=t1;ctx.font='bold 17px Inter,sans-serif';
+  ctx.fillText((o.speci?'SPECI ':'METAR ')+(o.station||'—')+(o.time?' · '+o.time.slice(0,2)+':'+o.time.slice(2,4)+'Z':''),18,14);
+  // ── Rosa de vientos ──
+  var cx=140,cy=185,R=100;
+  ctx.strokeStyle='rgba(154,163,184,.35)';ctx.lineWidth=1;
+  [1,.66,.33].forEach(function(f){ctx.beginPath();ctx.arc(cx,cy,R*f,0,2*Math.PI);ctx.stroke();});
+  ctx.strokeStyle='rgba(154,163,184,.55)';
+  for(var dg=0;dg<360;dg+=30){
+    var rad=dg*Math.PI/180;
+    var x1=cx+Math.sin(rad)*R,y1=cy-Math.cos(rad)*R;
+    var x2=cx+Math.sin(rad)*(R-7),y2=cy-Math.cos(rad)*(R-7);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  }
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.textAlign='center';
+  ctx.fillText('N',cx,cy-R-16);ctx.fillText('S',cx,cy+R+5);ctx.fillText('E',cx+R+7,cy-6);ctx.fillText('O',cx-R-14,cy-6);
+  if(o.spd!=null){
+    var maxRef=Math.max(50,o.spd+(o.gust||0));
+    var fr=Math.min(1,o.spd/maxRef);
+    var wr=(o.dir!=null?o.dir*Math.PI/180:0);
+    // flecha: apunta hacia donde sopla (dir+180)
+    var tipX=cx+Math.sin(wr)*R*fr,tipY=cy-Math.cos(wr)*R*fr;
+    var dirArrow=(o.dir!=null?(o.dir+180)%360:null);
+    var ar=dirArrow!=null?dirArrow*Math.PI/180:Math.PI/2;
+    var ax=cx+Math.sin(ar)*R*fr,ay=cy-Math.cos(ar)*R*fr;
+    ctx.strokeStyle=acc;ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ax,ay);ctx.stroke();
+    var ang=Math.atan2(ay-cy,ax-cx);
+    ctx.fillStyle=acc;ctx.beginPath();
+    ctx.moveTo(ax,ay);
+    ctx.lineTo(ax-12*Math.cos(ang-.4),ay-12*Math.sin(ang-.4));
+    ctx.lineTo(ax-12*Math.cos(ang+.4),ay-12*Math.sin(ang+.4));
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle=t1;ctx.font='bold 15px Inter,sans-serif';
+    ctx.fillText((o.vrb?'VRB':(o.dir!=null?String(o.dir).padStart(3,'0')+'°':'—'))+' '+o.spd+(o.gust?'G'+o.gust:'')+' KT',cx,cy+R+24);
+    if(o.varEnd)ctx.fillText('VAR '+o.varEnd[0]+'–'+o.varEnd[1]+'°',cx,cy+R+44);
+  }else{ctx.fillStyle=t2;ctx.font='12px Inter,sans-serif';ctx.fillText('Viento: —',cx,cy+R+24);}
+  ctx.textAlign='left';
+  // ── Panel derecho datos ──
+  var px=290;
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';
+  ctx.fillText('TEMPERATURA / ROCÍO',px,42);
+  ctx.fillStyle=t1;ctx.font='bold 26px Inter,sans-serif';
+  ctx.fillText((o.temp!=null?o.temp+'°C':'—'),px,58);
+  ctx.font='bold 15px Inter,sans-serif';ctx.fillStyle=t2;
+  ctx.fillText('/ '+(o.dew!=null?o.dew+'°C':'—'),px+92,70);
+  if(o.temp!=null&&o.dew!=null){var spr=o.temp-o.dew;
+    ctx.font='11px Inter,sans-serif';ctx.fillStyle=spr<=2?'#e74c3c':spr<=4?'#f39c12':'#2ecc71';
+    ctx.fillText('Dif. '+spr+'°C'+(spr<=1?' — niebla probable':spr<=3?' — niebla posible':''),px+152,72);}
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText('QNH',px,110);
+  ctx.fillStyle=t1;ctx.font='bold 26px Inter,sans-serif';
+  ctx.fillText(o.qnh?o.qnh+' hPa':'—',px,126);
+  // Visibilidad
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText('VISIBILIDAD',px,170);
+  var visKm=o.cavok?10:(o.visM!=null?Math.min(10,o.visM/1000):null);
+  ctx.fillStyle='#20263c';ctx.fillRect(px,190,360,14);
+  if(visKm!=null){
+    var vc=visKm>=10?'#2ecc71':visKm>=5?'#f1c40f':visKm>=1.5?'#f39c12':'#e74c3c';
+    ctx.fillStyle=vc;ctx.fillRect(px,190,360*(visKm/10),14);
+    ctx.fillStyle=t1;ctx.font='bold 14px Inter,sans-serif';
+    ctx.fillText(o.cavok?'CAVOK ≥10 km':(o.visM===9999?'≥10 km':o.visM+' m'),px+370,190);
+  }else{ctx.fillStyle=t2;ctx.font='bold 13px Inter,sans-serif';ctx.fillText('—',px+370,190);}
+  // ── Viento cruzado vs pista ──
+  var rwy=parseFloat(document.getElementById('mvRwy').value);
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText('VIENTO VS PISTA',px,232);
+  if(rwy&&o.dir!=null&&o.spd!=null){
+    var ang2=Math.abs(o.dir-rwy)%360;if(ang2>180)ang2=360-ang2;
+    var xw=o.spd*Math.sin(ang2*Math.PI/180),hw=o.spd*Math.cos(ang2*Math.PI/180);
+    function bar(lbl,val,max,y,col){
+      ctx.fillStyle=t2;ctx.font='10.5px Inter,sans-serif';ctx.fillText(lbl,px,y);
+      ctx.fillStyle='#20263c';ctx.fillRect(px+92,y-2,190,12);
+      ctx.fillStyle=col;ctx.fillRect(px+92,y-2,190*Math.min(1,Math.abs(val)/max),12);
+      ctx.fillStyle=t1;ctx.font='bold 12px Inter,sans-serif';
+      ctx.fillText((val>=0?'':'−')+Math.abs(val).toFixed(1)+' KT'+(lbl[0]==='C'?(val>=0?' (cabeza)':' (cola)'):''),px+290,y);
+    }
+    var maxS=Math.max(20,o.spd+(o.gust||0));
+    bar('Cruzado',xw,maxS,248,xw>20?'#e74c3c':xw>13?'#f39c12':'#2ecc71');
+    bar('Cabeza',hw,maxS,270,hw<0?'#e67e22':'#2ecc71');
+    ctx.fillStyle=t2;ctx.font='10.5px Inter,sans-serif';
+    ctx.fillText('Δ ángulo: '+ang2.toFixed(0)+'° · pista '+String(Math.round(rwy)).padStart(3,'0'),px,294);
+  }else{
+    ctx.fillStyle=t2;ctx.font='11.5px Inter,sans-serif';
+    ctx.fillText(rwy?'Ingresa rumbo de viento válido':'Escribe el rumbo de pista (ej. 150) para el cálculo',px,250);
+  }
+  // ── Capas de nubes ──
+  var bx=18,by=330,bw=340,bh=210;
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText('NUBES (ft AGL)',bx,by-16);
+  ctx.fillStyle='#11141f';ctx.fillRect(bx,by,bw,bh);
+  ctx.strokeStyle='rgba(154,163,184,.3)';ctx.lineWidth=1;
+  [0,5000,10000,15000,20000].forEach(function(ft){
+    var y=by+bh-(ft/20000)*bh;
+    ctx.beginPath();ctx.moveTo(bx,y);ctx.lineTo(bx+bw,y);ctx.stroke();
+    ctx.fillStyle=t2;ctx.font='9.5px Inter,sans-serif';ctx.fillText(ft?String(ft/1000)+'k':'0',bx+bw+6,y-5);
+  });
+  if(!o.clouds.length){ctx.fillStyle=t2;ctx.font='12px Inter,sans-serif';ctx.fillText('Sin capas reportadas',bx+14,by+16);}
+  o.clouds.forEach(function(c,i){
+    var y=by+bh-Math.min(1,c.ft/20000)*bh;
+    var col=c.t==='FEW'?'#2ecc71':c.t==='SCT'?'#f1c40f':c.t==='BKN'?'#f39c12':c.t==='OVC'?'#e74c3c':'#9b59b6';
+    if(c.t==='NSC'||c.t==='NCD'||c.t==='SKC'||c.t==='CLR'){
+      ctx.fillStyle=col;ctx.font='bold 12px Inter,sans-serif';
+      ctx.fillText(c.t+' — sin nubes significativas',bx+12,by+18);return;
+    }
+    ctx.fillStyle=col;ctx.fillRect(bx+8,y-7,bw-30,14);
+    ctx.fillStyle='#0b0d16';ctx.font='bold 10px Inter,sans-serif';
+    ctx.fillText(c.t+(c.cb?' '+c.cb:'')+' '+c.ft,bx+14,y-4);
+  });
+  // Tiempo presente
+  var wxX=390;
+  ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText('TIEMPO PRESENTE',wxX,by-16);
+  if(o.wx&&o.wx.length){
+    o.wx.forEach(function(w2,i){
+      var y=by+4+i*24;
+      ctx.fillStyle='#f39c12';ctx.font='bold 13px Inter,sans-serif';
+      ctx.fillText(w2,wxX,y);
+      var es={RA:'Lluvia','DZ':'Llovizna',SN:'Nieve',FG:'Neblina',BR:'Neblina ligera',HZ:'Bruma',TS:'Tormenta',GR:'Granizo',SH:'Chubascos',VA:'Ceniza volcánica',FU:'Humo',SA:'Arena',SQ:'Ráfagas',FC:'Tornado/Funnel'}[w2.replace(/^[+-]VC?/,'')]||'';
+      if(es){ctx.fillStyle=t2;ctx.font='11px Inter,sans-serif';ctx.fillText(es,wxX+70,y);}
+    });
+  }else{ctx.fillStyle='#2ecc71';ctx.font='bold 12px Inter,sans-serif';ctx.fillText(o.cavok?'CAVOK':'Sin tiempo significativo',wxX,by+4);}
+  // Tendencia + info
+  ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
+  ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
+  ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.3.0',18,H-18);
+}
+
+// ── OCR (Tesseract.js) ───────────────────────────────────────
+var _ocrAbort=false;
+async function ocrRun(){
+  if(!pdfDoc){toast('Carga un PDF primero','err');return;}
+  if(!window.Tesseract){toast('Tesseract no disponible (sin conexión)','err');return;}
+  var mode=document.getElementById('ocrPages').value;
+  var lang=document.getElementById('ocrLang').value;
+  var prog=document.getElementById('ocrProg'),bar=document.getElementById('ocrBar'),lbl=document.getElementById('ocrLbl');
+  var out=document.getElementById('ocrOut'),acts=document.getElementById('ocrActs');
+  prog.style.display='block';out.style.display='none';acts.style.display='none';bar.style.width='0';
+  var slots=mode==='all'?pageOrder.map(function(_,i){return i;}).filter(function(s){return pageOrder[s]>=0;}):[curPage-1].filter(function(s){return pageOrder[s]>=0;});
+  if(!slots.length){toast('No hay páginas para procesar','err');prog.style.display='none';return;}
+  var texts=[];
+  for(var si=0;si<slots.length;si++){
+    var slot=slots[si];
+    lbl.textContent='Renderizando página '+(slot+1)+' de '+pageCount+'…';
+    var pg=await pdfDoc.getPage(pageOrder[slot]+1);
+    var vp=pg.getViewport({scale:2});
+    var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+    await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    var dataUrl=cv.toDataURL('image/png');
+    lbl.textContent='OCR página '+(slot+1)+'/'+pageCount+' ('+lang+')… — descargando motor la primera vez (~15 MB)';
+    try{
+      var res=await Tesseract.recognize(dataUrl,lang,{logger:function(m){
+        if(m.status==='recognizing text'){bar.style.width=Math.round(((si+m.progress)/slots.length)*100)+'%';lbl.textContent='OCR página '+(slot+1)+' — '+Math.round(m.progress*100)+'%';}
+      }});
+      texts.push('── Página '+(slot+1)+' ──\n'+((res.data&&res.data.text)||'').trim());
+    }catch(e){texts.push('── Página '+(slot+1)+' ──\n(ERROR OCR: '+e.message+')');}
+  }
+  bar.style.width='100%';
+  out.value=texts.join('\n\n');
+  out.style.display='block';acts.style.display='flex';prog.style.display='none';
+  window._ocrText=out.value;
+  toast(texts.length+' página(s) procesada(s)','ok');
+}
+function ocrCopy(){
+  var t=document.getElementById('ocrOut');
+  t.select();try{document.execCommand('copy');}catch(e){}
+  if(navigator.clipboard&&window._ocrText)navigator.clipboard.writeText(window._ocrText).catch(function(){});
+  toast('Texto copiado','ok');
+}
+function ocrToDecoder(){
+  var t=document.getElementById('ocrOut');
+  document.getElementById('aeroInput').value=t.value;
+  showEditorTab('aero');aeroDecode();
+}
+function ocrToTextbox(){
+  if(!window._ocrText||!window._ocrText.trim()){toast('No hay texto OCR','err');return;}
+  var slot=curPage-1,wrap=document.getElementById('pw-'+slot);
+  if(!wrap){toast('Página no disponible','err');return;}
+  createTextBox(slot,wrap,40,70,window._ocrText.slice(0,4000),annColor,12,annFont);
+  toast('Texto insertado como anotación editable — arrástralo/edítalo en el PDF','ok');
+}
+
+// ── COMPARADOR DE PDFs ───────────────────────────────────────
+async function pdfExtractPagesText(file){
+  var bytes=new Uint8Array(await file.arrayBuffer());
+  var doc=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
+  var pages=[];
+  for(var i=0;i<doc.numPages;i++){
+    var pg=await doc.getPage(i+1);
+    var tc=await pg.getTextContent();
+    var txt=tc.items.map(function(x){return x.str;}).join(' ').replace(/\s+/g,' ').trim();
+    pages.push(txt);
+  }
+  return pages;
+}
+function diffLines(a,b){
+  // LCS clásico con límite de tamaño (fallback trivial si es enorme)
+  var n=a.length,m=b.length;
+  if(n*m>2500000){
+    var out2=[];
+    for(var k=0;k<Math.max(n,m);k++){
+      var la=a[k],lb=b[k];
+      if(la===lb)out2.push({t:'same',s:la});
+      else{if(la!=null)out2.push({t:'del',s:la});if(lb!=null)out2.push({t:'ins',s:lb});}
+    }
+    return out2;
+  }
+  var dp=[];
+  for(var i=0;i<=n;i++){dp.push(new Array(m+1).fill(0));}
+  for(var i2=n-1;i2>=0;i2--)for(var j=m-1;j>=0;j--)
+    dp[i2][j]=a[i2]===b[j]?dp[i2+1][j+1]+1:Math.max(dp[i2+1][j],dp[i2][j+1]);
+  var ops=[],i3=0,j2=0;
+  while(i3<n&&j2<m){
+    if(a[i3]===b[j2]){ops.push({t:'same',s:a[i3]});i3++;j2++;}
+    else if(dp[i3+1][j2]>=dp[i3][j2+1]){ops.push({t:'del',s:a[i3]});i3++;}
+    else{ops.push({t:'ins',s:b[j2]});j2++;}
+  }
+  while(i3<n){ops.push({t:'del',s:a[i3]});i3++;}
+  while(j2<m){ops.push({t:'ins',s:b[j2]});j2++;}
+  return ops;
+}
+async function diffRun(){
+  var fa=document.getElementById('diffFileA').files[0];
+  var fb=document.getElementById('diffFileB').files[0];
+  var out=document.getElementById('diffOut');
+  if(!fa||!fb){toast('Selecciona dos archivos PDF','err');return;}
+  out.innerHTML='<div style="font-size:11.5px;color:var(--t3)">Extrayendo texto…</div>';
+  try{
+    var A=await pdfExtractPagesText(fa),B=await pdfExtractPagesText(fb);
+    var ins=0,del=0,pageRows='';
+    for(var p=0;p<Math.max(A.length,B.length);p++){
+      var la=(A[p]||'').split(/(?<=\.)\s|(?<=,)\s/).filter(function(x){return x.trim();});
+      var lb=(B[p]||'').split(/(?<=\.)\s|(?<=,)\s/).filter(function(x){return x.trim();});
+      var ops=diffLines(la,lb);
+      var pi=ops.filter(function(o){return o.t==='ins';}).length;
+      var pd=ops.filter(function(o){return o.t==='del';}).length;
+      ins+=pi;del+=pd;
+      pageRows+='<div class="airac-row" style="margin-bottom:3px"><span>Página '+(p+1)+'</span><span style="font-size:11px;color:'+(pi||pd?'#f39c12':'#2ecc71')+'">'+((A[p]||'')===(B[p]||'')?'idéntica':('+'+pi+' / −'+pd))+'</span></div>';
+    }
+    var same=ins===0&&del===0&&A.length===B.length;
+    var html='<div class="airac-cur" style="border-color:'+(same?'rgba(46,204,113,.5)':'rgba(243,156,18,.5)')+'">'+
+      '<div style="font-weight:700;font-size:12.5px;color:'+(same?'#2ecc71':'#f39c12')+'">'+(same?'✅ Los PDFs tienen el mismo texto':'⚠ Se encontraron diferencias')+'</div>'+
+      '<div style="font-size:11px;margin-top:3px">'+fa.name+' ('+A.length+' pág.) vs '+fb.name+' ('+B.length+' pág.) · <span style="color:#7ee2a8">+'+ins+' añadidas</span> · <span style="color:#f0948a">−'+del+' eliminadas</span></div></div>';
+    html+='<div style="font-size:10.5px;color:var(--t3);margin:6px 0">Detalle por página</div>'+pageRows;
+    if(!same){
+      html+='<div style="font-size:10.5px;color:var(--t3);margin:8px 0 4px">Diferencias (texto nuevo en verde, eliminado en rojo)</div><div class="diff-wrap">';
+      for(var p2=0;p2<Math.max(A.length,B.length);p2++){
+        var la2=(A[p2]||'').split(/(?<=\.)\s|(?<=,)\s/).filter(function(x){return x.trim();});
+        var lb2=(B[p2]||'').split(/(?<=\.)\s|(?<=,)\s/).filter(function(x){return x.trim();});
+        var ops2=diffLines(la2,lb2);
+        var shown=0;
+        ops2.forEach(function(o){
+          if(o.t==='same'){shown++;return;}
+          if(shown>0&&ops2[ops2.indexOf(o)-1]&&ops2[ops2.indexOf(o)-1].t==='same'&&false)return;
+          html+='<div class="diff-line '+o.t+'"><span class="ln">'+(p2+1)+'</span><span class="ct">'+(o.t==='ins'?'+ ':'− ')+String(o.s).replace(/</g,'&lt;')+'</span></div>';
+        });
+      }
+      html+='</div>';
+    }
+    out.innerHTML=html;
+    toast(same?'PDFs idénticos en texto':'Diferencias encontradas: +'+ins+' / −'+del,'ok');
+  }catch(e){
+    console.error(e);
+    out.innerHTML='<div style="color:var(--err);font-size:12px">Error: '+e.message+'</div>';
+    toast('Error al comparar','err');
+  }
+}
+
+// ── MARCA DE AGUA ────────────────────────────────────────────
+function wmApply(){
+  if(!pageOrder.length){toast('Carga un PDF primero','err');return;}
+  var text=document.getElementById('wmText').value.trim();
+  if(!text){toast('Escribe el texto de la marca de agua','err');return;}
+  pushUndo();
+  var size=Math.max(10,Math.min(200,parseFloat(document.getElementById('wmSize').value)||42));
+  var opacity=Math.max(.03,Math.min(1,(parseFloat(document.getElementById('wmOpacity').value)||14)/100));
+  var rotate=(parseFloat(document.getElementById('wmRotate').value)||45)%360;
+  var color=document.getElementById('wmColor').value;
+  var pattern=document.getElementById('wmPattern').value;
+  var only=pageOrder.length&&document.getElementById('wmPages').value==='cur'?[curPage-1]:null;
+  var n=0;
+  for(var slot=0;slot<pageOrder.length;slot++){
+    if(only&&only.indexOf(slot)<0)continue;
+    var cv=document.querySelector('.acv[data-slot="'+slot+'"]');if(!cv)continue;
+    if(!annotations[slot])annotations[slot]=[];
+    annotations[slot].push({type:'watermark',text:text,size:size,opacity:opacity,rotate:rotate,color:color,pattern:pattern,x:0,y:0,w:cv.width,h:cv.height});
+    n++;redraw(slot,cv);
+  }
+  updateDocInfo();scheduleAutosave();
+  toast('Marca de agua aplicada a '+n+' página(s) — se incluye al exportar el PDF','ok');
+}
+function wmRemove(){
+  if(!pageOrder.length)return;
+  var n=0;
+  for(var slot=0;slot<pageOrder.length;slot++){
+    if(!annotations[slot])continue;
+    var before=annotations[slot].length;
+    annotations[slot]=annotations[slot].filter(function(a){return a.type!=='watermark';});
+    if(annotations[slot].length!==before){n+=before-annotations[slot].length;
+      var cv=document.querySelector('.acv[data-slot="'+slot+'"]');if(cv)redraw(slot,cv);}
+  }
+  if(!n){toast('No había marcas de agua');return;}
+  updateDocInfo();scheduleAutosave();
+  toast(n+' marca(s) de agua eliminadas','ok');
+}
+function wmDraw(ctx,a,cvW,cvH){
+  var rad=(a.rotate||0)*Math.PI/180;
+  ctx.save();
+  ctx.fillStyle=a.color||'#c0392b';
+  ctx.font='bold '+(a.size||42)+'px Inter,sans-serif';
+  ctx.textAlign='center';
+  var tw=ctx.measureText(a.text).width;
+  var cx=cvW/2,cy=cvH/2;
+  ctx.translate(cx,cy);ctx.rotate(rad);
+  if(a.pattern==='tile'){
+    var diag=Math.sqrt(cvW*cvW+cvH*cvH)/2;
+    var dx=Math.max(120,tw*1.9),dy=Math.max(60,(a.size||42)*4.5);
+    for(var gy=-diag;gy<=diag;gy+=dy){
+      for(var gx=-diag;gx<=diag;gx+=dx){
+        ctx.fillText(a.text,gx,gy);
+      }
+    }
+  }else{
+    ctx.fillText(a.text,0,0);
+  }
+  ctx.restore();
+}
+
 
 // ════ AERONAUTICAL DECODER ENGINE ════
 // Based on: ICAO Annex 15, Annex 14, Annex 16, Doc 8126, Doc 8400, AIP Peru
@@ -4720,6 +5398,7 @@ function drawAnn(ctx,a,selected){
   else if(a.type==='arrow'){var ex=a.x+a.w,ey=a.y+a.h,angle=Math.atan2(a.h,a.w),hl=Math.max(10,lw*4);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=lw;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-hl*Math.cos(angle-.5),ey-hl*Math.sin(angle-.5));ctx.lineTo(ex-hl*Math.cos(angle+.5),ey-hl*Math.sin(angle+.5));ctx.closePath();ctx.fill();}
   else if(a.type==='draw'&&a.pts&&a.pts.length>1){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();a.pts.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();}
   else if(a.type==='cover-rect'){ctx.fillStyle=a.bgColor||'#ffffff';ctx.fillRect(a.x,a.y,a.w,a.h);}
+  else if(a.type==='watermark'){wmDraw(ctx,a,cv.width,cv.height);}
   else if(a.type==='para-edit'){
     ctx.save();ctx.globalAlpha=op||1;
     ctx.fillStyle=a.bgColor||'#ffffff';ctx.fillRect(a.x,a.y,a.w,a.h);
@@ -5347,6 +6026,26 @@ async function exportPDF(){
           var scol=hexToRgb01(a.color||'#000000');
           var say=ph-a.y*scaleY;
           try{pdfPage.drawText((a.emoji||'')+' '+(a.text||''),{x:a.x*scaleX,y:say,size:sfz,font:sfnt,color:PDFLib.rgb(scol[0],scol[1],scol[2])});}catch(e){}
+        } else if(a.type==='watermark'&&a.text){
+          // v2.3.0 — marca de agua vectorial (pdf-lib) con rotación y opacidad
+          var wmcol=hexToRgb01(a.color||'#c0392b');
+          var wmfnt=pickFont('',true);
+          var wmsz=Math.max(6,(a.size||42)*scaleY*0.92);
+          var wmop=a.opacity!=null?a.opacity:0.14;
+          var wmrot=PDFLib.degrees(a.rotate||0);
+          var wmwid=wmsz*(a.text.length*0.55);
+          try{
+            if(a.pattern==='tile'){
+              var wmdx=Math.max(120,wmwid*1.9),wmdy=Math.max(50,wmsz*4.5);
+              for(var wmgy=-wmsz;wmgy<ph+wmsz;wmgy+=wmdy){
+                for(var wmgx=-wmwid;wmgx<pw+wmwid;wmgx+=wmdx){
+                  pdfPage.drawText(a.text,{x:wmgx,y:wmgy,size:wmsz,font:wmfnt,color:PDFLib.rgb(wmcol[0],wmcol[1],wmcol[2]),opacity:wmop,rotate:wmrot});
+                }
+              }
+            }else{
+              pdfPage.drawText(a.text,{x:pw/2-wmwid/2,y:ph/2-wmsz/2,size:wmsz,font:wmfnt,color:PDFLib.rgb(wmcol[0],wmcol[1],wmcol[2]),opacity:wmop,rotate:wmrot});
+            }
+          }catch(e2){}
         }
       }
       // Anotaciones canvas (draw freehand ya procesadas arriba)
@@ -5610,6 +6309,52 @@ document.addEventListener('keydown',function(e){
     <button class="btn btn-ghost" style="color:rgba(255,255,255,.5)" onclick="closeParagraphEditor(false)">Cancelar</button>
     <button class="btn" style="background:rgba(240,80,80,.15);color:#ff6b6b;border:1px solid rgba(240,80,80,.3)" onclick="peClearZone()">🗑 Borrar zona</button>
     <button class="btn btn-primary" style="min-width:140px;font-weight:700" onclick="closeParagraphEditor(true)">✓ Aplicar al PDF</button>
+  </div>
+</div>
+
+<!-- ══ v2.3.0: MAP MODAL ══ -->
+<div id="mapModal" style="display:none;position:fixed;inset:0;z-index:10020;background:rgba(8,10,20,.78);backdrop-filter:blur(4px);padding:26px" onclick="if(event.target===this)closeMapModal()">
+  <div style="background:var(--s1);border:1px solid var(--bdr);border-radius:12px;max-width:1080px;margin:0 auto;height:calc(100vh - 52px);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bdr)">
+      <div><span style="font-size:14px;font-weight:800">🗺️ Cartas — Aeródromos del Perú</span> <span style="font-size:10.5px;color:var(--t3);margin-left:8px">OpenStreetMap · 30 aeródromos</span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="mapMeasureToggle()" id="measureBtn">📏 Medir</button>
+        <button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="mapGotoSede()" id="sedeBtn">🏠 Mi sede</button>
+        <button onclick="closeMapModal()" style="background:var(--s2);border:1px solid var(--bdr);border-radius:7px;color:var(--t2);font-size:15px;cursor:pointer;width:30px;height:30px">✕</button>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;overflow:hidden">
+      <div style="width:270px;flex-shrink:0;border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:9px;border-bottom:1px solid var(--bdr)">
+          <div class="pe-map-search"><input id="mapSearch" placeholder="OACI, IATA o nombre…" oninput="mapSearchRender()"></div>
+          <div id="mapMeasureOut" style="font-size:11px;color:var(--acc);display:none"></div>
+        </div>
+        <div id="mapAptList" style="flex:1;overflow-y:auto;padding:8px"></div>
+      </div>
+      <div id="peMap" style="flex:1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ v2.3.0: METAR VIS MODAL ══ -->
+<div id="metarVisModal" style="display:none;position:fixed;inset:0;z-index:10020;background:rgba(8,10,20,.78);backdrop-filter:blur(4px);padding:26px" onclick="if(event.target===this)closeMetarVis()">
+  <div style="background:var(--s1);border:1px solid var(--bdr);border-radius:12px;max-width:760px;margin:0 auto;max-height:calc(100vh - 52px);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bdr)">
+      <span style="font-size:14px;font-weight:800">📊 METAR gráfico</span>
+      <button onclick="closeMetarVis()" style="background:var(--s2);border:1px solid var(--bdr);border-radius:7px;color:var(--t2);font-size:15px;cursor:pointer;width:30px;height:30px">✕</button>
+    </div>
+    <div style="padding:12px 16px;overflow-y:auto">
+      <textarea id="mvInput" class="f-input" rows="2" style="font-size:12px;font-family:JetBrains Mono,monospace;resize:vertical" placeholder="METAR SPJC 051200Z 14012G25KT 9999 SCT025 BKN040 18/15 Q1016 NOSIG"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <span style="font-size:11.5px;color:var(--t3)">Rumbo pista (°):</span>
+        <input type="number" id="mvRwy" class="f-input" style="width:70px;font-size:12px;padding:4px 7px" placeholder="150" min="1" max="360">
+        <button class="btn btn-primary btn-sm" style="font-size:12px;margin-left:auto" onclick="metarVisRender()">Renderizar</button>
+      </div>
+      <div id="mvError" style="display:none;color:var(--err);font-size:12px;margin-top:8px"></div>
+      <div id="mvCanvasWrap" style="margin-top:12px;display:none">
+        <canvas id="mvCanvas" width="700" height="560" style="width:100%;height:auto;background:var(--s2);border-radius:10px"></canvas>
+      </div>
+    </div>
   </div>
 </div>
 
