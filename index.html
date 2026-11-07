@@ -689,7 +689,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.3.1 · edición de texto fiel al formato + AIS+</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.4.0 · hora de recepción editable + sello vectorial al exportar</div>
   </div>
 </div>
 
@@ -1166,6 +1166,17 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <div id="etab-sigs" class="hidden">
         <div class="sello-panel">
           <div class="ersec-title">Sello de Recepción (UTC)</div>
+          <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:8px;margin-bottom:8px">
+            <div>
+              <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Fecha Recepción (UTC)</label>
+              <input type="date" class="f-input" id="selloRxDate" style="font-size:12px;padding:6px 8px" oninput="updateSelloPreview()">
+            </div>
+            <div>
+              <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Hora Recepción (UTC)</label>
+              <input class="f-input" id="selloRxTime" inputmode="numeric" maxlength="4" placeholder="ahora" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);updateSelloPreview()">
+            </div>
+          </div>
+          <div style="font-size:9.5px;color:var(--t3);margin:-2px 0 8px">Recepción: vacío = fecha/hora actuales. Doble clic sobre un sello colocado edita su hora.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Hora Transmisión (UTC)</label>
@@ -2496,8 +2507,46 @@ async function initEditor(){
 function updateDrivePathLabel(){var pl=document.getElementById('drivePathLabel');if(pl)pl.textContent=getDrivePath();}
 function normTxTimeVal(v){var d=(v||'').replace(/\D/g,'');if(d.length===4)return d;if(d.length===3)return '0'+d;return '';}
 function selloTxLine(txT,txI){if(txT&&txI)return 'TRANSMITIDO '+txT+'Z · OPR '+txI;if(txT)return 'TRANSMITIDO '+txT+'Z';if(txI)return 'OPR '+txI;return '';}
+
+// ════ v2.4.0 — HORA DE RECEPCIÓN EDITABLE EN EL SELLO (helpers puros) ════
+// normRxDateVal: acepta 'YYYY-MM-DD' (input date nativo), 'DD/MM/AAAA' o
+// 'DDMMAAAA' → 'DD/MM/YYYY' validado (rechacha 30/FEB, meses 13, años locos).
+function normRxDateVal(v){
+  v=(v||'').trim();if(!v)return '';
+  var m=null,d=0,mo=0,y=0;
+  if(m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/)){y=+m[1];mo=+m[2];d=+m[3];}
+  else if(m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)){d=+m[1];mo=+m[2];y=+m[3];} // DD/MM/AAAA (convención Perú)
+  else{var dg=v.replace(/\D/g,'');if(dg.length===8){d=+dg.slice(0,2);mo=+dg.slice(2,4);y=+dg.slice(4);}}
+  if(y<1970||y>2100||mo<1||mo>12||d<1||d>31)return '';
+  var dt=new Date(Date.UTC(y,mo-1,d));
+  if(dt.getUTCDate()!==d||dt.getUTCMonth()!==mo-1)return '';
+  return pad(d)+'/'+pad(mo)+'/'+y;
+}
+// normRxTimeVal: 'HHMM'/'HMM'/'HH:MM' → 'HH:MM' 24h válido; '' si inválido.
+function normRxTimeVal(v){
+  var dg=(v||'').replace(/\D/g,'');
+  if(dg.length<3)return '';
+  if(dg.length===3)dg='0'+dg;
+  if(dg.length!==4)return '';
+  var h=+dg.slice(0,2),mi=+dg.slice(2);
+  if(h>23||mi>59)return '';
+  return dg.slice(0,2)+':'+dg.slice(2);
+}
+// selloStampTs: compone 'DD/MM/YYYY HH:MM UTC'; cada parte que falte usa la actual.
+function selloStampTs(dateVal,timeVal){
+  var d=normRxDateVal(dateVal);var t=normRxTimeVal(timeVal);
+  if(!d){var n=new Date();d=pad(n.getUTCDate())+'/'+pad(n.getUTCMonth()+1)+'/'+n.getUTCFullYear();}
+  if(!t){var n2=new Date();t=pad(n2.getUTCHours())+':'+pad(n2.getUTCMinutes());}
+  return d+' '+t+' UTC';
+}
+// parseSelloTs: 'DD/MM/YYYY HH:MM UTC' → {date:'YYYY-MM-DD',time:'HHMM'}
+function parseSelloTs(ts){
+  var m=(ts||'').match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+  if(!m)return{date:'',time:''};
+  return{date:m[3]+'-'+m[2]+'-'+m[1],time:m[4]+m[5]};
+}
 function updateSelloPreview(){
-  var ts=getUTC();
+  var ts=selloStampTs(((document.getElementById('selloRxDate')||{}).value||''),((document.getElementById('selloRxTime')||{}).value||''));
   var el=document.getElementById('selloTimestamp');if(el)el.textContent=ts;
   var logo=document.getElementById('selloLogoImg');if(logo&&typeof CORPAC_LOGO!=='undefined')logo.src=CORPAC_LOGO;
   // Mostrar sede del usuario actual
@@ -4225,7 +4274,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.3.1',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.4.0',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5595,7 +5644,7 @@ function onMD(e,slot,cv){
   if(currentTool==='sello-place'&&pendingSello){
     pushUndo();if(!annotations[slot])annotations[slot]=[];
     var activeSig=getActiveSig();
-    var _txT=normTxTimeVal((document.getElementById('selloTxTime')||{}).value||'');var _txI=((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().trim().replace(/\s+/g,' ');annotations[slot].push({type:'sello_recepcion',x:pos.x,y:pos.y,w:220,h:216,timestamp:getUTC(),txTime:_txT,txInitials:_txI,sigImg:activeSig?activeSig.src:null,color:'#c00',opacity:annOpacity});
+    var _txT=normTxTimeVal((document.getElementById('selloTxTime')||{}).value||'');var _txI=((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().trim().replace(/\s+/g,' ');var _rxTs=selloStampTs(((document.getElementById('selloRxDate')||{}).value||''),((document.getElementById('selloRxTime')||{}).value||''));annotations[slot].push({type:'sello_recepcion',x:pos.x,y:pos.y,w:220,h:216,timestamp:_rxTs,txTime:_txT,txInitials:_txI,sigImg:activeSig?activeSig.src:null,color:'#c00',opacity:annOpacity});
     redraw(slot,cv);updateDocInfo();pendingSello=false;setTool('cursor');return;
   }
   drawing=true;drawStart={x:pos.x,y:pos.y};drawPts=[{x:pos.x,y:pos.y}];
@@ -5637,23 +5686,116 @@ function onMU(e,slot,cv){
 function onDbl(e,slot,cv){
   e.preventDefault();e.stopPropagation();var pos=getXY(e,cv);var idx=hitTest(slot,pos);
   if(idx>=0&&annotations[slot][idx].type==='para-edit'){openParaEditForAnn(slot,idx);return;}
+  if(idx>=0&&annotations[slot][idx].type==='sello_recepcion'){openSelloEdit(slot,idx,cv);return;}
   if(idx>=0&&(annotations[slot][idx].type==='text'||annotations[slot][idx].type==='callout')){selAnn={slot:slot,idx:idx};var a=annotations[slot][idx];openText(e.clientX,e.clientY,a.x,a.y,slot,cv,idx,a.type);}
 }
 function onCtx(e,slot,cv){
   e.preventDefault();e.stopPropagation();var pos=getXY(e,cv);var idx=hitTest(slot,pos);if(idx<0)return;
   ctxAnn={slot:slot,idx:idx,cv:cv};selAnn={slot:slot,idx:idx};redraw(slot,cv);
   var isText=annotations[slot][idx].type==='text'||annotations[slot][idx].type==='callout';
-  document.getElementById('ctxEditItem').style.display=isText?'flex':'none';
+  var isSello=annotations[slot][idx].type==='sello_recepcion';
+  document.getElementById('ctxEditItem').style.display=(isText||isSello)?'flex':'none';
   var m=document.getElementById('ctxMenu');m.style.display='block';m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';
 }
 function hideCtx(){document.getElementById('ctxMenu').style.display='none';}
-function ctxEdit(){if(!ctxAnn)return;hideCtx();var a=annotations[ctxAnn.slot][ctxAnn.idx];var cv=ctxAnn.cv,r=cv.getBoundingClientRect();openText(r.left+a.x*(r.width/cv.width),r.top+a.y*(r.height/cv.height),a.x,a.y,ctxAnn.slot,cv,ctxAnn.idx,a.type);}
+function ctxEdit(){if(!ctxAnn)return;hideCtx();var a=annotations[ctxAnn.slot][ctxAnn.idx];if(a&&a.type==='sello_recepcion'){openSelloEdit(ctxAnn.slot,ctxAnn.idx,ctxAnn.cv);return;}var cv=ctxAnn.cv,r=cv.getBoundingClientRect();openText(r.left+a.x*(r.width/cv.width),r.top+a.y*(r.height/cv.height),a.x,a.y,ctxAnn.slot,cv,ctxAnn.idx,a.type);}
 function ctxDuplicate(){if(!ctxAnn)return;hideCtx();pushUndo();var a=JSON.parse(JSON.stringify(annotations[ctxAnn.slot][ctxAnn.idx]));a.x+=18;a.y+=18;annotations[ctxAnn.slot].push(a);redraw(ctxAnn.slot,ctxAnn.cv);updateDocInfo();toast('Duplicado');}
 function ctxBringFront(){if(!ctxAnn)return;hideCtx();pushUndo();var anns=annotations[ctxAnn.slot];anns.push(anns.splice(ctxAnn.idx,1)[0]);selAnn={slot:ctxAnn.slot,idx:anns.length-1};redraw(ctxAnn.slot,ctxAnn.cv);}
 function ctxSendBack(){if(!ctxAnn)return;hideCtx();pushUndo();var anns=annotations[ctxAnn.slot];anns.unshift(anns.splice(ctxAnn.idx,1)[0]);selAnn={slot:ctxAnn.slot,idx:0};redraw(ctxAnn.slot,ctxAnn.cv);}
 function ctxDelete(){if(!ctxAnn)return;hideCtx();pushUndo();annotations[ctxAnn.slot].splice(ctxAnn.idx,1);selAnn=null;redraw(ctxAnn.slot,ctxAnn.cv);updateDocInfo();toast('Eliminado');}
 function deleteSelected(){if(!selAnn)return;pushUndo();var cv=document.querySelector('.acv[data-slot="'+selAnn.slot+'"]');annotations[selAnn.slot].splice(selAnn.idx,1);selAnn=null;if(cv)redraw(+cv.dataset.slot,cv);updateDocInfo();toast('Eliminado');}
 document.addEventListener('mousedown',function(e){if(!document.getElementById('ctxMenu').contains(e.target))hideCtx();});
+
+// ════ v2.4.0 — EDICIÓN DEL SELLO COLOCADO (hora de recepción, TX, iniciales) ════
+// Doble clic sobre un sello colocado (o menú contextual → Editar) abre este
+// editor flotante. "Aplicar" actualiza la anotación EN SITIO (con undo y
+// autosave); "Ahora" pone la fecha/hora UTC vigente; Enter aplica, Esc cancela.
+var _selloEditCtx=null;
+function _selloEditEl(){
+  var el=document.getElementById('selloEditPop');
+  if(el)return el;
+  el=document.createElement('div');el.id='selloEditPop';
+  el.style.cssText='position:fixed;z-index:60;display:none;width:272px;background:#fff;border:1.5px solid #d5d9e2;border-radius:11px;box-shadow:0 10px 34px rgba(15,23,42,.22);padding:13px;font-family:Inter,sans-serif;color:#111';
+  el.innerHTML=
+    '<div style="font-size:12.5px;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:6px"><span style="font-size:15px">⏱</span>Editar sello de recepción</div>'
+    +'<label style="display:block;font-size:10px;color:#667085;margin-bottom:2px">Fecha recepción (UTC) — vacío = actual</label>'
+    +'<input type="date" id="seRxDate" style="width:100%;box-sizing:border-box;font-size:12px;padding:5px 7px;margin-bottom:7px;border:1px solid #d5d9e2;border-radius:7px;background:#f8fafc;color:#111">'
+    +'<label style="display:block;font-size:10px;color:#667085;margin-bottom:2px">Hora recepción (UTC) — HHMM</label>'
+    +'<input id="seRxTime" maxlength="4" inputmode="numeric" placeholder="ahora" style="width:100%;box-sizing:border-box;font-family:JetBrains Mono,monospace;font-size:12px;padding:5px 7px;margin-bottom:7px;border:1px solid #d5d9e2;border-radius:7px;background:#f8fafc;color:#111">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px">'
+    +'<div><label style="display:block;font-size:10px;color:#667085;margin-bottom:2px">Hora transmisión</label><input id="seTxTime" maxlength="4" inputmode="numeric" placeholder="HHMM" style="width:100%;box-sizing:border-box;font-family:JetBrains Mono,monospace;font-size:12px;padding:5px 7px;border:1px solid #d5d9e2;border-radius:7px;background:#f8fafc;color:#111"></div>'
+    +'<div><label style="display:block;font-size:10px;color:#667085;margin-bottom:2px">Iniciales OPR</label><input id="seTxInit" maxlength="6" placeholder="MK" style="width:100%;box-sizing:border-box;font-size:12px;padding:5px 7px;border:1px solid #d5d9e2;border-radius:7px;background:#f8fafc;color:#111"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button id="seNowBtn" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #d5d9e2;background:#f8fafc;color:#495e72;cursor:pointer;font-size:11.5px">⏱ Ahora</button>'
+    +'<button id="seApplyBtn" style="flex:1.4;padding:7px;border-radius:7px;border:1.5px solid rgba(79,142,247,.55);background:rgba(79,142,247,.18);color:#3d6fd6;cursor:pointer;font-size:11.5px;font-weight:700">✓ Aplicar</button>'
+    +'<button id="seCancelBtn" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #d5d9e2;background:#fff;color:#8a94a6;cursor:pointer;font-size:11.5px">✕</button>'
+    +'</div>';
+  document.body.appendChild(el);
+  el.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();applySelloEdit();}else if(e.key==='Escape'){e.preventDefault();closeSelloEdit();}});
+  document.getElementById('seNowBtn').onclick=selloEditNow;
+  document.getElementById('seApplyBtn').onclick=applySelloEdit;
+  document.getElementById('seCancelBtn').onclick=closeSelloEdit;
+  return el;
+}
+function openSelloEdit(slot,idx,cv){
+  if(_selloEditCtx)applySelloEdit();
+  var a=annotations[slot]&&annotations[slot][idx];
+  if(!a||a.type!=='sello_recepcion')return;
+  _selloEditEl();
+  var parsed=parseSelloTs(a.timestamp);
+  document.getElementById('seRxDate').value=parsed.date;
+  document.getElementById('seRxTime').value=parsed.time;
+  document.getElementById('seTxTime').value=a.txTime||'';
+  document.getElementById('seTxInit').value=a.txInitials||'';
+  var el=document.getElementById('selloEditPop');
+  var r=cv.getBoundingClientRect();
+  var px=r.left+a.x*(r.width/cv.width),py=r.top+a.y*(r.height/cv.height);
+  el.style.display='block';
+  var ew=el.offsetWidth||272,eh=el.offsetHeight||240;
+  el.style.left=Math.max(8,Math.min(px+18,window.innerWidth-ew-8))+'px';
+  el.style.top=Math.max(8,Math.min(py+18,window.innerHeight-eh-8))+'px';
+  _selloEditCtx={slot:slot,idx:idx,cv:cv};
+  try{document.getElementById('seRxTime').focus();document.getElementById('seRxTime').select();}catch(e){}
+}
+function selloEditNow(){
+  var n=new Date();
+  var d=document.getElementById('seRxDate');var t=document.getElementById('seRxTime');
+  if(d)d.value=n.getUTCFullYear()+'-'+pad(n.getUTCMonth()+1)+'-'+pad(n.getUTCDate());
+  if(t)t.value=pad(n.getUTCHours())+pad(n.getUTCMinutes());
+}
+function applySelloEdit(){
+  if(!_selloEditCtx)return;
+  var slot=_selloEditCtx.slot,idx=_selloEditCtx.idx,cv=_selloEditCtx.cv;
+  var a=annotations[slot]&&annotations[slot][idx];
+  if(a&&a.type==='sello_recepcion'){
+    var nd=((document.getElementById('seRxDate')||{}).value)||'';
+    var nt=((document.getElementById('seRxTime')||{}).value)||'';
+    var tt=normTxTimeVal(((document.getElementById('seTxTime')||{}).value)||'');
+    var ti=(((document.getElementById('seTxInit')||{}).value)||'').toUpperCase().trim().replace(/\s+/g,' ');
+    var newTs=selloStampTs(nd,nt);
+    if(a.timestamp!==newTs||(a.txTime||'')!==tt||(a.txInitials||'')!==ti){
+      pushUndo();
+      a.timestamp=newTs;a.txTime=tt;a.txInitials=ti;
+      if(!cv||!cv.isConnected)cv=document.querySelector('.acv[data-slot="'+slot+'"]');
+      if(cv)redraw(slot,cv);
+      updateDocInfo();scheduleAutosave();
+      toast('Sello actualizado: '+newTs,'ok');
+    }
+  }
+  closeSelloEdit();
+}
+function closeSelloEdit(){
+  var el=document.getElementById('selloEditPop');
+  if(el)el.style.display='none';
+  _selloEditCtx=null;
+}
+document.addEventListener('pointerdown',function(e){
+  if(!_selloEditCtx)return;
+  var pop=document.getElementById('selloEditPop');
+  if(pop&&pop.contains(e.target))return;
+  applySelloEdit();
+},true);
 
 // ── TEXT INPUT ──
 function openText(cx,cy,px,py,slot,cv,editIdx,type){
@@ -5739,7 +5881,7 @@ function toggleBold(){annBold=!annBold;document.getElementById('fbBold').style.b
 function toggleItalic(){annItalic=!annItalic;document.getElementById('fbItalic').style.background=annItalic?'var(--accg)':'var(--s2)';document.getElementById('fbItalic').style.color=annItalic?'var(--acc)':'var(--t2)';}
 
 // ── SELLO RECEPCIÓN ──
-function placeSelloRecepcion(){pendingSello=true;setTool('sello-place');updateSelloPreview();toast('Haz clic en el documento para colocar el sello','ok');}
+function placeSelloRecepcion(){pendingSello=true;setTool('sello-place');updateSelloPreview();toast('Haz clic en el documento para colocar el sello · doble clic sobre un sello edita su hora','ok');}
 
 // ── UNDO/REDO ──
 // ── Text layer undo helpers ──
@@ -5948,6 +6090,99 @@ async function gdriveUploadPDF(pdfBlob,filename){
 }
 
 // ── GOOGLE DRIVE SAVE ──
+// ════ v2.4.0 — SELLO DE RECEPCIÓN VECTORIAL EN EL PDF EXPORTADO ════
+// BUG pre-existente corregido: la anotación sello_recepcion NO tenía rama en
+// exportPDF/saveToDrive → el sello se perdía en la exportación vectorial.
+// Ahora se dibuja fiel al canvas: borde rojo redondeado, logo, textos
+// vectoriales reales (extraíbles) e imagen del sello personal.
+async function _embedDataUrlImg(doc,url){
+  try{
+    if(!url)return null;
+    if(/^data:image\/jpe?g/i.test(url))return await doc.embedJpg(url);
+    return await doc.embedPng(url);
+  }catch(e){return null;}
+}
+function _selloSigUrls(){
+  var set={};
+  Object.keys(annotations).forEach(function(k){
+    (annotations[k]||[]).forEach(function(a){
+      if(a&&a.type==='sello_recepcion'&&a.sigImg)set[a.sigImg]=1;
+    });
+  });
+  return Object.keys(set);
+}
+async function _selloExportAssets(pdfLibDoc){
+  var assets={logo:null,sigs:{}};
+  try{assets.logo=await _embedDataUrlImg(pdfLibDoc,(typeof CORPAC_LOGO!=='undefined')?CORPAC_LOGO:null);}catch(e){}
+  var urls=_selloSigUrls();
+  for(var i=0;i<urls.length;i++){
+    try{assets.sigs[urls[i]]=await _embedDataUrlImg(pdfLibDoc,urls[i]);}catch(e){assets.sigs[urls[i]]=null;}
+  }
+  return assets;
+}
+function _paintSelloPdf(PDFLib,pdfPage,pw,ph,sX,sY,a,f,assets){
+  // Réplica vectorial fiel del sello de drawAnn. f={hb,cB,hv}.
+  try{
+    var op=(a.opacity==null?1:a.opacity)||1;
+    if(op<=0)op=1;
+    var sw=a.w||220;
+    var hasTx=!!(a.txTime||a.txInitials);
+    var rh=hasTx?103:90;
+    var RED=PDFLib.rgb(.7529,0,0);
+    function cx(x){return x*sX;}
+    function cy(y){return ph-y*sY;}
+    function ctr(txt,font,szPx,baseY,col){
+      try{
+        var sz=Math.max(2,szPx*sY);
+        var w=font.widthOfTextAtSize(txt,sz);
+        pdfPage.drawText(txt,{x:cx(a.x+sw/2)-w/2,y:cy(baseY),size:sz,font:font,color:col,opacity:op});
+      }catch(e){}
+    }
+    var bx=cx(a.x),bw=sw*sX,bh=rh*sY,by=ph-(a.y+rh)*sY;
+    var rr=5*sX,lw2=Math.max(.5,2.5*sX);
+    var d='M '+(bx+rr)+' '+by+
+      ' H '+(bx+bw-rr)+' Q '+(bx+bw)+' '+by+' '+(bx+bw)+' '+(by+rr)+
+      ' V '+(by+bh-rr)+' Q '+(bx+bw)+' '+(by+bh)+' '+(bx+bw-rr)+' '+(by+bh)+
+      ' H '+(bx+rr)+' Q '+bx+' '+(by+bh)+' '+bx+' '+(by+bh-rr)+
+      ' V '+(by+rr)+' Q '+bx+' '+by+' '+(bx+rr)+' '+by+' Z';
+    try{pdfPage.drawSvgPath(d,{borderColor:RED,borderWidth:lw2,borderOpacity:op});}
+    catch(e1){try{pdfPage.drawRectangle({x:bx,y:by,width:bw,height:bh,borderColor:RED,borderWidth:lw2,borderOpacity:op});}catch(e2){}}
+    var logoH=30;
+    if(assets&&assets.logo){
+      try{
+        var la=assets.logo.width/assets.logo.height;
+        var lwd=Math.round(logoH*la);
+        if(lwd>sw-12){lwd=sw-12;logoH=Math.round(lwd/la);}
+        pdfPage.drawImage(assets.logo,{x:cx(a.x+(sw-lwd)/2),y:ph-(a.y+5+logoH)*sY,width:lwd*sX,height:logoH*sY,opacity:op});
+      }catch(e){}
+    }
+    var sep1=a.y+logoH+9;
+    try{pdfPage.drawLine({start:{x:cx(a.x+8),y:cy(sep1)},end:{x:cx(a.x+sw-8),y:cy(sep1)},thickness:Math.max(.4,.7*sX),color:RED,opacity:.35*op});}catch(e){}
+    var t1=sep1+14;
+    ctr('RECIBIDO / RECEIVED',f.hb,11,t1,RED);
+    var t2=t1+13;
+    ctr(a.timestamp||'',f.cB,10.5,t2,RED);
+    var t3=t2+12;
+    if(hasTx){ctr(selloTxLine(a.txTime||'',(a.txInitials||'').toUpperCase()),f.cB,9.5,t3,RED);t3+=11;}
+    ctr('AIS/ARO – CORPAC S.A.',f.hb,9,t3+11,PDFLib.rgb(.2,.2,.2));
+    var sedeCode=currentUser?(currentUser.sede||'SPHI'):'SPHI';
+    var db2=getDB();var sedeObj2=db2&&db2.sedes&&db2.sedes.find(function(s){return s.code===sedeCode;});
+    ctr(sedeObj2?(sedeObj2.code+' – '+sedeObj2.city):sedeCode,f.hv,8,t3+11+11,PDFLib.rgb(.3333,.3333,.3333));
+    var gap=6,phA=120,py=a.y+rh+gap;
+    var emb=(assets&&assets.sigs&&a.sigImg)?assets.sigs[a.sigImg]:null;
+    if(emb){
+      try{
+        var pRat=emb.width/emb.height;
+        var pdw=sw,pdh=Math.round(sw/pRat);
+        if(pdh>phA){pdh=phA;pdw=Math.round(phA*pRat);}
+        pdfPage.drawImage(emb,{x:cx(a.x+(sw-pdw)/2),y:ph-(py+(phA-pdh)/2+pdh)*sY,width:pdw*sX,height:pdh*sY,opacity:op});
+      }catch(e){}
+    }else{
+      try{pdfPage.drawRectangle({x:cx(a.x+sw/2-45),y:ph-(py+8+phA-16)*sY,width:90*sX,height:(phA-16)*sY,borderColor:PDFLib.rgb(.8,.8,.8),borderWidth:Math.max(.4,1*sX),borderOpacity:op,borderDashArray:[4*sX,3*sX]});}catch(e){}
+      ctr('Sello Personal',f.hv,8,py+phA/2+3,PDFLib.rgb(.7333,.7333,.7333));
+    }
+  }catch(e){console.warn('sello export',e);}
+}
 async function saveToDrive(){
   if(!pdfDoc&&!pageOrder.length){toast('Carga un PDF primero','err');return;}
   if(!gdriveIsConnected()){
@@ -5966,6 +6201,8 @@ async function saveToDrive(){
     var helveticaBold=await pdfLibDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
     var timesRoman=await pdfLibDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
     var courier=await pdfLibDoc.embedFont(PDFLib.StandardFonts.Courier);
+    var courierBold=await pdfLibDoc.embedFont(PDFLib.StandardFonts.CourierBold);
+    var selloAssets=await _selloExportAssets(pdfLibDoc);
     function pickFont2(family,bold){
       if(/courier|mono/i.test(family))return courier;
       if(/times|serif/i.test(family))return bold?timesRoman:timesRoman;
@@ -6038,6 +6275,9 @@ async function saveToDrive(){
         } else if(a.type==='circle'){
           var cc=hexToRgb01(a.color||'#000');
           lPage.drawEllipse({x:ax+aw/2,y:ay+ah/2,xScale:Math.abs(aw/2),yScale:Math.abs(ah/2),borderColor:PDFLib.rgb(cc[0],cc[1],cc[2]),borderWidth:(a.stroke||2)*sX,opacity:a.opacity||1});
+        } else if(a.type==='sello_recepcion'){
+          // v2.4.0 — sello de recepción vectorial (antes se perdía al exportar)
+          try{_paintSelloPdf(PDFLib,lPage,lw,lh,sX,sY,a,{hb:helveticaBold,cB:courierBold,hv:helvetica},selloAssets);}catch(e3){}
         }
       });
       setProg(10+Math.round(slot/pageOrder.length*70));
@@ -6086,6 +6326,8 @@ async function exportPDF(){
     var timesRoman=await pdfLibDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
     var timesRomanBold=await pdfLibDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
     var courier=await pdfLibDoc.embedFont(PDFLib.StandardFonts.Courier);
+    var courierBold=await pdfLibDoc.embedFont(PDFLib.StandardFonts.CourierBold);
+    var selloAssets=await _selloExportAssets(pdfLibDoc);
     function pickFont(family,bold){
       if(/courier|mono/i.test(family))return courier;
       if(/times|serif/i.test(family))return bold?timesRomanBold:timesRoman;
@@ -6219,6 +6461,9 @@ async function exportPDF(){
               pdfPage.drawText(a.text,{x:pw/2-wmwid/2,y:ph/2-wmsz/2,size:wmsz,font:wmfnt,color:PDFLib.rgb(wmcol[0],wmcol[1],wmcol[2]),opacity:wmop,rotate:wmrot});
             }
           }catch(e2){}
+        } else if(a.type==='sello_recepcion'){
+          // v2.4.0 — sello de recepción vectorial (antes se perdía al exportar)
+          try{_paintSelloPdf(PDFLib,pdfPage,pw,ph,scaleX,scaleY,a,{hb:helveticaBold,cB:courierBold,hv:helvetica},selloAssets);}catch(e3){}
         }
       }
       // Anotaciones canvas (draw freehand ya procesadas arriba)
