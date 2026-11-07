@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
@@ -689,7 +690,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.4.0 · hora de recepción editable + sello vectorial al exportar</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.5.0 · abre y edita también Excel y Word (conversión a PDF vectorial)</div>
   </div>
 </div>
 
@@ -1096,10 +1097,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <div class="evscroll" id="evScroll">
         <div class="drop-zone" id="dropZone">
           <div class="drop-box" id="dropBox" onclick="document.getElementById('fInput').click()">
-            <div class="drop-di">📄</div>
-            <div class="drop-dt">Arrastra tu PDF aquí</div>
-            <div class="drop-ds">o <em>haz clic para abrir</em></div>
-            <div class="drop-tags"><span class="dtag">PDF</span><span class="dtag">Texto</span><span class="dtag">Firmas</span><span class="dtag">Sellos</span></div>
+            <div class="drop-di">📄📊📝</div>
+            <div class="drop-dt">Arrastra tu PDF, Excel o Word aquí</div>
+            <div class="drop-ds">o <em>haz clic para abrir</em> · PDF · XLSX · XLS · CSV · DOCX · DOC</div>
+            <div class="drop-tags"><span class="dtag">PDF</span><span class="dtag">Excel</span><span class="dtag">Word</span><span class="dtag">Firmas</span><span class="dtag">Sellos</span></div>
           </div>
         </div>
         <div id="pagesBox" class="hidden"></div>
@@ -1485,7 +1486,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
   </div>
   <div id="mpMenu" class="mp-section" style="display:none">
     <div class="mp-title">☰ Opciones</div>
-    <button class="mob-action-btn sec" onclick="document.getElementById('fInput').click();closeMobPanel()">📂 Abrir PDF</button>
+    <button class="mob-action-btn sec" onclick="document.getElementById('fInput').click();closeMobPanel()">📂 Abrir PDF/Excel/Word</button>
     <button class="mob-action-btn sec" onclick="saveToDrive();closeMobPanel()">☁️ Guardar en Drive</button>
     <button class="mob-action-btn sec" onclick="exportPDF();closeMobPanel()">💾 Guardar PDF</button>
     <button class="mob-action-btn sec" onclick="doPrint();closeMobPanel()">🖨 Imprimir</button>
@@ -1520,7 +1521,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 <input id="annInput" type="text" placeholder="Escribe y pulsa Enter…" autocomplete="off" spellcheck="false">
 <div id="inpHint">↵ confirma · Esc cancela</div>
-<input type="file" id="fInput" accept=".pdf" style="display:none" onchange="onFileChosen(this)">
+<input type="file" id="fInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.docx,.doc" style="display:none" onchange="onFileChosen(this)">
 <input type="file" id="sigUploadInput" accept="image/*" multiple style="display:none" onchange="onSigUpload(this)">
 <div class="prog" id="prog"><div class="prog-fill" id="progFill"></div></div>
 <div class="toast" id="toast"></div>
@@ -2371,7 +2372,7 @@ function docTabNew(file){
   renderDocTabs();
   docTabSwitch(id);
   if(!file){document.getElementById('fInput').click();}
-  else{loadPDF(file);}
+  else{handleFileOpen(file);}
   return id;
 }
 function docTabSwitch(id){
@@ -4274,7 +4275,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.4.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.5.0',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5356,6 +5357,514 @@ function showTemplates(){
 
 // ════ END MAJOR FEATURES ════
 
+// ════ v2.5.0 — IMPORTAR EXCEL Y WORD (conversión a PDF vectorial editable) ════
+// Los archivos de Office se convierten a PDF con pdf-lib (texto vectorial real),
+// por lo que TODAS las herramientas del editor — capa de texto, edición de
+// párrafos, sellos, firmas, exportación vectorial — funcionan igual que sobre
+// un PDF nativo. Excel/CSV → SheetJS + tabla paginada; Word → mammoth + maquetador.
+var OFFICE_EXT=/\.(xlsx|xlsm|xls|csv|docx|doc)$/i;
+function isOfficeFileName(n){return OFFICE_EXT.test(n||'');}
+function _fileOpenable(f){
+  if(!f)return false;
+  var nm=String(f.name||'');
+  return /\.pdf$/i.test(nm)||f.type==='application/pdf'||isOfficeFileName(nm);
+}
+function _officeBaseName(n){return (n||'documento').replace(/\.(pdf|xlsx|xlsm|xls|csv|docx|doc)$/i,'');}
+
+// Texto seguro para las fuentes estándar (WinAnsi) de pdf-lib: mapea los
+// caracteres comunes fuera de WinAnsi y sustituye el resto por '?'.
+var _PDFSAFE_MAP={'\u2212':'-','\u2248':'~','\u2260':'!=','\u2264':'<=','\u2265':'>=','\u2192':'->','\u2190':'<-','\u2194':'<->','\u2713':'OK','\u2717':'X','\u25CF':'*','\u25AA':'*','\u2500':'-','\u2502':'|','\u25B6':'>'};
+var _PDFSAFE_EXTRA='\u2013\u2014\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC\u2122\u0160\u0161\u0152\u0153\u0178\u017D\u017E\u02C6\u02DC';
+function pdfSafeText(s){
+  if(s===null||s===undefined)return '';
+  var src=String(s).replace(/\r\n?/g,'\n'),out='';
+  for(var i=0;i<src.length;i++){
+    var c=src.charAt(i),k=src.charCodeAt(i);
+    if(_PDFSAFE_MAP[c]){out+=_PDFSAFE_MAP[c];continue;}
+    if(c==='\n'){out+='\n';continue;}
+    if(c==='\t'){out+='  ';continue;}
+    if((k>=32&&k<=126)||(k>=160&&k<=255)||_PDFSAFE_EXTRA.indexOf(c)>=0){out+=c;continue;}
+    out+='?';
+  }
+  return out;
+}
+function _pdfMeasure(f,t,sz){try{return f.widthOfTextAtSize(t,sz);}catch(e){return String(t==null?'':t).length*sz*0.5;}}
+
+// Envoltura greedy: font = objeto con widthOfTextAtSize(texto,tamaño)->ptos
+function wrapPdfText(text,font,size,maxW){
+  var out=[];
+  String(text==null?'':text).split('\n').forEach(function(par){
+    if(!par.replace(/\s/g,'').length){out.push(par.replace(/^[\s]+|[\s]+$/g,''));return;}
+    var words=par.split(/\s+/).filter(function(w){return w.length>0;});
+    var cur='';
+    for(var i=0;i<words.length;i++){
+      var w=words[i];
+      while(w.length>2&&font.widthOfTextAtSize(w,size)>maxW){
+        var cut=w.length;
+        while(cut>2&&font.widthOfTextAtSize(w.slice(0,cut)+'-',size)>maxW)cut--;
+        out.push(w.slice(0,cut)+'-');
+        w=w.slice(cut);
+      }
+      var t=cur?cur+' '+w:w;
+      if(!cur||font.widthOfTextAtSize(t,size)<=maxW){cur=t;}
+      else{out.push(cur);cur=w;}
+    }
+    if(cur)out.push(cur);
+  });
+  return out.length?out:[''];
+}
+
+// ── EXCEL/CSV → PDF ──
+// Recorta filas/columnas vacías de una matriz (AOA). Devuelve {aoa,cols} o null.
+function _xlsTrimAoa(aoa){
+  if(!aoa||!aoa.length)return null;
+  var maxC=0,r,c;
+  for(r=0;r<aoa.length;r++){
+    var row=aoa[r]||[];
+    for(c=row.length-1;c>=0;c--){
+      if(row[c]!==null&&row[c]!==undefined&&String(row[c]).trim()!==''){if(c+1>maxC)maxC=c+1;break;}
+    }
+  }
+  if(!maxC)return null;
+  var rows=[];
+  for(r=0;r<aoa.length;r++){
+    var row2=aoa[r]||[],out=[];
+    for(c=0;c<maxC;c++){var v=row2[c];out.push(v===null||v===undefined?'':String(v));}
+    if(out.join('').replace(/\s/g,'')!=='')rows.push(out);
+  }
+  return rows.length?{aoa:rows,cols:maxC}:null;
+}
+// Anchos de columna por contenido: measure(texto,cabecera)->ptos. La suma
+// final queda garantizada <= maxW (re-escala y, en último recurso, sin mínimo).
+function _xlsColWidths(aoa,cols,measure,maxW){
+  var W=[],c,r;
+  for(c=0;c<cols;c++){
+    var mx=0;
+    for(r=0;r<aoa.length;r++){
+      var s=aoa[r][c];if(!s)continue;
+      var w=measure(String(s).slice(0,60),r===0)+10;
+      if(w>mx)mx=w;
+    }
+    W.push(Math.max(34,Math.min(190,mx||34)));
+  }
+  var tot=0;for(c=0;c<cols;c++)tot+=W[c];
+  if(tot>maxW){var k=maxW/tot;for(c=0;c<cols;c++)W[c]=Math.max(26,W[c]*k);}
+  var tot2=0;for(c=0;c<cols;c++)tot2+=W[c];
+  if(tot2>maxW){var k2=maxW/tot2;for(c=0;c<cols;c++)W[c]=W[c]*k2;}
+  return W;
+}
+async function excelToPdfBytes(ab,name,isCsv){
+  var PDFLib=window.PDFLib;
+  if(!PDFLib)throw new Error('pdf-lib no disponible');
+  if(typeof XLSX==='undefined')throw new Error('SheetJS no disponible (revisa tu conexión)');
+  var wb=null;
+  try{
+    if(isCsv){
+      var txtCsv=new TextDecoder('utf-8').decode(new Uint8Array(ab)).replace(/^\uFEFF/,'');
+      wb=XLSX.read(txtCsv,{type:'string',cellDates:true});
+    }else{
+      wb=XLSX.read(new Uint8Array(ab),{type:'array',cellDates:true});
+    }
+  }catch(e){throw new Error('No se pudo leer el Excel/CSV: '+(e&&e.message?e.message:e));}
+  var doc=await PDFLib.PDFDocument.create();
+  var fH=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  var fHB=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+  var PW=841.89,PH=595.28,MG=34,fs=8.5,LH=10.5,ROWMIN=17;
+  var INK=PDFLib.rgb(.13,.14,.17),HEAD=PDFLib.rgb(.10,.22,.44),GRID=PDFLib.rgb(.72,.77,.84),BAND=PDFLib.rgb(.955,.965,.985),WHITE=PDFLib.rgb(1,1,1);
+  var availW=PW-2*MG,pgTotal=0,any=false;
+  var base=pdfSafeText(name||'');
+  var measure=function(t,hdr){return _pdfMeasure(hdr?fHB:fH,pdfSafeText(t),fs);};
+  wb.SheetNames.forEach(function(sn){
+    var ws=wb.Sheets[sn];if(!ws)return;
+    var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:false});
+    var trimmed=_xlsTrimAoa(aoa);if(!trimmed)return;
+    var M=trimmed.aoa,cols=trimmed.cols,r,c;
+    var colW=_xlsColWidths(M,cols,measure,availW);
+    var title=pdfSafeText(sn||'Hoja');
+    var rows=[];
+    for(r=0;r<M.length;r++){
+      var cells=[],maxL=1;
+      for(c=0;c<cols;c++){
+        var lines=wrapPdfText(pdfSafeText(M[r][c]),r===0?fHB:fH,fs,colW[c]-8).slice(0,4);
+        if(!lines.length)lines=[''];
+        cells.push(lines);if(lines.length>maxL)maxL=lines.length;
+      }
+      rows.push({h:Math.max(ROWMIN,maxL*LH+6.5),cells:cells,hdr:r===0});
+    }
+    if(!rows.length)return;
+    any=true;
+    var page=null,y=0,sheetNo=wb.SheetNames.indexOf(sn)+1;
+    function newPage(cont){
+      page=doc.addPage([PW,PH]);pgTotal++;
+      try{page.drawText(cont?title+' (cont.)':title,{x:MG,y:PH-MG-11,size:12,font:fHB,color:HEAD});}catch(e){}
+      try{page.drawText(base+(cont?'':' · importado desde Excel'),{x:MG,y:PH-MG-3,size:6.5,font:fH,color:PDFLib.rgb(.45,.48,.55)});}catch(e){}
+      try{page.drawText('Hoja '+sheetNo+'/'+wb.SheetNames.length+' · pág. '+pgTotal,{x:PW-MG-130,y:14,size:6.5,font:fH,color:PDFLib.rgb(.45,.48,.55)});}catch(e){}
+      y=PH-MG-22;
+      var hr=rows[0],xh=MG;
+      for(c=0;c<cols;c++){
+        page.drawRectangle({x:xh,y:y-hr.h,width:colW[c],height:hr.h,borderColor:GRID,borderWidth:.5,color:PDFLib.rgb(.90,.94,.99)});
+        for(var li=0;li<hr.cells[c].length;li++){
+          if(!hr.cells[c][li])continue;
+          try{page.drawText(hr.cells[c][li],{x:xh+4,y:y-11-li*LH,size:fs,font:fHB,color:HEAD});}catch(e){}
+        }
+        xh+=colW[c];
+      }
+      y-=hr.h;
+    }
+    newPage(false);
+    for(r=1;r<rows.length;r++){
+      var row=rows[r];
+      if(y-row.h<MG+16)newPage(true);
+      var x=MG;
+      for(c=0;c<cols;c++){
+        page.drawRectangle({x:x,y:y-row.h,width:colW[c],height:row.h,borderColor:GRID,borderWidth:.5,color:r%2===0?BAND:WHITE});
+        var lines2=row.cells[c];
+        for(var l2=0;l2<lines2.length;l2++){
+          if(!lines2[l2])continue;
+          try{page.drawText(lines2[l2],{x:x+4,y:y-11-l2*LH,size:fs,font:fH,color:INK});}catch(e){}
+        }
+        x+=colW[c];
+      }
+      y-=row.h;
+    }
+  });
+  if(!any)throw new Error('El archivo no contiene datos legibles');
+  try{doc.setProducer('PDF Editor Pro · importador Excel');doc.setTitle(base||'Importado');}catch(e){}
+  return await doc.save();
+}
+
+// ── WORD → PDF ──
+function _runsOf(node){
+  var out=[];
+  (function walk(n,st){
+    for(var i=0;i<n.childNodes.length;i++){
+      var c=n.childNodes[i];
+      if(c.nodeType===3){if(c.nodeValue)out.push({text:c.nodeValue,b:st.b,i:st.i,a:st.a});continue;}
+      if(c.nodeType!==1)continue;
+      var tg=(c.tagName||'').toUpperCase();
+      if(tg==='BR'){out.push({br:true});continue;}
+      if(tg==='IMG')continue;
+      walk(c,{b:st.b||(tg==='STRONG'||tg==='B'),i:st.i||(tg==='EM'||tg==='I'),a:st.a||tg==='A'});
+    }
+  })(node,{b:false,i:false,a:false});
+  return out;
+}
+function _pushPara(n,blocks){
+  var runs=_runsOf(n);
+  var imgs=n.querySelectorAll?n.querySelectorAll('img'):[];
+  if(imgs&&imgs.length){
+    for(var i=0;i<imgs.length;i++)blocks.push({t:'img',src:imgs[i].getAttribute('src')||''});
+    var txt=runs.map(function(r){return r.text||'';}).join('').replace(/\s+/g,' ').trim();
+    if(txt)blocks.push({t:'p',runs:runs});
+    return;
+  }
+  if(runs.length)blocks.push({t:'p',runs:runs});
+}
+function _listBlocks(n,blocks,ordered,depth){
+  var idx=0,i,j;
+  for(i=0;i<n.childNodes.length;i++){
+    var c=n.childNodes[i];
+    if(c.nodeType!==1)continue;
+    var tg=(c.tagName||'').toUpperCase();
+    if(tg==='LI'){
+      idx++;
+      var sub=[],runs=[];
+      for(j=0;j<c.childNodes.length;j++){
+        var cc=c.childNodes[j],tg2=cc.nodeType===1?(cc.tagName||'').toUpperCase():'';
+        if(tg2==='UL'||tg2==='OL'){sub.push(cc);}
+        else if(tg2==='P'){runs=runs.concat(_runsOf(cc));}
+        else if(cc.nodeType===3){if(cc.nodeValue&&cc.nodeValue.trim())runs.push({text:cc.nodeValue});}
+        else if(cc.nodeType===1){runs=runs.concat(_runsOf(cc));}
+      }
+      blocks.push({t:'li',label:ordered?(idx+'.'):'•',depth:depth||1,runs:runs});
+      for(var s=0;s<sub.length;s++)_listBlocks(sub[s],blocks,(sub[s].tagName||'').toUpperCase()==='OL',(depth||1)+1);
+    }else if(tg==='UL'||tg==='OL'){_listBlocks(c,blocks,tg==='OL',(depth||1)+1);}
+  }
+}
+function _tableBlocks(tbl,blocks){
+  var grid=[],i,j,p;
+  for(i=0;i<tbl.rows.length;i++){
+    var row=tbl.rows[i],cells=[];
+    for(j=0;j<row.cells.length;j++){
+      var cell=row.cells[j],parts=[];
+      var ps=cell.querySelectorAll('p');
+      if(ps&&ps.length){
+        for(p=0;p<ps.length;p++){
+          var t=_runsOf(ps[p]).map(function(r){return r.text||'';}).join('').replace(/\s+/g,' ').trim();
+          if(t)parts.push(t);
+        }
+      }else{
+        var t2=(cell.textContent||'').replace(/\s+/g,' ').trim();
+        if(t2)parts.push(t2);
+      }
+      cells.push(parts.join('\n'));
+    }
+    grid.push(cells);
+  }
+  if(grid.length)blocks.push({t:'table',rows:grid});
+}
+function _blocksFromDom(root,blocks){
+  if(!root)return;
+  for(var i=0;i<root.childNodes.length;i++){
+    var n=root.childNodes[i];
+    if(n.nodeType===3){if(n.nodeValue&&n.nodeValue.trim())blocks.push({t:'p',runs:[{text:n.nodeValue}]});continue;}
+    if(n.nodeType!==1)continue;
+    var tag=(n.tagName||'').toUpperCase();
+    if(tag==='P'){_pushPara(n,blocks);}
+    else if(/^H[1-6]$/.test(tag)){blocks.push({t:'h',lv:parseInt(tag.charAt(1),10),runs:_runsOf(n)});}
+    else if(tag==='UL'||tag==='OL'){_listBlocks(n,blocks,tag==='OL',1);}
+    else if(tag==='TABLE'){_tableBlocks(n,blocks);}
+    else if(tag==='HR'){blocks.push({t:'hr'});}
+    else if(tag==='BLOCKQUOTE'){blocks.push({t:'quote',runs:_runsOf(n)});}
+    else if(tag==='IMG'){blocks.push({t:'img',src:n.getAttribute('src')||''});}
+    else if(tag==='BR'){blocks.push({t:'p',runs:[]});}
+    else{_blocksFromDom(n,blocks);}
+  }
+}
+async function _wordPdf(blocks,name){
+  var PDFLib=window.PDFLib;
+  if(!PDFLib)throw new Error('pdf-lib no disponible');
+  var doc=await PDFLib.PDFDocument.create();
+  var F={r:await doc.embedFont(PDFLib.StandardFonts.Helvetica),b:await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),i:await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique),bi:await doc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique)};
+  var PW=595.28,PH=841.89,MG=56,TOP=64,BOT=52;
+  var INK=PDFLib.rgb(.12,.13,.16),GRAY=PDFLib.rgb(.5,.53,.6),ACC=PDFLib.rgb(.18,.38,.75),LINE=PDFLib.rgb(.78,.81,.86),WHITE=PDFLib.rgb(1,1,1);
+  var page=null,y=0,pg=0;
+  var title=pdfSafeText(name||'documento');
+  function newPage(){
+    page=doc.addPage([PW,PH]);pg++;
+    try{page.drawText(title.slice(0,60)+' · pág. '+pg,{x:MG,y:24,size:7,font:F.r,color:GRAY});}catch(e){}
+    y=PH-TOP;
+  }
+  function need(h){if(!page||y-h<BOT)newPage();}
+  function fnt(r){return r.b?(r.i?F.bi:F.b):(r.i?F.i:F.r);}
+  function drawRuns(runs,size,lh,maxW,indent,align){
+    var toks=[];
+    runs.forEach(function(r){
+      if(r.br){toks.push({br:true});return;}
+      pdfSafeText(r.text).split(/\s+/).forEach(function(p){if(p)toks.push({t:p,f:fnt(r),c:r.a?ACC:INK,w:0});});
+    });
+    if(!toks.length)return;
+    var i;
+    for(i=0;i<toks.length;i++){
+      if(toks[i].br)continue;
+      toks[i].w=_pdfMeasure(toks[i].f,toks[i].t,size);
+    }
+    var spc=_pdfMeasure(F.r,' ',size);
+    var line=[];
+    function flush(){
+      if(!line.length)return;
+      var w=0,i2;
+      for(i2=0;i2<line.length;i2++)w+=line[i2].w;
+      w+=Math.max(0,line.length-1)*spc;
+      var x=indent||0;
+      if(align==='center')x=(indent||0)+(maxW-w)/2;
+      else if(align==='right')x=(indent||0)+maxW-w;
+      need(lh);
+      // agrupar tokens contiguos con la misma fuente/color en un solo drawText
+      // (texto extraíble con espacios naturales en vez de palabra por palabra)
+      var gi=0;
+      while(gi<line.length){
+        var gj=gi+1;
+        while(gj<line.length&&line[gj].f===line[gi].f&&line[gj].c===line[gi].c)gj++;
+        var gs='';
+        for(var gk=gi;gk<gj;gk++){if(gk>gi)gs+=' ';gs+=line[gk].t;}
+        try{page.drawText(gs,{x:MG+x,y:y-size,font:line[gi].f,size:size,color:line[gi].c});}catch(e){}
+        for(var gk2=gi;gk2<gj;gk2++)x+=line[gk2].w+spc;
+        gi=gj;
+      }
+      y-=lh;line=[];
+    }
+    for(i=0;i<toks.length;i++){
+      var tk=toks[i];
+      if(tk.br){flush();continue;}
+      var lw=0,j2;
+      for(j2=0;j2<line.length;j2++)lw+=line[j2].w;
+      if(line.length)lw+=line.length*spc;
+      if(line.length&&lw+tk.w>maxW)flush();
+      line.push(tk);
+    }
+    flush();
+  }
+  var HS={1:17,2:14,3:12.5,4:11.5,5:10.8,6:10.2},HSP={1:12,2:10,3:8,4:7,5:6,6:6};
+  var i3;
+  for(i3=0;i3<blocks.length;i3++){
+    var blk=blocks[i3];
+    if(blk.t==='h'){
+      var sz=HS[blk.lv]||11,sp=HSP[blk.lv]||6;
+      need(sz*1.3+8);y-=sp;
+      drawRuns(blk.runs,sz,sz*1.25,PW-2*MG,0);
+      if(blk.lv<=2){need(12);page.drawLine({start:{x:MG,y:y-4},end:{x:PW-MG,y:y-4},thickness:.6,color:LINE});y-=8;}
+      else y-=4;
+    }else if(blk.t==='p'){
+      need(16);
+      drawRuns(blk.runs,10.5,15.5,PW-2*MG,0);
+      y-=6;
+    }else if(blk.t==='li'){
+      need(16);
+      var ind=16+((blk.depth||1)-1)*14;
+      try{page.drawText(pdfSafeText(blk.label||'•'),{x:MG+ind-13,y:y-10.5,size:10.5,font:F.r,color:INK});}catch(e){}
+      drawRuns(blk.runs,10.5,15.5,PW-2*MG-ind,ind);
+      y-=3;
+    }else if(blk.t==='quote'){
+      need(20);
+      drawRuns(blk.runs.map(function(r){return {text:r.text,b:r.b,i:true,a:r.a};}),10.5,15,PW-2*MG-22,22);
+      if(page)page.drawLine({start:{x:MG+6,y:y+14},end:{x:MG+6,y:y+4},thickness:2,color:LINE});
+      y-=8;
+    }else if(blk.t==='hr'){
+      need(18);
+      page.drawLine({start:{x:MG,y:y-6},end:{x:PW-MG,y:y-6},thickness:.8,color:LINE});
+      y-=18;
+    }else if(blk.t==='img'){
+      var m=/^data:image\/(png|jpe?g);base64,(.*)$/i.exec(blk.src||'');
+      if(m){
+        try{
+          var bin=atob(m[2]),u8=new Uint8Array(bin.length),q4;
+          for(q4=0;q4<bin.length;q4++)u8[q4]=bin.charCodeAt(q4);
+          var img=m[1].toLowerCase()==='png'?await doc.embedPng(u8):await doc.embedJpg(u8);
+          var mw=PW-2*MG,mh=PH-TOP-BOT-10;
+          var iw=Math.min(img.width,mw),ih=iw*img.height/img.width;
+          if(ih>mh){ih=mh;iw=ih*img.width/img.height;}
+          need(ih+12);
+          page.drawImage(img,{x:MG,y:y-ih,width:iw,height:ih});
+          y-=ih+12;
+        }catch(e){need(14);try{page.drawText('[imagen no compatible]',{x:MG,y:y-10,size:9,font:F.i,color:GRAY});}catch(e2){}y-=14;}
+      }else{need(14);try{page.drawText('[imagen no incrustada]',{x:MG,y:y-10,size:9,font:F.i,color:GRAY});}catch(e){}y-=14;}
+    }else if(blk.t==='table'){
+      var rowsN=blk.rows.length,colsN=0,r5,c5;
+      for(r5=0;r5<rowsN;r5++)if(blk.rows[r5].length>colsN)colsN=blk.rows[r5].length;
+      if(!colsN)continue;
+      var fT=F.r,fTB=F.b,fs2=9,lh2=10.5,avail2=PW-2*MG,colW2=[];
+      for(c5=0;c5<colsN;c5++){
+        var mx2=0;
+        for(r5=0;r5<rowsN;r5++){
+          var s2=String(blk.rows[r5][c5]||'');
+          var w3=Math.min(avail2/colsN,_pdfMeasure(fT,pdfSafeText(s2).slice(0,40),fs2)+10);
+          if(w3>mx2)mx2=w3;
+        }
+        colW2.push(Math.max(46,mx2));
+      }
+      var tot2=0;for(c5=0;c5<colsN;c5++)tot2+=colW2[c5];
+      if(tot2>avail2){var k2=avail2/tot2;for(c5=0;c5<colsN;c5++)colW2[c5]=Math.max(34,colW2[c5]*k2);}
+      var tot3=0;for(c5=0;c5<colsN;c5++)tot3+=colW2[c5];
+      if(tot3>avail2){var k3=avail2/tot3;for(c5=0;c5<colsN;c5++)colW2[c5]=colW2[c5]*k3;}
+      for(r5=0;r5<rowsN;r5++){
+        var cells2=[],maxL2=1;
+        for(c5=0;c5<colsN;c5++){
+          var lines2=wrapPdfText(pdfSafeText(blk.rows[r5][c5]||''),r5===0?fTB:fT,fs2,colW2[c5]-8).slice(0,6);
+          if(!lines2.length)lines2=[''];
+          cells2.push(lines2);if(lines2.length>maxL2)maxL2=lines2.length;
+        }
+        var rh2=Math.max(16,maxL2*lh2+5.5);
+        if(!page||y-rh2<BOT)newPage();
+        var x2=MG;
+        for(c5=0;c5<colsN;c5++){
+          page.drawRectangle({x:x2,y:y-rh2,width:colW2[c5],height:rh2,borderColor:LINE,borderWidth:.6,color:r5===0?PDFLib.rgb(.914,.937,.976):WHITE});
+          var lines3=cells2[c5];
+          for(var l3=0;l3<lines3.length;l3++){
+            if(!lines3[l3])continue;
+            try{page.drawText(lines3[l3],{x:x2+4,y:y-10-l3*lh2,size:fs2,font:r5===0?fTB:fT,color:INK});}catch(e){}
+          }
+          x2+=colW2[c5];
+        }
+        y-=rh2;
+      }
+      y-=8;
+    }
+  }
+  if(!page)newPage();
+  try{doc.setProducer('PDF Editor Pro · importador Word');doc.setTitle(title);}catch(e){}
+  return await doc.save();
+}
+async function docxToPdfBytes(ab,name){
+  if(typeof mammoth==='undefined')throw new Error('Conversor de Word no disponible (revisa tu conexión al CDN)');
+  var html='';
+  try{
+    var res=await mammoth.convertToHtml({arrayBuffer:ab});
+    html=res&&res.value?res.value:'';
+  }catch(e){
+    throw new Error('No se pudo leer el .docx: '+(e&&e.message?e.message:e));
+  }
+  var dom=new DOMParser().parseFromString(html,'text/html');
+  var blocks=[];
+  _blocksFromDom(dom.body,blocks);
+  if(!blocks.length)throw new Error('El documento Word está vacío o no tiene contenido legible');
+  return await _wordPdf(blocks,name);
+}
+// Word 97-2003 (.doc binario): extracción de texto mejor-esfuerzo
+function docLegacyText(u8){
+  function scanU16(){
+    var runs=[],cur='',n=0,i;
+    for(i=0;i+1<u8.length;i+=2){
+      var c=u8[i]|(u8[i+1]<<8);
+      if((c>=32&&c<127)||(c>=160&&c<4096)||c===9){cur+=String.fromCharCode(c);n++;}
+      else{if(n>=12)runs.push(cur);cur='';n=0;}
+    }
+    if(n>=12)runs.push(cur);
+    return runs.join('\n');
+  }
+  function scan8(){
+    var runs=[],cur='',n=0,j;
+    for(j=0;j<u8.length;j++){
+      var c=u8[j];
+      if((c>=32&&c<127)||c===9||(c>=160&&c<=255)){cur+=String.fromCharCode(c);n++;}
+      else{if(n>=16)runs.push(cur);cur='';n=0;}
+    }
+    return runs.join('\n');
+  }
+  var junk=/^(times new roman|arial|calibri|cambria|ms sans serif|microsoft( corp)?|msworddoc|word\.document|root entry|worddocument|summaryinformation|documentsummaryinformation|compobj|objectpool|[01]table|datasummary|data|table|tahoma|verdana|georgia|courier new|symbol|wingdings|helvetica|monotype|cordia|angsana|arial unicode ms|normal\.dotm?|default paragraph font|heading \d|body text|title|subtitle|list paragraph|header|footer|page number|contents|macros|vba|thisdocument|operating system|word for windows|ole object|complus|nonbacked|dflt)$|^[a-z]:\\|^https?:\/\//i;
+  function clean(t){
+    return t.split('\n').map(function(l){return l.replace(/\s+/g,' ').trim();})
+      .filter(function(l){return l.length>=6&&!junk.test(l)&&/[a-záéíóúñ0-9]/i.test(l);})
+      .join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  }
+  var a=clean(scanU16()),b=clean(scan8());
+  return a.replace(/\s/g,'').length>=b.replace(/\s/g,'').length?a:b;
+}
+function docLegacyBlocks(txt){
+  var blocks=[];
+  String(txt||'').split(/\n+/).forEach(function(par){
+    par=par.replace(/\s+/g,' ').trim();
+    if(par)blocks.push({t:'p',runs:[{text:par}]});
+  });
+  return blocks;
+}
+// Enrutador central de apertura: PDF → loadPDF directo; Office → conversión
+async function handleFileOpen(file){
+  if(!file)return;
+  var nm=String(file.name||'');
+  if(!isOfficeFileName(nm)){
+    if(file.type&&file.type!=='application/pdf'&&!/\.pdf$/i.test(nm)){
+      toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');
+      return;
+    }
+    loadPDF(file);return;
+  }
+  if(file.size>30*1024*1024){toast('Archivo demasiado grande (máx. 30 MB)','err');return;}
+  var base=_officeBaseName(nm);
+  toast('Convirtiendo '+nm+' a PDF editable…');
+  setProg(6);
+  try{
+    var ab=await file.arrayBuffer();
+    var bytes=null;
+    if(/\.(xlsx|xlsm|xls)$/i.test(nm)){bytes=await excelToPdfBytes(ab,base,false);}
+    else if(/\.csv$/i.test(nm)){bytes=await excelToPdfBytes(ab,base,true);}
+    else if(/\.docx$/i.test(nm)){bytes=await docxToPdfBytes(ab,base);}
+    else{
+      var txt=docLegacyText(new Uint8Array(ab));
+      var blocks=docLegacyBlocks(txt);
+      if(!blocks.length)throw new Error('No se pudo extraer texto del .doc — guarda el archivo como .docx e inténtalo de nuevo');
+      toast('Word 97-2003: texto extraído (mejor esfuerzo). Para conservar el formato guarda como .docx');
+      bytes=await _wordPdf(blocks,base);
+    }
+    setProg(40);
+    var f2=new File([bytes],base+'.pdf',{type:'application/pdf'});
+    loadPDF(f2);
+  }catch(e){
+    hideProg();
+    toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
+  }
+}
+
 // ── FILE HANDLING ──
 var dropBox=document.getElementById('dropBox');
 dropBox.addEventListener('dragover',function(e){e.preventDefault();dropBox.classList.add('dg');});
@@ -5363,30 +5872,32 @@ dropBox.addEventListener('dragleave',function(){dropBox.classList.remove('dg');}
 dropBox.addEventListener('drop',function(e){
   e.preventDefault();dropBox.classList.remove('dg');
   var f=e.dataTransfer.files[0];
-  if(!f||f.type!=='application/pdf'){toast('Solo archivos PDF','err');return;}
+  if(!f){return;}
+  if(!_fileOpenable(f)){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
   if(activeTabId&&pdfDoc){
     docTabSaveCurrent();
     var newId='tab_'+(++_tabIdSeq);
-    var newTab={id:newId,fileName:f.name.replace(/\.pdf$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
+    var newTab={id:newId,fileName:f.name.replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
     docTabs.push(newTab);activeTabId=newId;
     pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
     renderDocTabs();
   }
-  loadPDF(f);
+  handleFileOpen(f);
 });
 function onFileChosen(inp){
   if(!inp.files[0])return;
   var file=inp.files[0];inp.value='';
+  if(!_fileOpenable(file)){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
   // Si tab activo ya tiene doc, guardar estado y crear tab nuevo
   if(activeTabId&&pdfDoc){
     docTabSaveCurrent();
     var newId='tab_'+(++_tabIdSeq);
-    var newTab={id:newId,fileName:file.name.replace(/\.pdf$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
+    var newTab={id:newId,fileName:file.name.replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
     docTabs.push(newTab);activeTabId=newId;
     pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
     renderDocTabs();
   }
-  loadPDF(file);
+  handleFileOpen(file);
 }
 
 async function loadPDF(file){
