@@ -690,7 +690,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.5.1 · Excel y Word editables — formularios Excel con retícula fiel</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.6.0 · Edición de texto celda-fiel — el formato original nunca se distorsiona</div>
   </div>
 </div>
 
@@ -3272,10 +3272,13 @@ function peClearZone(){
   var cv=document.querySelector('.acv[data-slot="'+slot+'"]');if(!cv)return;
   // Draw white rect to cover original text
   var ctx=cv.getContext('2d');
-  ctx.save();ctx.fillStyle='#ffffff';ctx.fillRect(peRect.x,peRect.y,peRect.w,peRect.h);ctx.restore();
-  // Save to annotations as a white cover rect
+  // v2.6.0 — cubrir con el color de FONDO real de la zona (muestreo modal),
+  // no blanco plano: conserva rellenos grises/de color de los formularios
+  var bgC=_sampleRegionBg(slot,peRect.x,peRect.y,peRect.w,peRect.h)||'#ffffff';
+  ctx.save();ctx.fillStyle=bgC;ctx.fillRect(peRect.x,peRect.y,peRect.w,peRect.h);ctx.restore();
+  // Save to annotations as a cover rect with sampled bg
   if(!annotations[slot])annotations[slot]=[];
-  annotations[slot].push({type:'cover-rect',x:peRect.x,y:peRect.y,w:peRect.w,h:peRect.h});
+  annotations[slot].push({type:'cover-rect',x:peRect.x,y:peRect.y,w:peRect.w,h:peRect.h,bgColor:bgC});
   redraw(slot,cv);
   closeParagraphEditor(false);
   toast('Zona borrada','ok');
@@ -3358,14 +3361,20 @@ function _paraGroupSpecs(specs,ci){
   for(var l=0;l<lines.length;l++){if(lines[l].idx.indexOf(ci)>=0){cli=l;break;}}
   if(cli<0)return{spans:[ci],lines:[{y:specs[ci].y,size:specs[ci].fh,x0:specs[ci].x,x1:specs[ci].x+specs[ci].w,run:[ci]}]};
   var fh=specs[ci].fh||10;
-  var GAPX=Math.max(6,fh*1.5);   // hueco horizontal dentro de la misma línea
-  var PITCH=fh*1.75;             // interlineado máximo para encadenar líneas
+  // v2.6.0 — grouping estricto anti-distorsión: en formularios cada casilla
+  // es un span con su propio tamaño; encadenar solo si el hueco es un
+  // espacio real (<=0.42·fh) y el tamaño es el mismo (±12%). Antes GAPX=1.5·fh
+  // fusionaba casillas contiguas del FPL y todo quedaba en un solo bloque.
+  var GAPX=Math.max(2.5,fh*0.42);
+  var PITCH=fh*1.6;              // interlineado máximo para encadenar líneas
+  var MINSZ=0.12;                // tolerancia de tamaño de fuente
   // run inicial: contiguo alrededor del span clicado (su propia casilla)
   var arr=lines[cli].idx;
+  function szOk(a,b2){var fa=specs[a].fh||10,fb=specs[b2].fh||10;return Math.abs(fa-fb)<=Math.max(fa,fb)*MINSZ;}
   var k=arr.indexOf(ci);if(k<0)k=0;
   var lo=k,hi=k;
-  while(lo>0&&(specs[arr[lo]].x-(specs[arr[lo-1]].x+specs[arr[lo-1]].w))<=GAPX)lo--;
-  while(hi<arr.length-1&&(specs[arr[hi+1]].x-(specs[arr[hi]].x+specs[arr[hi]].w))<=GAPX)hi++;
+  while(lo>0&&(specs[arr[lo]].x-(specs[arr[lo-1]].x+specs[arr[lo-1]].w))<=GAPX&&szOk(arr[lo],arr[lo-1]))lo--;
+  while(hi<arr.length-1&&(specs[arr[hi+1]].x-(specs[arr[hi]].x+specs[arr[hi]].w))<=GAPX&&szOk(arr[hi],arr[hi+1]))hi++;
   var run0=arr.slice(lo,hi+1);
   var px0=specs[run0[0]].x,px1=specs[run0[run0.length-1]].x+specs[run0[run0.length-1]].w;
   var groups=[{line:cli,run:run0}];
@@ -3373,10 +3382,12 @@ function _paraGroupSpecs(specs,ci){
     var last=cli,cx0=px0,cx1=px1;
     var i=cli+step;
     while(step>0?i<lines.length:i>=0){
-      if(groups.length>=60)break;
+      if(groups.length>=12)break;
       var L=lines[i];
       var pitch=Math.abs(L.y-lines[last].y);
-      if(pitch<=0.01||pitch>PITCH)break;
+      // v2.6.0 — pitch mínimo 0.92·fh: filas apiladas más juntas que la propia
+      // altura de la fuente son casillas de formulario, no líneas de párrafo
+      if(pitch<=fh*0.92||pitch>PITCH)break;
       // candidatos: items de la línea que intersecan la columna actual
       var cand=[];
       L.idx.forEach(function(si){
@@ -3400,14 +3411,21 @@ function _paraGroupSpecs(specs,ci){
       if(!best||bestOv<=0)break;
       var c0=specs[best[0]].x,c1=specs[best[best.length-1]].x+specs[best[best.length-1]].w;
       var ov2=Math.min(c1,cx1)-Math.max(c0,cx0);
-      if(ov2<=0.45*Math.min(cx1-cx0,c1-c0))break;   // debe ser la MISMA columna
-      if(Math.abs(L.size-fh)>fh*0.35)break;          // tamaño de fuente similar
+      if(ov2<=0.55*Math.min(cx1-cx0,c1-c0))break;   // debe ser la MISMA columna
+      if(Math.abs(L.size-fh)>fh*MINSZ)break;         // tamaño de fuente igual (±12%)
       groups.push({line:i,run:best});
       last=i;cx0=Math.min(cx0,c0);cx1=Math.max(cx1,c1);
       i+=step;
     }
   }
   chain(1);chain(-1);
+  // v2.6.0 — tope anti-bloque: si el grupo agrupó demasiados spans (heurística
+  // fallada en formularios densos), editar solo la línea clicada
+  var totSp=0;groups.forEach(function(g){totSp+=g.run.length;});
+  if(totSp>28||groups.length>12){
+    groups=groups.filter(function(g){return g.line===cli;});
+    if(!groups.length)groups=[{line:cli,run:run0}];
+  }
   groups.sort(function(a,b){return a.line-b.line;});
   var spans=[],lns=[];
   groups.forEach(function(g){
@@ -3416,6 +3434,21 @@ function _paraGroupSpecs(specs,ci){
     lns.push({y:lines[g.line].y,size:lines[g.line].size,x0:a,x1:b,run:g.run});
   });
   return{spans:spans,lines:lns};
+}
+// v2.6.0 — ancho VISUAL de un span del text-layer (incluye su scaleX del
+// transform): es la extensión real de los glifos del PDF. offsetWidth la
+// ignora y dejaba glifos sin cubrir (texto fantasma) en la edición.
+function _spanVisW(s,tl){
+  try{
+    var r=s.getBoundingClientRect();
+    if(r.width>1&&tl){
+      var lr=tl.getBoundingClientRect();
+      var k=(tl.offsetWidth&&lr.width&&lr.width>0)?(lr.width/tl.offsetWidth):1;
+      var vw=r.width/k;
+      if(vw>1)return vw;
+    }else if(r.width>1)return r.width;
+  }catch(e){}
+  return s.offsetWidth||s.scrollWidth||40;
 }
 // Agrupación para el flujo de spans del text-layer (clic directo sobre el texto)
 function _groupParagraph(cs){
@@ -3428,7 +3461,7 @@ function _groupParagraph(cs){
   var list=[];
   Array.from(tl.querySelectorAll('span')).forEach(function(s){
     list.push({x:parseFloat(s.style.left)||0,y:parseFloat(s.style.top)||0,
-      w:s.offsetWidth||s.scrollWidth||40,fh:parseFloat(s.dataset.fontHeight||s.style.fontSize)||10,el:s});
+      w:_spanVisW(s,tl),fh:parseFloat(s.dataset.fontHeight||s.style.fontSize)||10,el:s});
   });
   var specs=list;
   var ci=-1;
@@ -3478,9 +3511,12 @@ function activateInlineEdit(clickedSpan){
   spans.forEach(function(s){
     var sx=parseFloat(s.style.left);var sy=parseFloat(s.style.top);
     var sfh=parseFloat(s.dataset.fontHeight||s.style.fontSize||12);
-    var sw=s.offsetWidth||s.scrollWidth||80;
-    minX=Math.min(minX,sx);minY=Math.min(minY,sy-sfh);
-    maxX=Math.max(maxX,sx+sw);maxY=Math.max(maxY,sy+sfh*0.4);
+    var sw=_spanVisW(s,tl);
+    // v2.6.0 — sy YA es el top del span (v2.3.1); antes se restaba sfh otra
+    // vez y el bbox quedaba una línea por encima: el cover borraba la fila
+    // superior y spanItemsForRect tocaba celdas ajenas (distorsión).
+    minX=Math.min(minX,sx);minY=Math.min(minY,sy);
+    maxX=Math.max(maxX,sx+sw);maxY=Math.max(maxY,sy+sfh*1.25);
     texts.push(s.textContent||s.dataset.origText||'');
     fontSizes.push(sfh);
     fontFamilies.push(s.style.fontFamily||'sans-serif');
@@ -3503,6 +3539,20 @@ function activateInlineEdit(clickedSpan){
     return L.spans.map(function(s){return (s.textContent||s.dataset.origText||'');}).join(' ').replace(/\s+/g,' ').trim();
   }).join('\n');
   var lineMap=grp.lines.map(function(L){return{x:L.x,y:L.y,size:L.size};});
+  // v2.6.0 — spanMap: geometría por span (casilla) para un render fiel al
+  // aplicar. vw = ancho VISUAL (incluye scaleX del span) convertido a px de
+  // capa; se usa para el cover sin tocar bordes de la retícula.
+  var spanMap=[];
+  grp.lines.forEach(function(L,li){
+    var arr2=(L.spans||[]).slice().sort(function(p,r){return (parseFloat(p.style.left)||0)-(parseFloat(r.style.left)||0);});
+    arr2.forEach(function(s){
+      spanMap.push({x:parseFloat(s.style.left)||0,y:parseFloat(s.style.top)||0,
+        w:s.offsetWidth||s.scrollWidth||40,vw:_spanVisW(s,tl),
+        fh:parseFloat(s.dataset.fontHeight||s.style.fontSize)||10,
+        b:s.dataset.bold==='1',i:s.dataset.italic==='1',ff:s.style.fontFamily||'sans-serif',
+        text:(s.textContent||s.dataset.origText||''),ln:li});
+    });
+  });
 
   // Dimensions with padding
   var PAD=4;
@@ -3543,7 +3593,8 @@ function activateInlineEdit(clickedSpan){
 
   _paraInlineData={slot:slot,x:x,y:y,w:w,h:h,spans:spans,lines:lineMap,
     origText:paraText,fontSize:fontSize,fontFamily:fontFamily,
-    bold:bold,italic:italic,color:color,lineH:lineH,scaleX:scaleX,scaleY:scaleY};
+    bold:bold,italic:italic,color:color,lineH:lineH,scaleX:scaleX,scaleY:scaleY,
+    spanMap:spanMap,baseFh:fontSize};
 
   el.focus();
   // Select all
@@ -3583,6 +3634,21 @@ function _commitParaEdit(){
     var a=d.editAnn;
     var prevFS=a.fontSize||d.fontSize||11;
     a.text=newText;a.color=curColor;a.fontFamily=curFF;a.fontSize=curFS||d.fontSize;
+    if(a.spanMap&&a.spanMap.length){
+      // v2.6.0 — anotación celda-fiel: geometría intacta, solo overrides.
+      // k = tamaño toolbar / tamaño original real (baseFh), no encadenado.
+      var kS=(a.baseFh&&a.baseFh>0)?((curFS||d.fontSize)/a.baseFh):((a.ovr&&a.ovr.k)||1);
+      a.ovr={k:(kS>0?kS:1),
+        color:(curColor!==d.color)?curColor:((a.ovr&&a.ovr.color)||null),
+        bold:(curBold!==d.bold)?curBold:((a.ovr&&a.ovr.bold!=null)?a.ovr.bold:null),
+        italic:(curItalic!==d.italic)?curItalic:((a.ovr&&a.ovr.italic!=null)?a.ovr.italic:null),
+        ff:(curFF!==d.fontFamily)?curFF:((a.ovr&&a.ovr.ff)||null)};
+      var mY=0,mLn=0;(a.spanMap||[]).forEach(function(s){
+        if(s.y+s.fh*1.3>mY)mY=s.y+s.fh*1.3;if(s.ln>mLn)mLn=s.ln;});
+      var pitchX=(a.baseFh||10)*(a.lineHeight||1.35);
+      var extraH=Math.max(0,newText.split('\n').length-(mLn+1))*pitchX;
+      a.h=Math.max(24,(mY-a.y)+extraH+6);
+    } else {
     // v2.3.1 — si cambió el tamaño, re-escalar el mapa de líneas (sigue fiel)
     if(a.lines&&curFS&&prevFS>0&&Math.abs(curFS-prevFS)>0.01){
       var kk=curFS/prevFS;
@@ -3590,6 +3656,7 @@ function _commitParaEdit(){
     }
     a.bold=curBold;a.italic=curItalic;
     a.h=Math.max(d.h,newText.split('\n').length*(curFS||d.fontSize)*1.5+8);
+    }
     if((!a.spanItems||!a.spanItems.length)&&d.spans&&d.spans.length)
       a.spanItems=d.spans.map(function(s){return +s.dataset.item;}).filter(function(n){return!isNaN(n);});
     redraw(d.slot,cv);updateDocInfo();
@@ -3598,13 +3665,21 @@ function _commitParaEdit(){
     pushUndoTextLayer(d.slot);
     if(cv){
       if(!annotations[d.slot])annotations[d.slot]=[];
+      // v2.6.0 — overrides como deltas respecto al estilo original dominante
+      var ovrNew={k:(curFS&&d.fontSize&&d.fontSize>0)?(curFS/d.fontSize):1,
+        color:(curColor!==d.color)?curColor:null,
+        bold:(curBold!==d.bold)?curBold:null,
+        italic:(curItalic!==d.italic)?curItalic:null,
+        ff:(curFF!==d.fontFamily)?curFF:null};
       annotations[d.slot].push({
         type:'para-edit',
-        x:d.x,y:d.y,w:d.w,h:Math.max(d.h,newText.split('\n').length*(curFS||d.fontSize)*1.5+8),
+        x:d.x,y:d.y,w:d.w,h:Math.max(d.h,newText.split('\n').length*(curFS||d.fontSize)*1.35+8),
         text:newText,fontFamily:curFF,fontSize:curFS||d.fontSize,
         bold:curBold,italic:curItalic,under:false,
-        color:curColor,bgColor:'#ffffff',align:'left',lineHeight:1.4,
+        color:curColor,bgColor:'#ffffff',align:'left',lineHeight:1.35,
         spanItems:(d.spans||[]).map(function(s){return +s.dataset.item;}).filter(function(n){return!isNaN(n);}),
+        spanMap:(d.spanMap&&d.spanMap.length)?_sampleSpanBg(d.slot,d.spanMap):null,
+        ovr:ovrNew,baseFh:d.fontSize,
         lines:(d.lines||null)
       });
       // Hide original spans (quedan registrados en spanItems para re-render)
@@ -3674,7 +3749,7 @@ function spanItemsForRect(slot,x,y,w,h){
   for(var i=0;i<sp.length;i++){var s=sp[i];
     var sx=parseFloat(s.style.left)||0;var sy=parseFloat(s.style.top)||0;
     var sfh=parseFloat(s.dataset.fontHeight||s.style.fontSize)||10;
-    var sw=s.offsetWidth||s.scrollWidth||40;
+    var sw=_spanVisW(s,tl);
     if(sx<(x+w)&&sx+sw>x&&sy<(y+h)&&sy+sfh>y)out.push(s.dataset.item!=null?+s.dataset.item:i);
   }
   return out;
@@ -6317,6 +6392,96 @@ async function renderThumbs(){
   }
 }
 
+// ════ v2.6.0 — EDICIÓN CELDA-FIEL: muestreo de fondo y maquetación ════
+// Color modal (más frecuente) de una región del canvas de página: es el
+// fondo de la celda (blanco, gris de banda o relleno del formulario).
+function _sampleRegionMode(cv,x,y,w,h){
+  try{
+    x=Math.max(0,Math.floor(x));y=Math.max(0,Math.floor(y));
+    w=Math.min(cv.width-x,Math.ceil(w));h=Math.min(cv.height-y,Math.ceil(h));
+    if(w<=0||h<=0)return null;
+    var d=cv.getContext('2d').getImageData(x,y,w,h).data;
+    var buckets={},order=[],bestL=null,bestLN=0,best=null,bestN=0;
+    var step=Math.max(1,Math.floor(Math.min(w,h)/22));
+    for(var yy=0;yy<h;yy+=step)for(var xx=0;xx<w;xx+=step){
+      var i2=(yy*w+xx)*4;
+      var key=(d[i2]>>3)+'_'+(d[i2+1]>>3)+'_'+(d[i2+2]>>3);
+      var b=buckets[key];if(!b){b={n:0,r:d[i2],g:d[i2+1],bl:d[i2+2]};buckets[key]=b;order.push(b);}
+      b.n++;
+      var lum=(0.3*b.r+0.55*b.g+0.15*b.bl)/255;
+      if(lum>=0.35&&b.n>bestLN){bestLN=b.n;bestL=b;}
+      if(b.n>bestN){bestN=b.n;best=b;}
+    }
+    var pick=bestL||best;
+    if(!pick)return null;
+    var hx=function(v){return('0'+Math.max(0,Math.min(255,Math.round(v))).toString(16)).slice(-2);};
+    return '#'+hx(pick.r)+hx(pick.g)+hx(pick.bl);
+  }catch(e){return null;}
+}
+function _sampleRegionBg(slot,x,y,w,h){
+  var cv=document.getElementById('pcv-'+slot);if(!cv)return null;
+  return _sampleRegionMode(cv,x,y,w,h);
+}
+// Muestrea el fondo de cada span del spanMap desde el canvas de página
+function _sampleSpanBg(slot,spanMap){
+  (spanMap||[]).forEach(function(s){
+    var bg=_sampleRegionBg(slot,s.x-1,s.y-1,(s.vw||s.w||s.fh)+2,s.fh*1.24+2);
+    s.bg=bg||'#ffffff';
+  });
+  return spanMap;
+}
+// Maquetación por span: covers fijos (geometría+fondo originales, borran solo
+// los glifos sin tocar bordes) + textos distribuidos por tokens según el
+// conteo de palabras ORIGINAL de cada span. Usada por drawAnn y por la
+// exportación vectorial (canvas y PDF siempre coinciden).
+function _paraSpanLayout(a){
+  var map=a.spanMap||[];
+  var lines=(a.text||'').split('\n');
+  var covers=[],texts=[];
+  var nLn=0;
+  for(var q=0;q<map.length;q++)if((map[q].ln||0)>nLn)nLn=map[q].ln;
+  nLn++;
+  var ovr=a.ovr||{};
+  var kS=(typeof ovr.k==='number'&&ovr.k>0)?ovr.k:1;
+  for(var c2=0;c2<map.length;c2++){var s2=map[c2];
+    covers.push({x:s2.x,y:s2.y,w:Math.max(2,s2.vw||s2.w||s2.fh),h:s2.fh*1.24,bg:s2.bg||a.bgColor||'#ffffff'});
+  }
+  for(var li=0;li<lines.length;li++){
+    var spans=[];
+    for(var q2=0;q2<map.length;q2++)if(map[q2].ln===li)spans.push(map[q2]);
+    spans.sort(function(p,r){return p.x-r.x;});
+    if(!spans.length){
+      if(li<nLn)continue;
+      // línea añadida por el usuario: continuar bajo la última línea original
+      var lastL=[];
+      for(var q3=0;q3<map.length;q3++)if(map[q3].ln===nLn-1)lastL.push(map[q3]);
+      if(!lastL.length)continue;
+      lastL.sort(function(p,r){return p.x-r.x;});
+      var ref=lastL[0];
+      var pitch=(ref.fh||10)*(a.lineHeight||1.35);
+      texts.push({x:ref.x,yB:ref.y+ref.fh+(li-nLn+1)*pitch,fh:ref.fh*kS,
+        b:(ovr.bold!=null?ovr.bold:ref.b),i:(ovr.italic!=null?ovr.italic:ref.i),
+        ff:(ovr.ff||ref.ff),text:lines[li]});
+      continue;
+    }
+    var toks=lines[li].split(/\s+/).filter(function(t){return t.length>0;});
+    var exp=spans.map(function(s){
+      var n=0;if(s.text)n=s.text.split(/\s+/).filter(function(t){return t.length>0;}).length;
+      return Math.max(1,n);});
+    var ti=0;
+    spans.forEach(function(s,si){
+      var take=exp[si];
+      if(si===spans.length-1)take=Math.max(1,toks.length-ti); // el resto al último
+      var seg='';
+      if(ti<toks.length&&take>0){seg=toks.slice(ti,ti+take).join(' ');ti+=take;}
+      texts.push({x:s.x,yB:s.y+s.fh,fh:s.fh*kS,
+        b:(ovr.bold!=null?ovr.bold:s.b),i:(ovr.italic!=null?ovr.italic:s.i),
+        ff:(ovr.ff||s.ff),text:seg});
+    });
+  }
+  return {covers:covers,texts:texts};
+}
+
 // ── DRAW ANNOTATIONS ──
 function redraw(slot,cv){
   var ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
@@ -6344,6 +6509,30 @@ function drawAnn(ctx,a,selected){
   else if(a.type==='cover-rect'){ctx.fillStyle=a.bgColor||'#ffffff';ctx.fillRect(a.x,a.y,a.w,a.h);}
   else if(a.type==='watermark'){wmDraw(ctx,a,cv.width,cv.height);}
   else if(a.type==='para-edit'){
+    if(a.spanMap&&a.spanMap.length){
+      // v2.6.0 — render por span (celda-fiel): covers con el fondo muestreado
+      // de cada celda (la retícula y los rellenos del formulario NO se tocan)
+      // y cada texto en su x/baseline/tamaño/fuente originales.
+      var lay=_paraSpanLayout(a);
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      lay.covers.forEach(function(c3){
+        ctx.fillStyle=c3.bg;ctx.fillRect(c3.x-0.75,c3.y-0.75,c3.w+1.5,c3.h+1.5);
+      });
+      lay.texts.forEach(function(t2){
+        if(!t2.text)return;
+        ctx.font=(t2.b?'bold ':'')+(t2.i?'italic ':'')+t2.fh+'px '+(t2.ff||'Arial,sans-serif');
+        ctx.fillStyle=(a.ovr&&a.ovr.color)||a.color||'#000000';
+        ctx.fillText(t2.text,t2.x,t2.yB);
+        if(a.under){
+          var uw3=ctx.measureText(t2.text).width;
+          var uc3=(a.ovr&&a.ovr.color)||a.color||'#000';
+          ctx.strokeStyle=uc3;ctx.lineWidth=0.8;
+          ctx.beginPath();ctx.moveTo(t2.x,t2.yB+1.5);ctx.lineTo(t2.x+uw3,t2.yB+1.5);ctx.stroke();
+        }
+      });
+      if(selected){ctx.strokeStyle='rgba(79,142,247,.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.setLineDash([]);}
+    }
+    else{
     ctx.save();ctx.globalAlpha=op||1;
     ctx.fillStyle=a.bgColor||'#ffffff';ctx.fillRect(a.x,a.y,a.w,a.h);
     ctx.fillStyle=a.color||'#000000';
@@ -6386,6 +6575,7 @@ function drawAnn(ctx,a,selected){
     });
     ctx.restore();
     if(selected){ctx.strokeStyle='rgba(79,142,247,.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.setLineDash([]);}
+    }
     }
   }
   else if(a.type==='stamp'){var fs2=a.size||14;ctx.font='bold '+fs2+'px Inter,sans-serif';var tw2=ctx.measureText(a.text||'').width;var pad=10;ctx.fillStyle=col+'22';ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(a.x-pad,a.y-20-pad,tw2+pad*2+(a.emoji?26:0),32+pad);ctx.fillRect(a.x-pad,a.y-20-pad,tw2+pad*2+(a.emoji?26:0),32+pad);ctx.fillStyle=col;if(a.emoji){ctx.font='20px serif';ctx.fillText(a.emoji,a.x-22,a.y);ctx.font='bold '+fs2+'px Inter,sans-serif';}ctx.fillText(a.text||'',a.x,a.y);}
@@ -6753,6 +6943,9 @@ function _rescaleAnns(k){
     if(a.stroke!=null)a.stroke*=k;if(a.spacing!=null)a.spacing*=k;
     if(a.pts)a.pts.forEach(function(p){p.x*=k;p.y*=k;});
     if(a.lines)a.lines.forEach(function(l){l.x*=k;l.y*=k;if(l.size!=null)l.size*=k;});
+    // v2.6.0 — la geometría por span también escala con el zoom
+    if(a.spanMap)a.spanMap.forEach(function(s){s.x*=k;s.y*=k;if(s.w!=null)s.w*=k;if(s.vw!=null)s.vw*=k;if(s.fh!=null)s.fh*=k;});
+    if(a.baseFh!=null)a.baseFh*=k;
   }
   function rsDict(d){
     if(!d)return;
@@ -7021,7 +7214,22 @@ async function saveToDrive(){
       (annotations[slot]||[]).forEach(function(a){
         var ax=a.x*sX;var aw=(a.w||0)*sX;var ah=(a.h||0)*sY;
         var ay=lh-(a.y+(a.h||0))*sY;
-        if(a.type==='cover-rect'||a.type==='para-edit'){
+        if(a.type==='para-edit'&&a.spanMap&&a.spanMap.length){
+          // v2.6.0 — export celda-fiel: covers por span (fondo muestreado) y
+          // texto por span en su posición/baseline/tamaño exactos
+          var layS=_paraSpanLayout(a);
+          layS.covers.forEach(function(cS){
+            var bgS=hexToRgb01(cS.bg||'#ffffff');
+            try{lPage.drawRectangle({x:cS.x*sX,y:lh-(cS.y+cS.h)*sY,width:cS.w*sX,height:cS.h*sY,color:PDFLib.rgb(bgS[0],bgS[1],bgS[2])});}catch(e){}
+          });
+          layS.texts.forEach(function(tS){
+            if(!tS.text)return;
+            var fS=pickFont2(tS.ff||'',tS.b);
+            var zS=Math.max(3,tS.fh*sY);
+            var ccS=hexToRgb01((a.ovr&&a.ovr.color)||a.color||'#000000');
+            try{lPage.drawText(pdfSafeText(tS.text),{x:tS.x*sX,y:lh-tS.yB*sY,size:zS,font:fS,color:PDFLib.rgb(ccS[0],ccS[1],ccS[2])});}catch(e){}
+          });
+        } else if(a.type==='cover-rect'||a.type==='para-edit'){
           var bg=hexToRgb01(a.bgColor||'#ffffff');
           lPage.drawRectangle({x:ax,y:ay,width:aw,height:ah,color:PDFLib.rgb(bg[0],bg[1],bg[2])});
           if(a.type==='para-edit'&&a.text){
@@ -7152,7 +7360,21 @@ async function exportPDF(){
         // Convertir coords: pdf.js tiene Y desde arriba, pdf-lib desde abajo
         var ax=a.x*scaleX;var ay=ph-(a.y+( a.h||0))*scaleY;
         var aw=(a.w||0)*scaleX;var ah=(a.h||0)*scaleY;
-        if(a.type==='cover-rect'||a.type==='para-edit'){
+        if(a.type==='para-edit'&&a.spanMap&&a.spanMap.length){
+          // v2.6.0 — export celda-fiel (mismo layout que el canvas)
+          var layP=_paraSpanLayout(a);
+          layP.covers.forEach(function(cP){
+            var bgP=hexToRgb01(cP.bg||'#ffffff');
+            try{pdfPage.drawRectangle({x:cP.x*scaleX,y:ph-(cP.y+cP.h)*scaleY,width:cP.w*scaleX,height:cP.h*scaleY,color:PDFLib.rgb(bgP[0],bgP[1],bgP[2])});}catch(e){}
+          });
+          layP.texts.forEach(function(tP){
+            if(!tP.text)return;
+            var fP=pickFont(tP.ff||'',tP.b);
+            var zP=Math.max(3,tP.fh*scaleY);
+            var ccP=hexToRgb01((a.ovr&&a.ovr.color)||a.color||'#000000');
+            try{pdfPage.drawText(pdfSafeText(tP.text),{x:tP.x*scaleX,y:ph-tP.yB*scaleY,size:zP,font:fP,color:PDFLib.rgb(ccP[0],ccP[1],ccP[2])});}catch(e){}
+          });
+        } else if(a.type==='cover-rect'||a.type==='para-edit'){
           // Cubrir zona con rect blanco
           var bgHex=a.bgColor||'#ffffff';
           var bgRgb=hexToRgb01(bgHex);
