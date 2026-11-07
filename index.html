@@ -690,7 +690,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.5.0 · abre y edita también Excel y Word (conversión a PDF vectorial)</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.5.1 · Excel y Word editables — formularios Excel con retícula fiel</div>
   </div>
 </div>
 
@@ -4275,7 +4275,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.5.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.5.1',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5453,6 +5453,293 @@ function _xlsColWidths(aoa,cols,measure,maxW){
   if(tot2>maxW){var k2=maxW/tot2;for(c=0;c<cols;c++)W[c]=W[c]*k2;}
   return W;
 }
+// ════ v2.5.1 — MODO FORMULARIO EXCEL (fidelidad de formatos con retícula) ════
+// Las hojas tipo "formulario" (FPL/OACI, FAA, retículas: baja densidad de datos
+// y celdas combinadas) se maquetan con la GEOMETRÍA REAL del libro: anchos de
+// columna y altos de fila del propio Excel, celdas combinadas como cajas,
+// rellenos de celda, valores centrados en su celda y etiquetas centradas sobre
+// su extensión (reproduce el "centrar a través de la selección"). Sin re-flujo:
+// el formulario sale como se ve en Excel/impreso — normalmente en UNA página.
+function _formColToIdx(s){var n=0;for(var i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-64);return n;}
+function _formDecodeRef(ref){
+  var m=/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(String(ref||'A1').replace(/\$/g,''));
+  if(!m)return null;
+  return {r0:parseInt(m[2],10),r1:parseInt(m[4],10),c0:_formColToIdx(m[1]),c1:_formColToIdx(m[3])};
+}
+function _formCellText(ws,r,c){ // 1-based
+  try{
+    var cell=ws[XLSX.utils.encode_cell({r:r-1,c:c-1})];
+    if(!cell||cell.v===undefined||cell.v===null)return '';
+    var t=(cell.w!==undefined&&cell.w!==null)?String(cell.w):String(cell.v);
+    return t.replace(/\s+/g,' ').trim();
+  }catch(e){return '';}
+}
+// ¿hoja-formulario? baja densidad + celdas combinadas, o retícula ancha dispersa
+function _xlsIsFormSheet(ws){
+  try{
+    var rg=_formDecodeRef(ws['!ref']);if(!rg)return false;
+    var rows=rg.r1-rg.r0+1,cols=rg.c1-rg.c0+1;
+    if(rows<8||cols<6||rows*cols>60000)return false;
+    var ne=0,colUsed={},ncUsed=0,r,c;
+    for(r=rg.r0;r<=rg.r1;r++)for(c=rg.c0;c<=rg.c1;c++){
+      if(_formCellText(ws,r,c)){ne++;if(!colUsed[c]){colUsed[c]=1;ncUsed++;}}
+    }
+    var density=ne/(rows*cols);
+    if((ws['!merges']||[]).length>=5&&density<=0.5)return true;
+    if(density<=0.22&&cols>=8&&rows>=10&&ncUsed>=Math.max(6,Math.floor(cols*0.3)))return true;
+    return false;
+  }catch(e){return false;}
+}
+function _formHexRgb(lib,hx){
+  try{
+    var n=parseInt(String(hx).replace('#',''),16);
+    if(isNaN(n))return null;
+    return lib.rgb(((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255);
+  }catch(e){return null;}
+}
+// Maqueta una hoja-formulario en el documento pdf-lib compartido.
+// Devuelve el nº de páginas añadidas (0 = no se pudo; el llamador cae a tabla).
+function _excelFormSheet(doc,ws,ctx){
+  try{
+    var lib=ctx.lib,fH=ctx.fH,fHB=ctx.fHB;
+    var rg=_formDecodeRef(ws['!ref']);if(!rg)return 0;
+    var rowsMeta=ws['!rows']||[],colsMeta=ws['!cols']||[];
+    var DEFH=12.75,DEFCW=48;
+    var rowH=[],colW=[],rr,cc;
+    for(rr=rg.r0;rr<=rg.r1;rr++){var rm=rowsMeta[rr-1];rowH.push(rm&&rm.hidden?0:(rm&&rm.hpt?Math.max(2,rm.hpt):DEFH));}
+    for(cc=rg.c0;cc<=rg.c1;cc++){var cm=colsMeta[cc-1];colW.push(cm&&cm.hidden?0:(cm&&cm.wpx?cm.wpx*0.75:(cm&&cm.wch?(cm.wch*7+5)*0.75:DEFCW)));}
+    function H(r){return rowH[r-rg.r0];}
+    function W(c){return colW[c-rg.c0];}
+    // merges visibles (fuera de filas/columnas ocultas)
+    var merges=[];
+    (ws['!merges']||[]).forEach(function(m){
+      var a={r0:Math.max(rg.r0,m.s.r+1),r1:Math.min(rg.r1,m.e.r+1),c0:Math.max(rg.c0,m.s.c+1),c1:Math.min(rg.c1,m.e.c+1)};
+      if(a.r0>a.r1||a.c0>a.c1)return;
+      var vh=0;for(rr=a.r0;rr<=a.r1;rr++)vh+=H(rr);
+      var vw=0;for(cc=a.c0;cc<=a.c1;cc++)vw+=W(cc);
+      if(vh<=0||vw<=0)return;
+      a.vh=vh;a.vw=vw;merges.push(a);
+    });
+    // contenido + rellenos de celda (los formatos suelen sombrear las celdas de datos)
+    var grid={},fills={};
+    for(rr=rg.r0;rr<=rg.r1;rr++)for(cc=rg.c0;cc<=rg.c1;cc++){
+      var cell=ws[XLSX.utils.encode_cell({r:rr-1,c:cc-1})];
+      var t=_formCellText(ws,rr,cc);if(t)grid[rr+'_'+cc]=t;
+      if(cell&&cell.s&&cell.s.patternType==='solid'&&cell.s.fgColor&&typeof cell.s.fgColor.rgb==='string'){
+        var hx=cell.s.fgColor.rgb;if(hx.length===8)hx=hx.slice(2);
+        if(/^[0-9A-Fa-f]{6}$/.test(hx)&&hx.toUpperCase()!=='FFFFFF')fills[rr+'_'+cc]='#'+hx.toUpperCase();
+      }
+    }
+    var cover={};
+    merges.forEach(function(a){for(rr=a.r0;rr<=a.r1;rr++)for(cc=a.c0;cc<=a.c1;cc++)cover[rr+'_'+cc]=1;});
+    function rowUsed(r){for(cc=rg.c0;cc<=rg.c1;cc++)if(grid[r+'_'+cc]||cover[r+'_'+cc])return true;return false;}
+    function colUsed(c){for(rr=rg.r0;rr<=rg.r1;rr++)if(grid[rr+'_'+c]||cover[rr+'_'+c])return true;return false;}
+    var R0=rg.r0;while(R0<rg.r1&&!rowUsed(R0))R0++;
+    var R1=rg.r1;while(R1>R0&&!rowUsed(R1))R1--;
+    var C0=rg.c0;while(C0<rg.c1&&!colUsed(C0))C0++;
+    var C1=rg.c1;while(C1>C0&&!colUsed(C1))C1--;
+    if(R1<R0||C1<C0)return 0;
+    var NR=R1-R0+1,NC=C1-C0+1,i;
+    var xs=[0];for(i=0;i<NC;i++)xs.push(xs[i]+W(C0+i));
+    var ys=[0];for(i=0;i<NR;i++)ys.push(ys[i]+H(R0+i));
+    var contentW=xs[NC],contentH=ys[NR];
+    if(contentW<50||contentH<50)return 0;
+    // orientación y escala: ajuste a UNA página (como fitToPage de Excel);
+    // si el ajuste dejaría el texto ilegible se pagina por filas.
+    var A4W=595.28,A4H=841.89,MG=24;
+    var pS=Math.min(1,(A4W-2*MG)/contentW,(A4H-2*MG)/contentH);
+    var lS=Math.min(1,(A4H-2*MG)/contentW,(A4W-2*MG)/contentH);
+    var PW,PH,scale,single;
+    if(Math.max(pS,lS)>=0.34){
+      if(pS>=lS){PW=A4W;PH=A4H;scale=pS;}else{PW=A4H;PH=A4W;scale=lS;}
+      single=true;
+    }else{
+      if(contentW/contentH>(A4H-2*MG)/(A4W-2*MG)){PW=A4H;PH=A4W;}else{PW=A4W;PH=A4H;}
+      scale=Math.min(1,(PW-2*MG)/contentW);single=false;
+    }
+    var BLACK=lib.rgb(.08,.08,.1),GRAY=lib.rgb(.45,.48,.55);
+    var pgN=0,page=null;
+    function newPage(){
+      page=doc.addPage([PW,PH]);pgN++;
+      if(!single){try{page.drawText('pág. '+pgN,{x:PW-MG-40,y:10,size:6,font:fH,color:GRAY});}catch(e){}}
+    }
+    function xOf(c){return MG+xs[c-C0]*scale;}
+    function wOf(c0,c1){return (xs[c1-C0+1]-xs[c0-C0])*scale;}
+    function hOf(r0,r1){return (ys[r1-R0+1]-ys[r0-R0])*scale;}
+    function fitSz(f,t,maxW,maxS,minS){
+      var s=maxS;
+      while(s>minS&&_pdfMeasure(f,t,s)>maxW)s-=0.25;
+      return Math.max(s,minS);
+    }
+    function kindOf(t){
+      if(t.indexOf('<<')>=0)return 'marker';
+      if(/^[A-Z]\/[A-Z]?$/.test(t))return 'prefix';
+      if(t.length===1)return 'value';
+      if(/\d/.test(t)&&!/\s/.test(t))return 'value';
+      return 'label';
+    }
+    // contenido por fila (para detectar títulos) y celdas con caja (valores/rellenos)
+    var rowCount={},boxCells={},key,parts;
+    for(key in grid){
+      if(!Object.prototype.hasOwnProperty.call(grid,key))continue;
+      parts=key.split('_');
+      var gr=parseInt(parts[0],10),gc=parseInt(parts[1],10);
+      rowCount[gr]=(rowCount[gr]||0)+1;
+      if(!cover[key]&&kindOf(grid[key])==='value')boxCells[key]=fills[key]||null;
+    }
+    for(key in fills){
+      if(!Object.prototype.hasOwnProperty.call(fills,key))continue;
+      if(cover[key]||grid[key])continue;
+      boxCells[key]=fills[key];
+    }
+    // extensión de etiqueta: celdas vacías a la derecha (sin contenido, merge ni relleno)
+    function spanEnd(r,c){
+      var c2=c;
+      while(c2+1<=C1&&!grid[r+'_'+(c2+1)]&&!cover[r+'_'+(c2+1)]&&!fills[r+'_'+(c2+1)])c2++;
+      return c2;
+    }
+    function drawLines(lines,c0,c1,r0,r1,topUp,size,bold,align,pad){
+      var h=hOf(r0,r1),w=wOf(c0,c1);
+      var lh=size*1.15,n=Math.min(lines.length,4),tot=n*lh;
+      var off=Math.max(0,(h-tot)/2);
+      var f=bold?fHB:fH;
+      for(var i=0;i<n;i++){
+        var ln=pdfSafeText(lines[i]);if(!ln)continue;
+        var tw=_pdfMeasure(f,ln,size);
+        var xx=align==='c'?xOf(c0)+Math.max(1,(w-tw)/2):xOf(c0)+(pad||2.5);
+        try{page.drawText(ln,{x:xx,y:topUp-off-i*lh-size*0.82,size:size,font:f,color:BLACK});}catch(e){}
+      }
+    }
+    function drawCell(r,c,t,topUp){
+      var k=kindOf(t),rh=H(r)*scale;
+      if(k==='marker'||k==='prefix'){
+        var f=k==='prefix'?fHB:fH;
+        var sz=fitSz(f,t,Math.max(wOf(c,c)*1.8,22),k==='prefix'?10:10,6);
+        var yb=topUp-Math.max(1.5,(rh-sz*0.95)/2)-sz*0.78;
+        try{page.drawText(pdfSafeText(t),{x:xOf(c)+1.5,y:yb,size:sz,font:f,color:BLACK});}catch(e){}
+        return;
+      }
+      if(k==='value'){
+        var cw=wOf(c,c)-3,bold=t.length<=3,f2=bold?fHB:fH;
+        var sz2=fitSz(f2,t,cw,10,5.5);
+        if(_pdfMeasure(f2,t,sz2)<=cw){
+          drawLines([t],c,c,r,r,topUp,sz2,bold,'c');
+          return;
+        }
+        // no cabe en su celda: se desborda a la izquierda como Excel
+        var c2=spanEnd(r,c);
+        var sz3=fitSz(f2,t,wOf(c,c2)-4,10,6);
+        drawLines([t],c,c2,r,r,topUp,sz3,bold,'l');
+        return;
+      }
+      // etiqueta: centrada sobre su extensión si está acotada (center-across-selection);
+      // título solo en las primeras filas del formulario (evita falsos títulos en
+      // encabezados de sección que van solos en su fila)
+      var c2l=spanEnd(r,c),spw=wOf(c,c2l);
+      var isTitle=(r-R0)<=1&&rowCount[r]===1&&spw>=0.6*contentW*scale&&t===t.toUpperCase()&&/[A-Z]/.test(t)&&t.length<=34;
+      if(isTitle){
+        var szT=fitSz(fHB,t,spw*0.94,13,8);
+        drawLines([t],c,c2l,r,r,topUp,szT,true,'c');
+        return;
+      }
+      var tw7=_pdfMeasure(fH,t,7.5);
+      var center=spw<=Math.max(3.5*tw7,26);
+      var szL=fitSz(fH,t,spw-3,7.6,5.4);
+      drawLines([t],c,c2l,r,r,topUp,szL,false,center?'c':'l');
+    }
+    function drawMerge(a,topUp){
+      var anchorFill=fills[a.r0+'_'+a.c0];
+      var h=a.vh*scale,w=a.vw*scale;
+      var o={x:xOf(a.c0),y:topUp-h,width:w,height:h,borderColor:BLACK,borderWidth:.75};
+      if(anchorFill){var fc=_formHexRgb(lib,anchorFill);if(fc)o.color=fc;}
+      try{page.drawRectangle(o);}catch(e){}
+      var t=grid[a.r0+'_'+a.c0];if(!t)return;
+      // barra de sección/título = combinación ancha SIN relleno y texto CORTO
+      // (centrada); las líneas de datos largas van a la izquierda;
+      // etiqueta de campo = combinación angosta sin dígitos (centrada, 7.6)
+      var full=w>=0.6*contentW*scale&&!anchorFill&&t.length<=22;
+      var narrow=!full&&w<0.32*contentW*scale&&(!/\d/.test(t)||/^\d{1,2}\s/.test(t));
+      var maxW=w-(full?w*0.06:6);
+      var sz=fitSz(fH,t,maxW,full?9:(narrow?7.6:10),6.5),lines=[t];
+      if(_pdfMeasure(fH,t,sz)>maxW){
+        for(sz=(narrow?7.6:10);sz>=6.5;sz-=0.5){
+          lines=wrapPdfText(t,fH,sz,maxW).slice(0,4);
+          var ok=lines.length<=4;
+          for(var i=0;i<lines.length&&ok;i++){if(_pdfMeasure(fH,lines[i],sz)>maxW)ok=false;}
+          if(ok)break;
+        }
+        if(!lines.length)lines=[t];
+      }
+      var mPad=(a.c0===C0&&a.vw>=60)?14:5;
+      drawLines(lines,a.c0,a.c1,a.r0,a.r1,topUp,sz,false,(full||narrow)?'c':'l',(full||narrow)?0:mPad);
+    }
+    // runs de cajas contiguas: una sola caja con divisiones (look de formulario)
+    var byRow={};
+    for(key in boxCells){
+      if(!Object.prototype.hasOwnProperty.call(boxCells,key))continue;
+      parts=key.split('_');
+      var br=parseInt(parts[0],10),bc=parseInt(parts[1],10);
+      (byRow[br]=byRow[br]||[]).push(bc);
+    }
+    var runs=[];
+    for(var rkey in byRow){
+      if(!Object.prototype.hasOwnProperty.call(byRow,rkey))continue;
+      var cs=byRow[rkey].sort(function(a,b){return a-b;});
+      var i2=0;
+      while(i2<cs.length){
+        var j2=i2;
+        while(j2+1<cs.length&&cs[j2+1]===cs[j2]+1)j2++;
+        runs.push({r:parseInt(rkey,10),c0:cs[i2],c1:cs[j2]});
+        i2=j2+1;
+      }
+    }
+    function drawRun(run,topUp){
+      var r=run.r,c0=run.c0,c1=run.c1,k2,c;
+      for(c=c0;c<=c1;c++){
+        var fl=boxCells[r+'_'+c];
+        if(fl){var fc2=_formHexRgb(lib,fl);
+          if(fc2){try{page.drawRectangle({x:xOf(c),y:topUp-hOf(r,r),width:wOf(c,c),height:hOf(r,r),color:fc2});}catch(e){}}}
+      }
+      try{page.drawRectangle({x:xOf(c0),y:topUp-hOf(r,r),width:wOf(c0,c1),height:hOf(r,r),borderColor:BLACK,borderWidth:.75});}catch(e){}
+      for(k2=c0+1;k2<=c1;k2++){
+        try{page.drawLine({start:{x:xOf(k2),y:topUp},end:{x:xOf(k2),y:topUp-hOf(r,r)},thickness:.6,color:BLACK});}catch(e){}
+      }
+    }
+    // entidades ordenadas por su borde superior (runs primero: fondo bajo el texto)
+    var ents=[];
+    runs.forEach(function(run){ents.push({top:ys[run.r-R0]-0.001,kind:'run',run:run});});
+    merges.forEach(function(a){ents.push({top:ys[a.r0-R0],kind:'merge',a:a});});
+    for(key in grid){
+      if(!Object.prototype.hasOwnProperty.call(grid,key))continue;
+      if(cover[key])continue;
+      parts=key.split('_');
+      var pr=parseInt(parts[0],10),pc=parseInt(parts[1],10);
+      ents.push({top:ys[pr-R0],kind:'cell',r:pr,c:pc,t:grid[key]});
+    }
+    ents.sort(function(a,b){return a.top-b.top;});
+    newPage();
+    var curTop=PH-MG,limit=MG+(single?0:14);
+    ents.forEach(function(e){
+      var eH=e.kind==='merge'?e.a.vh:H(e.r);
+      var yUp=curTop-e.top*scale;
+      if(e.top>0&&yUp-eH*scale<limit){
+        newPage();curTop=PH-MG+e.top*scale;yUp=PH-MG;
+      }
+      if(e.kind==='merge')drawMerge(e.a,yUp);
+      else if(e.kind==='run')drawRun(e.run,yUp);
+      else drawCell(e.r,e.c,e.t,yUp);
+    });
+    // marco exterior del formulario (una página)
+    if(single){
+      try{page.drawRectangle({x:MG,y:PH-MG-contentH*scale,width:contentW*scale,height:contentH*scale,borderColor:BLACK,borderWidth:.9});}catch(e){}
+    }
+    return pgN;
+  }catch(e){
+    try{console.warn('form-render:',e);}catch(e2){}
+    return 0;
+  }
+}
+
 async function excelToPdfBytes(ab,name,isCsv){
   var PDFLib=window.PDFLib;
   if(!PDFLib)throw new Error('pdf-lib no disponible');
@@ -5461,9 +5748,9 @@ async function excelToPdfBytes(ab,name,isCsv){
   try{
     if(isCsv){
       var txtCsv=new TextDecoder('utf-8').decode(new Uint8Array(ab)).replace(/^\uFEFF/,'');
-      wb=XLSX.read(txtCsv,{type:'string',cellDates:true});
+      wb=XLSX.read(txtCsv,{type:'string',cellDates:true,cellStyles:true});
     }else{
-      wb=XLSX.read(new Uint8Array(ab),{type:'array',cellDates:true});
+      wb=XLSX.read(new Uint8Array(ab),{type:'array',cellDates:true,cellStyles:true});
     }
   }catch(e){throw new Error('No se pudo leer el Excel/CSV: '+(e&&e.message?e.message:e));}
   var doc=await PDFLib.PDFDocument.create();
@@ -5476,6 +5763,10 @@ async function excelToPdfBytes(ab,name,isCsv){
   var measure=function(t,hdr){return _pdfMeasure(hdr?fHB:fH,pdfSafeText(t),fs);};
   wb.SheetNames.forEach(function(sn){
     var ws=wb.Sheets[sn];if(!ws)return;
+    if(!isCsv&&_xlsIsFormSheet(ws)){
+      var npg=_excelFormSheet(doc,ws,{lib:PDFLib,fH:fH,fHB:fHB});
+      if(npg>0){any=true;pgTotal+=npg;return;}
+    }
     var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:false});
     var trimmed=_xlsTrimAoa(aoa);if(!trimmed)return;
     var M=trimmed.aoa,cols=trimmed.cols,r,c;
