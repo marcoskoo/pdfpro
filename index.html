@@ -690,7 +690,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.6.1 · Edición de texto celda-fiel · Sello: AIS/ARO – CORPAC S.A. y sede en azul</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.7.0 · Abre varios archivos a la vez (PDF · Excel · Word) — cada uno en su pestaña</div>
   </div>
 </div>
 
@@ -1098,8 +1098,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         <div class="drop-zone" id="dropZone">
           <div class="drop-box" id="dropBox" onclick="document.getElementById('fInput').click()">
             <div class="drop-di">📄📊📝</div>
-            <div class="drop-dt">Arrastra tu PDF, Excel o Word aquí</div>
-            <div class="drop-ds">o <em>haz clic para abrir</em> · PDF · XLSX · XLS · CSV · DOCX · DOC</div>
+            <div class="drop-dt">Arrastra tus PDF, Excel o Word aquí</div>
+            <div class="drop-ds">o <em>haz clic para abrir</em> · uno o varios a la vez · PDF · XLSX · XLS · CSV · DOCX · DOC</div>
             <div class="drop-tags"><span class="dtag">PDF</span><span class="dtag">Excel</span><span class="dtag">Word</span><span class="dtag">Firmas</span><span class="dtag">Sellos</span></div>
           </div>
         </div>
@@ -1521,7 +1521,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 <input id="annInput" type="text" placeholder="Escribe y pulsa Enter…" autocomplete="off" spellcheck="false">
 <div id="inpHint">↵ confirma · Esc cancela</div>
-<input type="file" id="fInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.docx,.doc" style="display:none" onchange="onFileChosen(this)">
+<input type="file" id="fInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.docx,.doc" multiple style="display:none" onchange="onFileChosen(this)">
 <input type="file" id="sigUploadInput" accept="image/*" multiple style="display:none" onchange="onSigUpload(this)">
 <div class="prog" id="prog"><div class="prog-fill" id="progFill"></div></div>
 <div class="toast" id="toast"></div>
@@ -4350,7 +4350,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.6.1',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.7.0',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -6201,11 +6201,14 @@ async function handleFileOpen(file){
   if(!isOfficeFileName(nm)){
     if(file.type&&file.type!=='application/pdf'&&!/\.pdf$/i.test(nm)){
       toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');
-      return;
+      return false;
     }
-    loadPDF(file);return;
+    // v2.7.0 — await: permite la carga secuencial multi-archivo y captura
+    // errores de PDF corrupto (antes la promesa quedaba sin manejar).
+    try{await loadPDF(file);return true;}
+    catch(e){hideProg();toast('No se pudo abrir '+nm+': '+(e&&e.message?e.message:e),'err');return false;}
   }
-  if(file.size>30*1024*1024){toast('Archivo demasiado grande (máx. 30 MB)','err');return;}
+  if(file.size>30*1024*1024){toast('Archivo demasiado grande (máx. 30 MB)','err');return false;}
   var base=_officeBaseName(nm);
   toast('Convirtiendo '+nm+' a PDF editable…');
   setProg(6);
@@ -6224,10 +6227,12 @@ async function handleFileOpen(file){
     }
     setProg(40);
     var f2=new File([bytes],base+'.pdf',{type:'application/pdf'});
-    loadPDF(f2);
+    await loadPDF(f2);
+    return true;
   }catch(e){
     hideProg();
     toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
+    return false;
   }
 }
 
@@ -6237,33 +6242,54 @@ dropBox.addEventListener('dragover',function(e){e.preventDefault();dropBox.class
 dropBox.addEventListener('dragleave',function(){dropBox.classList.remove('dg');});
 dropBox.addEventListener('drop',function(e){
   e.preventDefault();dropBox.classList.remove('dg');
-  var f=e.dataTransfer.files[0];
-  if(!f){return;}
-  if(!_fileOpenable(f)){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
-  if(activeTabId&&pdfDoc){
-    docTabSaveCurrent();
-    var newId='tab_'+(++_tabIdSeq);
-    var newTab={id:newId,fileName:f.name.replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
-    docTabs.push(newTab);activeTabId=newId;
-    pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
-    renderDocTabs();
-  }
-  handleFileOpen(f);
+  // v2.7.0 — drag & drop MULTI-ARCHIVO (formatos mixtos)
+  var files=Array.prototype.slice.call(e.dataTransfer.files||[]);
+  if(!files.length)return;
+  var bad=files.filter(function(f){return !_fileOpenable(f);});
+  if(bad.length===files.length){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
+  openFilesList(files);
 });
 function onFileChosen(inp){
-  if(!inp.files[0])return;
-  var file=inp.files[0];inp.value='';
-  if(!_fileOpenable(file)){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
-  // Si tab activo ya tiene doc, guardar estado y crear tab nuevo
-  if(activeTabId&&pdfDoc){
-    docTabSaveCurrent();
-    var newId='tab_'+(++_tabIdSeq);
-    var newTab={id:newId,fileName:file.name.replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
-    docTabs.push(newTab);activeTabId=newId;
-    pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
-    renderDocTabs();
+  // v2.7.0 — selección MÚLTIPLE: se reciben todos los archivos elegidos
+  var files=Array.prototype.slice.call(inp.files||[]);
+  inp.value='';
+  if(!files.length)return;
+  openFilesList(files);
+}
+// ════ v2.7.0 — APERTURA MULTI-ARCHIVO (formatos mixtos en una carga) ════
+// El editor trabaja con estado global (pdfDoc, pageOrder, annotations…), por
+// lo que los archivos se procesan SECUENCIALMENTE: cada uno carga en su propia
+// pestaña. El primero reutiliza la pestaña activa si está vacía (comportamiento
+// previo de archivo único conservado). Fallos por archivo no cortan la tanda.
+async function openFilesList(files){
+  if(!files||!files.length)return;
+  var okList=[],failList=[];
+  var multi=files.length>1;
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    if(!_fileOpenable(f)){failList.push(f.name);continue;}
+    try{
+      if(multi)toast('Abriendo '+(i+1)+'/'+files.length+': '+f.name+'…');
+      // Si el tab activo ya tiene documento → guardar su estado y abrir tab nuevo
+      if(activeTabId&&pdfDoc){
+        docTabSaveCurrent();
+        var newId='tab_'+(++_tabIdSeq);
+        docTabs.push({id:newId,fileName:String(f.name||'').replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1});
+        activeTabId=newId;
+        pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
+        renderDocTabs();
+      }
+      if(await handleFileOpen(f))okList.push(f.name);else failList.push(f.name);
+    }catch(e){
+      failList.push(f.name);
+      console.error('openFilesList '+f.name+':',e);
+      try{hideProg();}catch(e2){}
+    }
   }
-  handleFileOpen(file);
+  if(multi){
+    if(failList.length)toast(okList.length+' de '+files.length+' archivo(s) abierto(s) · no se pudo: '+failList.join(', '),'err');
+    else toast(files.length+' archivos abiertos en '+files.length+' pestañas — usa las pestañas de arriba para alternar','ok');
+  }
 }
 
 async function loadPDF(file){
