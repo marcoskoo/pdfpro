@@ -690,7 +690,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.6.0 · Edición de texto celda-fiel — el formato original nunca se distorsiona</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.6.1 · Edición de texto celda-fiel · Sello: AIS/ARO – CORPAC S.A. y sede en azul</div>
   </div>
 </div>
 
@@ -1194,8 +1194,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             <div style="font-size:11px;color:#c00000;font-weight:800;text-transform:uppercase">RECIBIDO / RECEIVED</div>
             <div id="selloTimestamp" style="font-size:10px;color:#c00000;font-weight:700;font-family:JetBrains Mono,monospace;margin:2px 0"></div>
             <div id="selloTxPreview" style="font-size:9px;color:#c00000;font-weight:700;font-family:JetBrains Mono,monospace;margin:1px 0"></div>
-            <div style="font-size:9px;color:#333;font-weight:700">AIS/ARO – CORPAC S.A.</div>
-            <div id="selloSedeName" style="font-size:8px;color:#555;font-weight:600;margin-top:1px"></div>
+            <div style="font-size:9px;color:#1a4fa0;font-weight:700">AIS/ARO – CORPAC S.A.</div>
+            <div id="selloSedeName" style="font-size:8px;color:#1a4fa0;font-weight:600;margin-top:1px"></div>
           </div>
           <button class="drive-save-btn" style="margin-bottom:0" onclick="placeSelloRecepcion()">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -4350,7 +4350,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.6.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.6.1',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -6592,9 +6592,9 @@ function drawAnn(ctx,a,selected){
     ctx.fillStyle='#c00000';ctx.font='bold 11px Inter,sans-serif';ctx.fillText('RECIBIDO / RECEIVED',a.x+sw/2,ty);ty+=13;
     ctx.fillStyle='#c00000';ctx.font='bold 10.5px "JetBrains Mono",monospace';ctx.fillText(a.timestamp||'',a.x+sw/2,ty);ty+=12;
     if(a.txTime||a.txInitials){ctx.fillStyle='#c00000';ctx.font='bold 9.5px "JetBrains Mono",monospace';ctx.fillText(selloTxLine(a.txTime||'',(a.txInitials||'').toUpperCase()),a.x+sw/2,ty);ty+=11;}
-    ctx.fillStyle='#333333';ctx.font='bold 9px Inter,sans-serif';ctx.fillText('AIS/ARO \u2013 CORPAC S.A.',a.x+sw/2,ty);ty+=11;
+    ctx.fillStyle='#1a4fa0';ctx.font='bold 9px Inter,sans-serif';ctx.fillText('AIS/ARO \u2013 CORPAC S.A.',a.x+sw/2,ty);ty+=11;
     var sedeCode=currentUser?currentUser.sede||'SPHI':'SPHI';var db2=getDB();var sedeObj2=db2&&db2.sedes&&db2.sedes.find(function(s){return s.code===sedeCode;});
-    ctx.fillStyle='#555';ctx.font='8px Inter,sans-serif';ctx.fillText(sedeObj2?sedeObj2.code+' \u2013 '+sedeObj2.city:sedeCode,a.x+sw/2,ty);
+    ctx.fillStyle='#1a4fa0';ctx.font='8px Inter,sans-serif';ctx.fillText(sedeObj2?sedeObj2.code+' \u2013 '+sedeObj2.city:sedeCode,a.x+sw/2,ty);
     // Part 2: Personal stamp (below, no border, full image)
     var gap=6;var ph=120;var py=a.y+rh+gap;
     if(a.sigImg){var pi=a._personalImg;if(!pi||pi.src!==a.sigImg){pi=new Image();pi.src=a.sigImg;a._personalImg=pi;}if(pi.complete&&pi.naturalWidth){var pRat=pi.naturalWidth/pi.naturalHeight;var pdw=sw,pdh=Math.round(sw/pRat);if(pdh>ph){pdh=ph;pdw=Math.round(ph*pRat);}ctx.drawImage(pi,a.x+(sw-pdw)/2,py+(ph-pdh)/2,pdw,pdh);}}
@@ -7123,7 +7123,7 @@ function _paintSelloPdf(PDFLib,pdfPage,pw,ph,sX,sY,a,f,assets){
     var sw=a.w||220;
     var hasTx=!!(a.txTime||a.txInitials);
     var rh=hasTx?103:90;
-    var RED=PDFLib.rgb(.7529,0,0);
+    var RED=PDFLib.rgb(.7529,0,0);var BLUE=PDFLib.rgb(.1020,.3098,.6275);
     function cx(x){return x*sX;}
     function cy(y){return ph-y*sY;}
     function ctr(txt,font,szPx,baseY,col){
@@ -7159,10 +7159,10 @@ function _paintSelloPdf(PDFLib,pdfPage,pw,ph,sX,sY,a,f,assets){
     ctr(a.timestamp||'',f.cB,10.5,t2,RED);
     var t3=t2+12;
     if(hasTx){ctr(selloTxLine(a.txTime||'',(a.txInitials||'').toUpperCase()),f.cB,9.5,t3,RED);t3+=11;}
-    ctr('AIS/ARO – CORPAC S.A.',f.hb,9,t3+11,PDFLib.rgb(.2,.2,.2));
+    ctr('AIS/ARO – CORPAC S.A.',f.hb,9,t3+11,BLUE);
     var sedeCode=currentUser?(currentUser.sede||'SPHI'):'SPHI';
     var db2=getDB();var sedeObj2=db2&&db2.sedes&&db2.sedes.find(function(s){return s.code===sedeCode;});
-    ctr(sedeObj2?(sedeObj2.code+' – '+sedeObj2.city):sedeCode,f.hv,8,t3+11+11,PDFLib.rgb(.3333,.3333,.3333));
+    ctr(sedeObj2?(sedeObj2.code+' – '+sedeObj2.city):sedeCode,f.hv,8,t3+11+11,BLUE);
     var gap=6,phA=120,py=a.y+rh+gap;
     var emb=(assets&&assets.sigs&&a.sigImg)?assets.sigs[a.sigImg]:null;
     if(emb){
