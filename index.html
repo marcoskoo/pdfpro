@@ -253,6 +253,40 @@ button{font-family:"Inter",sans-serif;cursor:pointer}
 .tlbl{font-size:11px;color:var(--t3);margin-left:auto;font-style:italic}
 
 .evscroll{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:16px;gap:14px}
+/* ═══ v2.9.0 — MODOS NATIVOS WORD/EXCEL (edición en formato original) ═══ */
+body.nativemode .eribbon:not(.nribbon){display:none}
+body.nativemode #nativeRibbon{display:flex !important}
+#nativeRibbon .rb{width:auto;min-width:46px;padding:0 9px}
+body.nativemode .elside{display:none}
+body.nativemode .evtb{display:none}
+#nativeBox{width:100%;max-width:none;flex:1 1 auto;align-self:stretch;display:flex;flex-direction:column;min-height:0}
+.nv-word{display:flex;flex-direction:column;align-items:center;width:100%;min-height:100%;padding:2px 0}
+.nv-sheet{background:#fff;box-shadow:0 10px 42px rgba(0,0,0,.55);border-radius:2px;margin:0 auto;transform-origin:top center}
+.nv-sheet .docx-wrapper{background:transparent;padding:30px 0}
+.nv-sheet .docx-wrapper>section.docx{box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.nv-word article[contenteditable]:focus{outline:none}
+.xg-fbar{display:flex;gap:6px;padding:6px 8px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin:2px auto 6px;width:min(760px,97%);align-items:center;flex:none}
+.xg-ref{font-family:JetBrains Mono,monospace;font-size:11px;color:var(--acc);min-width:54px;text-align:center;background:rgba(59,130,246,.08);border:1px solid var(--bdr);border-radius:5px;padding:5px 6px}
+.xg-val{flex:1;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--t1);font-size:12px;padding:5px 8px;outline:none;min-width:0}
+.xg-val:focus{border-color:var(--acc)}
+.xg-scroll{flex:1;overflow:auto;background:#1a1b1e;border:1px solid var(--bdr);border-radius:8px;margin:0 4px 4px;outline:none}
+.xg-host{position:relative;display:inline-block;min-width:100%}
+.xg-table{border-collapse:collapse;table-layout:fixed;background:#fff}
+.xg-table th{position:sticky;top:0;z-index:3;background:#2a3b52;color:#cdd9ea;font-size:10px;font-weight:600;padding:3px 2px;text-align:center;border-right:1px solid #3d5270;border-bottom:1px solid #3d5270;overflow:hidden;user-select:none}
+.xg-table th:first-child{position:sticky;left:0;z-index:4}
+.xg-rowh{position:sticky;left:0;z-index:2;background:#2a3b52;color:#cdd9ea;font-size:10px;text-align:center;padding:3px 2px;border-right:1px solid #3d5270;border-bottom:1px solid #3d5270;user-select:none}
+.xg-td{padding:0 3px;overflow:visible;white-space:pre;vertical-align:middle;cursor:cell;background:#fff}
+.xg-td .xg-tx{display:block;min-height:1.15em;line-height:1.22}
+.xg-td.xg-sel{outline:2px solid #2563eb;outline-offset:-2px;position:relative;z-index:1}
+.xg-edit{position:absolute;z-index:6;border:2px solid #2563eb;background:#fff;color:#000;padding:0 3px;outline:none;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.xg-sheets{display:flex;gap:4px;padding:4px 8px;flex-wrap:wrap;justify-content:center;flex:none}
+.xg-sheet{background:var(--s2);border:1px solid var(--bdr);color:var(--t2);border-radius:6px;font-size:11px;padding:4px 10px;cursor:pointer}
+.xg-sheet.on{background:rgba(59,130,246,.15);border-color:var(--acc);color:var(--t1);font-weight:600}
+.xg-empty{color:var(--t3);font-size:12px;padding:30px;text-align:center}
+.dt-ico{font-size:9px;font-weight:800;border-radius:3px;padding:1px 3px;margin-right:3px;flex:none}
+.dt-ico.dt-word{background:#2b579a;color:#fff}
+.dt-ico.dt-xcel{background:#217346;color:#fff}
+.dt-dirty{color:#f59e0b;font-weight:700;margin-left:2px}
 .evscroll::-webkit-scrollbar{width:5px}
 .evscroll::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
 
@@ -693,7 +727,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.8.1 · Word y Excel idénticos al original: fuentes, tablas, flechas y fechas reales</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.0 · Word y Excel editables en su formato original — guardar y exportar sin distorsión</div>
   </div>
 </div>
 
@@ -1060,6 +1094,23 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <button class="rb" onclick="exportExcel()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span class="rb-lbl">Excel</span></button>
     </div>
   </div>
+  <!-- v2.9.0 — Ribbon de modos nativos (Word/Excel): edición en formato original -->
+  <div class="eribbon nribbon" id="nativeRibbon" style="display:none">
+    <div class="erg">
+      <button class="rb" onclick="nativeSaveOriginal()" title="Guardar en el formato original (.docx / .xlsx) — el formato NO se distorsiona"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg><span class="rb-lbl" id="nrbSaveLbl">Guardar</span></button>
+      <button class="rb" onclick="nativeExportPdf()" title="Descarga un PDF fiel al original, con tus ediciones"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/></svg><span class="rb-lbl">Exportar PDF</span></button>
+      <button class="rb" onclick="nativeOpenAsPdf()" title="Abre el documento (con tus ediciones) como pestaña PDF para aplicar sellos y herramientas"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="rb-lbl">Abrir como PDF</span></button>
+      <button class="rb" onclick="nativeUndo()" title="Deshacer (Ctrl+Z)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7v6h6M3.51 13a9 9 0 102.13-9.36L3 7"/></svg><span class="rb-lbl">Deshacer</span></button>
+    </div>
+    <div class="rv"></div>
+    <div class="erg" id="nrbZoomGrp" style="display:none">
+      <button class="rb" onclick="nvWordZoomBtn(-0.1)" style="font-size:15px;padding:0 10px">−</button>
+      <span class="zval" id="nativeZoomVal" style="cursor:default">100%</span>
+      <button class="rb" onclick="nvWordZoomBtn(0.1)" style="font-size:15px;padding:0 10px">+</button>
+    </div>
+    <div class="rv"></div>
+    <span style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0" id="nativeHint"></span>
+  </div>
   <div class="emain">
     <!-- Left sidebar -->
     <div class="elside">
@@ -1107,6 +1158,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
           </div>
         </div>
         <div id="pagesBox" class="hidden"></div>
+        <!-- v2.9.0 — visor de modos nativos (Word/Excel) -->
+        <div id="nativeBox" class="hidden"></div>
       </div>
     </div>
     <!-- Right panel -->
@@ -2394,7 +2447,22 @@ function docTabSwitch(id){
   pageCount=pageOrder.length;
   curProjectId=null;updateProjectId();
   renderDocTabs();
-  if(pdfDoc){
+  // v2.9.0 — pestañas nativas (Word/Excel): visor y ribbon propios
+  var nvb=document.getElementById('nativeBox');
+  var isNat=!!(tab.kind==='word'||tab.kind==='excel');
+  document.body.classList.toggle('nativemode',isNat);
+  if(isNat){
+    document.getElementById('dropZone').classList.add('hidden');
+    document.getElementById('pagesBox').classList.add('hidden');
+    if(nvb){nvb.classList.remove('hidden');while(nvb.firstChild)nvb.removeChild(nvb.firstChild);if(tab.nvEl)nvb.appendChild(tab.nvEl);}
+    document.getElementById('sbDot').classList.add('ok');
+    document.getElementById('sbStatus').textContent=tab.fileName+(tab._dirty?' ·sin guardar':'');
+    nativeRefreshRibbon(tab);
+    if(tab.kind==='excel'&&tab._xlView&&tab._xlView.wrap){try{tab._xlView.wrap.focus({preventScroll:true});}catch(e2){}}
+  } else if(nvb){
+    nvb.classList.add('hidden');
+  }
+  if(!isNat&&pdfDoc){
     document.getElementById('dropZone').classList.add('hidden');
     document.getElementById('pagesBox').classList.remove('hidden');
     document.getElementById('totPages').textContent='/ '+pageCount;
@@ -2404,7 +2472,7 @@ function docTabSwitch(id){
     document.getElementById('sbZoom').textContent=Math.round(scale*100)+'%';
     renderAllPages().then(function(){var pb=document.getElementById('pagesBox');if(pb&&tab._scrollTop)pb.scrollTop=tab._scrollTop;renderThumbs().catch(function(e){});});
     updateDocInfo();
-  } else {
+  } else if(!isNat){
     document.getElementById('dropZone').classList.remove('hidden');
     document.getElementById('pagesBox').classList.add('hidden');
     document.getElementById('sbDot').classList.remove('ok');
@@ -2414,6 +2482,7 @@ function docTabSwitch(id){
 function docTabGet(id){return docTabs.find(function(t){return t.id===id;});}
 function docTabSaveCurrent(){
   var tab=docTabGet(activeTabId);if(!tab)return;
+  if(tab.kind)return; // v2.9.0 — pestañas nativas: estado propio (vista viva)
   tab.pdfDoc=pdfDoc;tab.fileName=fileName;tab.fileSize=fileSize;
   tab.pageOrder=pageOrder;tab.annotations=annotations;tab.pageTexts=pageTexts;
   tab.pageItems=pageItems;tab.textBoxes=textBoxes;
@@ -2425,10 +2494,13 @@ function docTabClose(id,e){
   if(docTabs.length<=1){// último tab — resetear
     docTabs=[];activeTabId=null;pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];rawPdfBytes=null;
     document.getElementById('dropZone').classList.remove('hidden');document.getElementById('pagesBox').classList.add('hidden');
+    try{document.body.classList.remove('nativemode');var nbx=document.getElementById('nativeBox');if(nbx){nbx.classList.add('hidden');while(nbx.firstChild)nbx.removeChild(nbx.firstChild);}}catch(e){}
     document.getElementById('sbDot').classList.remove('ok');document.getElementById('sbStatus').textContent='Sin documento';
     renderDocTabs();return;
   }
   var idx=docTabs.findIndex(function(t){return t.id===id;});
+  var closingTab=docTabs[idx];
+  if(closingTab&&closingTab.nvEl){try{closingTab.nvEl.remove();}catch(e){}closingTab.nvEl=null;}
   docTabs.splice(idx,1);
   if(activeTabId===id){var next=docTabs[Math.min(idx,docTabs.length-1)];activeTabId=null;docTabSwitch(next.id);}
   else renderDocTabs();
@@ -2441,8 +2513,9 @@ function renderDocTabs(){
     var div=document.createElement('div');
     div.className='doc-tab'+(tab.id===activeTabId?' active':'');
     div.onclick=function(){docTabSaveCurrent();docTabSwitch(tab.id);};
-    div.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+
-      '<span class="doc-tab-name" title="'+escH(tab.fileName)+'">'+escH(tab.fileName)+'</span>'+
+    var ico=tab.kind==='word'?'<span class="dt-ico dt-word" title="Word (edición nativa)">W</span>':(tab.kind==='excel'?'<span class="dt-ico dt-xcel" title="Excel (edición nativa)">X</span>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>');
+    div.innerHTML=ico+
+      '<span class="doc-tab-name" title="'+escH(tab.fileName)+'">'+escH(tab.fileName)+(tab._dirty?'<span class="dt-dirty" title="Cambios sin guardar">•</span>':'')+'</span>'+
       '<span class="doc-tab-close" onclick="docTabClose(\''+tab.id+'\',event)" title="Cerrar">✕</span>';
     bar.appendChild(div);
   });
@@ -4353,7 +4426,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.8.1',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.0',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -6028,6 +6101,62 @@ function _biffParseDrawings(wbU8){
   return out;
 }
 
+// ════ v2.9.0 — MERGES BIFF8 (.xls): registro MERGECELLS (0x00E5) ════
+// SheetJS sólo recupera parte de los rangos combinados del BIFF (en el FPL
+// 25 de 85), lo que descentra títulos y rompe cajas. Se extraen TODOS los
+// merges reales por hoja y se inyectan en ws["!merges"] (formato SheetJS).
+function _biffMerges(wbU8){
+  var bySheet = {};
+  try{
+    var dv = new DataView(wbU8.buffer, wbU8.byteOffset, wbU8.byteLength);
+    var pos = 0, sheetN = 0, inSheet = false;
+    while(pos + 4 <= wbU8.length){
+      var id = dv.getUint16(pos, true), sz = dv.getUint16(pos + 2, true);
+      if(id === 0x0809){
+        inSheet = (dv.getUint16(pos + 6, true) === 0x0010);
+        if(inSheet){ sheetN++; bySheet[sheetN] = []; }
+      }else if(inSheet && id === 0x00E5 && sz >= 2){
+        var n = dv.getUint16(pos + 4, true);
+        for(var q = 0; q < n && 6 + q * 8 + 8 <= 4 + sz; q++){
+          var o = pos + 6 + q * 8;
+          bySheet[sheetN].push({
+            s: {r: dv.getUint16(o, true),     c: dv.getUint16(o + 4, true)},
+            e: {r: dv.getUint16(o + 2, true), c: dv.getUint16(o + 6, true)}
+          });
+        }
+      }
+      pos += 4 + sz;
+    }
+  }catch(e){}
+  return bySheet;
+}
+
+// ════ v2.9.0 — ANCHOS DE COLUMNA BIFF8 (.xls): COLINFO (0x007D) ════
+// SheetJS subestima los anchos del BIFF (FPL: 2.57 en vez de 3.28 chars),
+// lo que estrecha el formulario. Se leen los rangos COLINFO reales y se
+// inyectan en ws["!cols"] con wch exacto y wpx coherente.
+function _biffCols(wbU8){
+  var bySheet = {};
+  try{
+    var dv = new DataView(wbU8.buffer, wbU8.byteOffset, wbU8.byteLength);
+    var pos = 0, sheetN = 0, inSheet = false;
+    while(pos + 4 <= wbU8.length){
+      var id = dv.getUint16(pos, true), sz = dv.getUint16(pos + 2, true);
+      if(id === 0x0809){
+        inSheet = (dv.getUint16(pos + 6, true) === 0x0010);
+        if(inSheet){ sheetN++; bySheet[sheetN] = []; }
+      }else if(inSheet && id === 0x007D && sz >= 8){
+        var c0 = dv.getUint16(pos + 4, true), c1 = dv.getUint16(pos + 6, true);
+        var w256 = dv.getUint16(pos + 8, true);
+        var flags = dv.getUint16(pos + 12, true);
+        bySheet[sheetN].push({c0: c0, c1: c1, wch: w256 / 256, hidden: !!(flags & 0x0001)});
+      }
+      pos += 4 + sz;
+    }
+  }catch(e){}
+  return bySheet;
+}
+
 // ── parser principal: estilos + XF por celda + setup de impresión ──
 function _biffParseStyles(wbU8){
   var out = {
@@ -6530,169 +6659,219 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
 }
 
 
-async function excelToPdfBytes(ab,name,isCsv){
-  var PDFLib=window.PDFLib;
-  if(!PDFLib)throw new Error('pdf-lib no disponible');
-  if(typeof XLSX==='undefined')throw new Error('SheetJS no disponible (revisa tu conexión)');
-  var wb=null;
+// ═══ v2.9.0 — MODELO EXCEL COMPARTIDO (lectura única para edición/PDF/guardado) ═══
+async function _xlBuildModel(ab, name, isCsv){
+  var wb = null;
   try{
     if(isCsv){
-      var txtCsv=new TextDecoder('utf-8').decode(new Uint8Array(ab)).replace(/^\uFEFF/,'');
-      wb=XLSX.read(txtCsv,{type:'string',cellDates:true,cellStyles:true});
+      var txtCsv = new TextDecoder('utf-8').decode(new Uint8Array(ab)).replace(/^\uFEFF/, '');
+      wb = XLSX.read(txtCsv, {type: 'string', cellDates: true, cellStyles: true});
     }else{
-      wb=XLSX.read(new Uint8Array(ab),{type:'array',cellDates:true,cellStyles:true});
+      wb = XLSX.read(new Uint8Array(ab), {type: 'array', cellDates: true, cellStyles: true});
     }
-  }catch(e){throw new Error('No se pudo leer el Excel/CSV: '+(e&&e.message?e.message:e));}
+  }catch(e){ throw new Error('No se pudo leer el Excel/CSV: ' + (e && e.message ? e.message : e)); }
   // v2.8.0 — estilos reales: .xls → parser BIFF8 propio (SheetJS no expone
   // fuentes/bordes de BIFF); .xlsx → cell.s de SheetJS
-  var biff=null, biffStream=null;
+  var biff = null, biffStream = null;
   if(!isCsv){
     try{
-      var u8b=new Uint8Array(ab);
+      var u8b = new Uint8Array(ab);
       // .xls = contenedor CFB (D0 CF 11 E0); el nombre llega sin extensión
-      var isXls=/\.xls$/i.test(String(name||''))||(u8b[0]===0xD0&&u8b[1]===0xCF&&u8b[2]===0x11&&u8b[3]===0xE0);
+      var isXls = /\.xls$/i.test(String(name || '')) || (u8b[0] === 0xD0 && u8b[1] === 0xCF && u8b[2] === 0x11 && u8b[3] === 0xE0);
       if(isXls){
-        biffStream=_cfbReadStream(u8b,'Workbook')||_cfbReadStream(u8b,'Book');
-        if(biffStream)biff=_biffParseStyles(biffStream);
+        biffStream = _cfbReadStream(u8b, 'Workbook') || _cfbReadStream(u8b, 'Book');
+        if(biffStream) biff = _biffParseStyles(biffStream);
       }
-    }catch(e){biff=null;}
+    }catch(e){ biff = null; }
   }
   // v2.8.1 — formas de la capa de dibujo (flechas/guiones del FPL)
-  var biffDraws=[];
-  if(biffStream){try{biffDraws=_biffParseDrawings(biffStream);}catch(e){biffDraws=[];}}
-  var doc=await PDFLib.PDFDocument.create();
-  try{if(window.fontkit&&doc.registerFontkit)doc.registerFontkit(window.fontkit);}catch(e){}
-  var fH=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-  var fHB=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-  var PW=841.89,PH=595.28,MG=34,fs=8.5,LH=10.5,ROWMIN=17;
-  var INK=PDFLib.rgb(.13,.14,.17),HEAD=PDFLib.rgb(.10,.22,.44),GRID=PDFLib.rgb(.72,.77,.84),BAND=PDFLib.rgb(.955,.965,.985),WHITE=PDFLib.rgb(1,1,1);
-  var availW=PW-2*MG,pgTotal=0,any=false;
-  var base=pdfSafeText(name||'');
-  var measure=function(t,hdr){return _pdfMeasure(hdr?fHB:fH,pdfSafeText(t),fs);};
+  var biffDraws = [];
+  if(biffStream){ try{ biffDraws = _biffParseDrawings(biffStream); }catch(e){ biffDraws = []; } }
+  // v2.9.0 — merges COMPLETOS del BIFF (SheetJS recupera sólo una parte):
+  // corrige títulos centrados y cajas del formulario en grid/PDF/guardado
+  if(biffStream){
+    try{
+      var bm = _biffMerges(biffStream);
+      var bcols = _biffCols(biffStream);
+      wb.SheetNames.forEach(function(sn0){
+        var ws0 = wb.Sheets[sn0]; if(!ws0) return;
+        var si0 = wb.SheetNames.indexOf(sn0) + 1;
+        var mm0 = bm[si0] || [];
+        if(mm0.length > (ws0['!merges'] || []).length){
+          ws0['!merges'] = mm0;
+          var rg0 = _formDecodeRef(ws0['!ref'] || 'A1');
+          if(rg0){
+            var r1m = rg0.r1, c1m = rg0.c1, need = false;
+            mm0.forEach(function(m){
+              if(m.e.r + 1 > r1m){ r1m = m.e.r + 1; need = true; }
+              if(m.e.c + 1 > c1m){ c1m = m.e.c + 1; need = true; }
+            });
+            if(need) ws0['!ref'] = XLSX.utils.encode_range({r: rg0.r0 - 1, c: rg0.c0 - 1}, {r: r1m - 1, c: c1m - 1});
+          }
+        }
+        // anchos COLINFO reales (SheetJS subestima wch del BIFF)
+        var ci0 = bcols[si0] || [];
+        if(ci0.length){
+          var cm0 = ws0['!cols'] = ws0['!cols'] || [];
+          ci0.forEach(function(ci){
+            for(var cc0 = ci.c0; cc0 <= ci.c1; cc0++){
+              cm0[cc0] = {wch: ci.wch, wpx: Math.round(ci.wch * 7 + 5), hidden: ci.hidden};
+            }
+          });
+        }
+      });
+    }catch(e){}
+  }
+  var sheets = [];
+  wb.SheetNames.forEach(function(sn){
+    var ws = wb.Sheets[sn]; if(!ws) return;
+    var sIdx = wb.SheetNames.indexOf(sn) + 1;
+    var styles = biff ? _biffStyleCells(biff, sIdx) : (isCsv ? {} : _xlsxStyleCells(ws));
+    var rich = false;
+    for(var sk in styles){ if(styles[sk].fontReal || styles[sk].bl || styles[sk].bt){ rich = true; break; } }
+    var setup = biff ? (biff.setups && biff.setups[sIdx]) : null;
+    if(setup) setup.landscape = false; // orientación por aspecto (como imprime LibreOffice)
+    var marg = biff ? (biff.marginsBy && biff.marginsBy[sIdx]) : null;
+    sheets.push({name: sn, ws: ws, sIdx: sIdx, styles: styles, rich: rich, setup: setup, marg: marg});
+  });
+  return {
+    ab: (ab && ab.slice) ? ab.slice(0) : ab, name: name, isCsv: !!isCsv, wb: wb,
+    biff: biff, biffStream: biffStream, biffDraws: biffDraws, sheets: sheets,
+    isXlsSrc: !!biff, edits: {}, orig: {}, undo: []
+  };
+}
+async function excelToPdfBytes(ab, name, isCsv, model){
+  var PDFLib = window.PDFLib;
+  if(!PDFLib) throw new Error('pdf-lib no disponible');
+  if(typeof XLSX === 'undefined') throw new Error('SheetJS no disponible (revisa tu conexión)');
+  // v2.9.0 — modelo compartido: la pestaña de edición pasa su modelo (con
+  // ediciones); el flujo clásico construye el suyo aquí
+  if(!model) model = await _xlBuildModel(ab, name, isCsv);
+  var wb = model.wb, biff = model.biff, isCsvM = model.isCsv, biffDraws = model.biffDraws;
+  var doc = await PDFLib.PDFDocument.create();
+  try{ if(window.fontkit && doc.registerFontkit) doc.registerFontkit(window.fontkit); }catch(e){}
+  var fH = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  var fHB = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+  var PW = 841.89, PH = 595.28, MG = 34, fs = 8.5, LH = 10.5, ROWMIN = 17;
+  var INK = PDFLib.rgb(.13, .14, .17), HEAD = PDFLib.rgb(.10, .22, .44), GRID = PDFLib.rgb(.72, .77, .84), BAND = PDFLib.rgb(.955, .965, .985), WHITE = PDFLib.rgb(1, 1, 1);
+  var availW = PW - 2 * MG, pgTotal = 0, any = false;
+  var base = pdfSafeText(name || '');
+  var measure = function(t, hdr){ return _pdfMeasure(hdr ? fHB : fH, pdfSafeText(t), fs); };
   // v2.8.0 — familias usadas según los estilos reales → fuentes embebidas
-  var embedMap={};
+  var embedMap = {};
   try{
-    var need={};
-    function needFam(nm,b2,i2){
-      var fam=_wzResolveFam(nm||'Arial');
-      need[fam+'|'+(b2?1:0)+'|'+(i2?1:0)]=1;
+    var need = {};
+    function needFam(nm, b2, i2){
+      var fam = _wzResolveFam(nm || 'Arial');
+      need[fam + '|' + (b2 ? 1 : 0) + '|' + (i2 ? 1 : 0)] = 1;
     }
     if(biff){
-      biff.xfs.forEach(function(xf){var f=biff.fonts[xf.fontIdx];if(f)needFam(f.name,f.bold,f.italic);});
-    }else if(!isCsv){
-      wb.SheetNames.forEach(function(sn2){
-        var ws2=wb.Sheets[sn2];if(!ws2)return;
-        var sc2=_xlsxStyleCells(ws2);
-        for(var kk2 in sc2)if(sc2[kk2].font)needFam(sc2[kk2].font.name,sc2[kk2].font.b,sc2[kk2].font.i);
+      biff.xfs.forEach(function(xf){ var f = biff.fonts[xf.fontIdx]; if(f) needFam(f.name, f.bold, f.italic); });
+    }else if(!isCsvM){
+      model.sheets.forEach(function(sh2){
+        for(var kk2 in sh2.styles) if(sh2.styles[kk2].font) needFam(sh2.styles[kk2].font.name, sh2.styles[kk2].font.b, sh2.styles[kk2].font.i);
       });
     }
     for(var nk in need){
-      var np=nk.split('|');
+      var np = nk.split('|');
       try{
-        var ttf=await _wzGetTtf(np[0],np[1]==='1',np[2]==='1');
-        if(ttf)embedMap[nk]=await doc.embedFont(ttf,{subset:false});
+        var ttf = await _wzGetTtf(np[0], np[1] === '1', np[2] === '1');
+        if(ttf) embedMap[nk] = await doc.embedFont(ttf, {subset: false});
       }catch(e){}
     }
   }catch(e){}
-  wb.SheetNames.forEach(function(sn){
-    var ws=wb.Sheets[sn];if(!ws)return;
+  model.sheets.forEach(function(sh){
+    var ws = sh.ws; if(!ws) return;
     // v2.8.0 — WYSIWYG primero: estilos reales por celda
     try{
-      var sIdx=wb.SheetNames.indexOf(sn)+1;
-      var styles=biff?_biffStyleCells(biff,sIdx):(isCsv?{}:_xlsxStyleCells(ws));
-      var rich=false;
-      for(var sk in styles){if(styles[sk].fontReal||styles[sk].bl||styles[sk].bt){rich=true;break;}}
-      if(rich){
-        var setup=biff?(biff.setups&&biff.setups[sIdx]):null;
-        if(setup)setup.landscape=false; // orientación por aspecto (como imprime LibreOffice)
-        var marg=biff?(biff.marginsBy&&biff.marginsBy[sIdx]):null;
-        var ectx={lib:PDFLib,fH:fH,fHB:fHB,stdFonts:[fH,fHB],sheetNo:sIdx,drawings:biffDraws,
-          ttfFor:function(nm,b3,i3){
-            var fam=_wzResolveFam(nm||'Arial');
-            return embedMap[fam+'|'+(b3?1:0)+'|'+(i3?1:0)]||null;
+      if(sh.rich){
+        var ectx = {lib: PDFLib, fH: fH, fHB: fHB, stdFonts: [fH, fHB], sheetNo: sh.sIdx, drawings: biffDraws,
+          ttfFor: function(nm, b3, i3){
+            var fam = _wzResolveFam(nm || 'Arial');
+            return embedMap[fam + '|' + (b3 ? 1 : 0) + '|' + (i3 ? 1 : 0)] || null;
           },
-          dateText:function(cel,r1,c1){
+          dateText: function(cel, r1, c1){
             // v2.8.1 — fechas con el formato real del libro (ifmt BIFF o z de
             // SheetJS); builtin 14/22 = fecha corta es-PE (d/m/yyyy)
             try{
-              var fmt=null;
+              var fmt = null;
               if(biff){
-                var xi=biff.cells[sIdx+','+(r1-1)+','+(c1-1)];
-                var xf=xi!==undefined?biff.xfs[xi]:null;
-                var ifmt=xf?xf.ifmt:null;
-                if(ifmt!==null&&ifmt!==undefined)fmt=ifmt>=164?(biff.fmts[ifmt]||null):_xlsBuiltinFmt(ifmt);
+                var xi = biff.cells[sh.sIdx + ',' + (r1 - 1) + ',' + (c1 - 1)];
+                var xf = xi !== undefined ? biff.xfs[xi] : null;
+                var ifmt = xf ? xf.ifmt : null;
+                if(ifmt !== null && ifmt !== undefined) fmt = ifmt >= 164 ? (biff.fmts[ifmt] || null) : _xlsBuiltinFmt(ifmt);
               }
-              if(!fmt&&cel.z){
-                fmt=cel.z;
-                if(fmt==='m/d/yy')fmt='d/m/yyyy';
-                else if(fmt==='m/d/yy h:mm')fmt='d/m/yyyy h:mm';
+              if(!fmt && cel.z){
+                fmt = cel.z;
+                if(fmt === 'm/d/yy') fmt = 'd/m/yyyy';
+                else if(fmt === 'm/d/yy h:mm') fmt = 'd/m/yyyy h:mm';
               }
-              if(!fmt)fmt='d/m/yyyy';
-              return _xlsFmtDate(cel.v,fmt);
-            }catch(e){return null;}
+              if(!fmt) fmt = 'd/m/yyyy';
+              return _xlsFmtDate(cel.v, fmt);
+            }catch(e){ return null; }
           }};
-        var npg=_excelWysiwygSheet(doc,ws,styles,ectx,setup,marg);
-        if(npg>0){any=true;pgTotal+=npg;return;}
+        var npg = _excelWysiwygSheet(doc, ws, sh.styles, ectx, sh.setup, sh.marg);
+        if(npg > 0){ any = true; pgTotal += npg; return; }
       }
-    }catch(e){try{console.warn('wysiwyg-xls-route:',e);}catch(e2){}}
-    if(!isCsv&&_xlsIsFormSheet(ws)){
-      var npg=_excelFormSheet(doc,ws,{lib:PDFLib,fH:fH,fHB:fHB});
-      if(npg>0){any=true;pgTotal+=npg;return;}
+    }catch(e){ try{ console.warn('wysiwyg-xls-route:', e); }catch(e2){} }
+    if(!isCsvM && _xlsIsFormSheet(ws)){
+      var npg2 = _excelFormSheet(doc, ws, {lib: PDFLib, fH: fH, fHB: fHB});
+      if(npg2 > 0){ any = true; pgTotal += npg2; return; }
     }
-    var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:false});
-    var trimmed=_xlsTrimAoa(aoa);if(!trimmed)return;
-    var M=trimmed.aoa,cols=trimmed.cols,r,c;
-    var colW=_xlsColWidths(M,cols,measure,availW);
-    var title=pdfSafeText(sn||'Hoja');
-    var rows=[];
-    for(r=0;r<M.length;r++){
-      var cells=[],maxL=1;
-      for(c=0;c<cols;c++){
-        var lines=wrapPdfText(pdfSafeText(M[r][c]),r===0?fHB:fH,fs,colW[c]-8).slice(0,4);
-        if(!lines.length)lines=[''];
-        cells.push(lines);if(lines.length>maxL)maxL=lines.length;
+    var aoa = XLSX.utils.sheet_to_json(ws, {header: 1, raw: false, defval: '', blankrows: false});
+    var trimmed = _xlsTrimAoa(aoa); if(!trimmed) return;
+    var M = trimmed.aoa, cols = trimmed.cols, r, c;
+    var colW = _xlsColWidths(M, cols, measure, availW);
+    var title = pdfSafeText(sh.name || 'Hoja');
+    var rows = [];
+    for(r = 0; r < M.length; r++){
+      var cells = [], maxL = 1;
+      for(c = 0; c < cols; c++){
+        var lines = wrapPdfText(pdfSafeText(M[r][c]), r === 0 ? fHB : fH, fs, colW[c] - 8).slice(0, 4);
+        if(!lines.length) lines = [''];
+        cells.push(lines); if(lines.length > maxL) maxL = lines.length;
       }
-      rows.push({h:Math.max(ROWMIN,maxL*LH+6.5),cells:cells,hdr:r===0});
+      rows.push({h: Math.max(ROWMIN, maxL * LH + 6.5), cells: cells, hdr: r === 0});
     }
-    if(!rows.length)return;
-    any=true;
-    var page=null,y=0,sheetNo=wb.SheetNames.indexOf(sn)+1;
+    if(!rows.length) return;
+    any = true;
+    var page = null, y = 0, sheetNo = sh.sIdx;
     function newPage(cont){
-      page=doc.addPage([PW,PH]);pgTotal++;
-      try{page.drawText(cont?title+' (cont.)':title,{x:MG,y:PH-MG-11,size:12,font:fHB,color:HEAD});}catch(e){}
-      try{page.drawText(base+(cont?'':' · importado desde Excel'),{x:MG,y:PH-MG-3,size:6.5,font:fH,color:PDFLib.rgb(.45,.48,.55)});}catch(e){}
-      try{page.drawText('Hoja '+sheetNo+'/'+wb.SheetNames.length+' · pág. '+pgTotal,{x:PW-MG-130,y:14,size:6.5,font:fH,color:PDFLib.rgb(.45,.48,.55)});}catch(e){}
-      y=PH-MG-22;
-      var hr=rows[0],xh=MG;
-      for(c=0;c<cols;c++){
-        page.drawRectangle({x:xh,y:y-hr.h,width:colW[c],height:hr.h,borderColor:GRID,borderWidth:.5,color:PDFLib.rgb(.90,.94,.99)});
-        for(var li=0;li<hr.cells[c].length;li++){
-          if(!hr.cells[c][li])continue;
-          try{page.drawText(hr.cells[c][li],{x:xh+4,y:y-11-li*LH,size:fs,font:fHB,color:HEAD});}catch(e){}
+      page = doc.addPage([PW, PH]); pgTotal++;
+      try{ page.drawText(cont ? title + ' (cont.)' : title, {x: MG, y: PH - MG - 11, size: 12, font: fHB, color: HEAD}); }catch(e){}
+      try{ page.drawText(base + (cont ? '' : ' · importado desde Excel'), {x: MG, y: PH - MG - 3, size: 6.5, font: fH, color: PDFLib.rgb(.45, .48, .55)}); }catch(e){}
+      try{ page.drawText('Hoja ' + sheetNo + '/' + wb.SheetNames.length + ' · pág. ' + pgTotal, {x: PW - MG - 130, y: 14, size: 6.5, font: fH, color: PDFLib.rgb(.45, .48, .55)}); }catch(e){}
+      y = PH - MG - 22;
+      var hr = rows[0], xh = MG;
+      for(c = 0; c < cols; c++){
+        page.drawRectangle({x: xh, y: y - hr.h, width: colW[c], height: hr.h, borderColor: GRID, borderWidth: .5, color: PDFLib.rgb(.90, .94, .99)});
+        for(var li = 0; li < hr.cells[c].length; li++){
+          if(!hr.cells[c][li]) continue;
+          try{ page.drawText(hr.cells[c][li], {x: xh + 4, y: y - 11 - li * LH, size: fs, font: fHB, color: HEAD}); }catch(e){}
         }
-        xh+=colW[c];
+        xh += colW[c];
       }
-      y-=hr.h;
+      y -= hr.h;
     }
     newPage(false);
-    for(r=1;r<rows.length;r++){
-      var row=rows[r];
-      if(y-row.h<MG+16)newPage(true);
-      var x=MG;
-      for(c=0;c<cols;c++){
-        page.drawRectangle({x:x,y:y-row.h,width:colW[c],height:row.h,borderColor:GRID,borderWidth:.5,color:r%2===0?BAND:WHITE});
-        var lines2=row.cells[c];
-        for(var l2=0;l2<lines2.length;l2++){
-          if(!lines2[l2])continue;
-          try{page.drawText(lines2[l2],{x:x+4,y:y-11-l2*LH,size:fs,font:fH,color:INK});}catch(e){}
+    for(r = 1; r < rows.length; r++){
+      var row = rows[r];
+      if(y - row.h < MG + 16) newPage(true);
+      var x = MG;
+      for(c = 0; c < cols; c++){
+        page.drawRectangle({x: x, y: y - row.h, width: colW[c], height: row.h, borderColor: GRID, borderWidth: .5, color: r % 2 === 0 ? BAND : WHITE});
+        var lines2 = row.cells[c];
+        for(var l2 = 0; l2 < lines2.length; l2++){
+          if(!lines2[l2]) continue;
+          try{ page.drawText(lines2[l2], {x: x + 4, y: y - 11 - l2 * LH, size: fs, font: fH, color: INK}); }catch(e){}
         }
-        x+=colW[c];
+        x += colW[c];
       }
-      y-=row.h;
+      y -= row.h;
     }
   });
-  if(!any)throw new Error('El archivo no contiene datos legibles');
-  try{doc.setProducer('PDF Editor Pro · importador Excel');doc.setTitle(base||'Importado');}catch(e){}
+  if(!any) throw new Error('El archivo no contiene datos legibles');
+  try{ doc.setProducer('PDF Editor Pro · importador Excel'); doc.setTitle(base || 'Importado'); }catch(e){}
   return await doc.save();
 }
 
@@ -7249,49 +7428,59 @@ function _wzNatRatio(fam, sizePx){
   _wzNatR[key] = ratio;
   return ratio;
 }
-async function docxWysiwygToPdf(ab, name){
+// v2.9.0 — normalización de familias + carga de fuentes reales del contenedor
+// (extraída del motor PDF para reutilizarla en la vista de edición Word)
+async function _wzPrepareWrap(wrap){
+  var all = wrap.querySelectorAll('*'), i, el;
+  for(i = 0; i < all.length; i++){
+    var csF = getComputedStyle(all[i]);
+    el = all[i];
+    if(csF.display === 'none') continue;
+    el.style.fontFamily = '"' + _wzResolveFam(csF.fontFamily) + '"';
+  }
+  // cargar las fuentes reales ANTES de medir (el layout depende de ellas)
+  var need = {};
+  all = wrap.querySelectorAll('p,span,h1,h2,h3,h4,h5,h6,td,th,li,a');
+  for(i = 0; i < all.length; i++){
+    var cs2 = getComputedStyle(all[i]);
+    var fam = _wzResolveFam(cs2.fontFamily);
+    var b = (parseInt(cs2.fontWeight, 10) || 400) >= 600;
+    var it = cs2.fontStyle === 'italic';
+    need[(it ? 'italic ' : '') + (b ? '700 ' : '400 ') + cs2.fontSize + ' "' + fam + '"'] = 1;
+  }
+  var loads = [];
+  Object.keys(need).forEach(function(sh){ loads.push(document.fonts.load(sh)); });
+  try{ await Promise.all(loads); await document.fonts.ready; }catch(e){}
+  _wzMC = {}; // invalidar métricas: ahora están las fuentes reales
+}
+async function docxWysiwygToPdf(ab, name, opts){
+  opts = opts || {};
   var PDFLib = window.PDFLib;
   if(!PDFLib) throw new Error('pdf-lib no disponible');
   if(!window.docx || !window.JSZip) throw new Error('docx-preview no disponible (revisa tu conexión)');
   _wzFontCss();
-  var marg = await _wzDocMeta(ab);     // twips (hdr, ftr) + reglas de interlineado
+  var marg = opts.marg || await _wzDocMeta(ab);     // twips (hdr, ftr) + reglas de interlineado (v2.9: cacheable)
   var hdrMargCss = marg.hdr / 15;      // twips → px css (96dpi)
   var ftrMargCss = marg.ftr / 15;
   var holder = document.createElement('div');
   holder.style.cssText = 'position:fixed;left:-99999px;top:0;width:0;height:0;overflow:visible;';
-  var wrap = document.createElement('div');
+  // v2.9.0 — preWrap: contenedor ya renderizado (vista de edición Word clonada)
+  var wrap = opts.preWrap || document.createElement('div');
   holder.appendChild(wrap);
   document.body.appendChild(holder);
   try{
-    await window.docx.renderAsync(ab, wrap, null, {
-      inWrapper: true, breakPages: true, ignoreWidth: false, ignoreHeight: false,
-      ignoreFonts: false, ignoreLastRenderedPageBreak: false, useBase64URL: true,
-      experimental: true, debug: false
-    });
+    if(!opts.preWrap){
+      await window.docx.renderAsync(ab, wrap, null, {
+        inWrapper: true, breakPages: true, ignoreWidth: false, ignoreHeight: false,
+        ignoreFonts: false, ignoreLastRenderedPageBreak: false, useBase64URL: true,
+        experimental: true, debug: false
+      });
+    }
     var secs = wrap.querySelectorAll('section.docx');
     if(!secs.length) throw new Error('DOCX sin contenido renderizable');
-    // familias deterministas (mismo layout en cualquier sistema operativo)
-    var all = wrap.querySelectorAll('*'), i, el;
-    for(i = 0; i < all.length; i++){
-      var csF = getComputedStyle(all[i]);
-      el = all[i];
-      if(csF.display === 'none') continue;
-      el.style.fontFamily = '"' + _wzResolveFam(csF.fontFamily) + '"';
-    }
-    // cargar las fuentes reales ANTES de medir (el layout depende de ellas)
-    var need = {};
-    all = wrap.querySelectorAll('p,span,h1,h2,h3,h4,h5,h6,td,th,li,a');
-    for(i = 0; i < all.length; i++){
-      var cs2 = getComputedStyle(all[i]);
-      var fam = _wzResolveFam(cs2.fontFamily);
-      var b = (parseInt(cs2.fontWeight, 10) || 400) >= 600;
-      var it = cs2.fontStyle === 'italic';
-      need[(it ? 'italic ' : '') + (b ? '700 ' : '400 ') + cs2.fontSize + ' "' + fam + '"'] = 1;
-    }
-    var loads = [];
-    Object.keys(need).forEach(function(sh){ loads.push(document.fonts.load(sh)); });
-    try{ await Promise.all(loads); await document.fonts.ready; }catch(e){}
-    _wzMC = {}; // invalidar métricas: ahora están las fuentes reales
+    var i, el;
+    // familias deterministas + fuentes reales (rutina compartida con la vista)
+    await _wzPrepareWrap(wrap);
     // ── v2.8.1 — interlineado/espaciado EFECTIVOS por zona ──
     // Cada <p> del DOM se alinea por TEXTO a su parte XML (document/header/
     // footer) y recoge su regla resuelta (directo > pStyle > tblStyle >
@@ -7311,6 +7500,16 @@ async function docxWysiwygToPdf(ab, name){
         }else{
           var found = -1;
           for(k = jx; k < Math.min(jx + 4, pTexts.length); k++){ if(pTexts[k] === dt){ found = k; break; } }
+          if(found < 0){
+            // v2.9.0 — párrafo EDITADO: anclar por prefijo para conservar su
+            // regla de interlineado del XML aunque el texto haya cambiado
+            var pf12 = dt.slice(0, 12);
+            if(pf12){
+              for(k = jx; k < Math.min(jx + 6, pTexts.length); k++){
+                if(pTexts[k] && pTexts[k].slice(0, 12) === pf12){ found = k; break; }
+              }
+            }
+          }
           if(found < 0) res.push('__MISS__');
           else { res.push(rules[found]); jx = found + 1; }
         }
@@ -7777,13 +7976,22 @@ async function handleFileOpen(file){
   }
   if(file.size>30*1024*1024){toast('Archivo demasiado grande (máx. 30 MB)','err');return false;}
   var base=_officeBaseName(nm);
-  toast('Convirtiendo '+nm+' a PDF editable…');
   setProg(6);
   try{
     var ab=await file.arrayBuffer();
+    // v2.9.0 — EDICIÓN NATIVA: .docx y .xlsx/.xls se abren en su formato
+    // original (sin conversión previa) para editar sin distorsión
+    if(/\.docx$/i.test(nm)&&window.docx&&window.JSZip){
+      hideProg();
+      return await wordTabOpen(ab,base);
+    }
+    if(/\.(xlsx|xlsm|xls)$/i.test(nm)&&typeof XLSX!=='undefined'){
+      hideProg();
+      return await excelTabOpen(ab,base);
+    }
+    toast('Convirtiendo '+nm+' a PDF editable…');
     var bytes=null;
-    if(/\.(xlsx|xlsm|xls)$/i.test(nm)){bytes=await excelToPdfBytes(ab,base,false);}
-    else if(/\.csv$/i.test(nm)){bytes=await excelToPdfBytes(ab,base,true);}
+    if(/\.csv$/i.test(nm)){bytes=await excelToPdfBytes(ab,base,true);}
     else if(/\.docx$/i.test(nm)){bytes=await docxToPdfBytes(ab,base);}
     else{
       var txt=docLegacyText(new Uint8Array(ab));
@@ -7798,7 +8006,7 @@ async function handleFileOpen(file){
     return true;
   }catch(e){
     hideProg();
-    toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
+    toast('No se pudo abrir: '+(e&&e.message?e.message:e),'err');
     return false;
   }
 }
@@ -7838,7 +8046,7 @@ async function openFilesList(files){
     try{
       if(multi)toast('Abriendo '+(i+1)+'/'+files.length+': '+f.name+'…');
       // Si el tab activo ya tiene documento → guardar su estado y abrir tab nuevo
-      if(activeTabId&&pdfDoc){
+      if(activeTabId&&(pdfDoc||((docTabGet(activeTabId)||{}).kind))){
         docTabSaveCurrent();
         var newId='tab_'+(++_tabIdSeq);
         docTabs.push({id:newId,fileName:String(f.name||'').replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1});
@@ -7878,6 +8086,11 @@ async function loadPDF(file){
   renderDocTabs();
   document.getElementById('dropZone').classList.add('hidden');
   document.getElementById('pagesBox').classList.remove('hidden');
+  // v2.9.0 — si venimos de "Abrir como PDF" desde una pestaña nativa, restaurar la UI de PDF
+  try{document.body.classList.remove('nativemode');var nb3=document.getElementById('nativeBox');if(nb3)nb3.classList.add('hidden');}catch(e){}
+  // v2.9.0 — la pestaña activa deja de ser nativa: ahora es PDF (evita tabs
+  // híbridas si loadPDF se invoca con una pestaña Word/Excel activa)
+  try{var atL=docTabGet(activeTabId);if(atL&&atL.kind){atL.kind=undefined;atL.nvEl=null;}}catch(e){}
   document.getElementById('prevBtn').disabled=false;document.getElementById('nextBtn').disabled=false;
   document.getElementById('totPages').textContent='/ '+pageCount;document.getElementById('pInput').max=pageCount;
   updateDocInfo();await renderAllPages();await renderThumbs();
@@ -9224,7 +9437,19 @@ window.addEventListener('resize',function(){
 
 // ── KEYBOARD ──
 document.addEventListener('keydown',function(e){
-  if(inputOpen)return;if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'||e.target.contentEditable==='true')return;
+  if(inputOpen)return;if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'||e.target.isContentEditable)return;
+  // v2.9.0 — pestañas nativas Word/Excel: atajos propios, sin herramientas PDF
+  var _natTab=docTabGet(activeTabId);
+  if(_natTab&&_natTab.kind){
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();nativeSaveOriginal();return;}
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){e.preventDefault();return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){if(_natTab.kind==='excel'){e.preventDefault();nativeUndo();}return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();nativeExportPdf();return;}
+    if(e.key==='Escape'){if(_natTab.kind==='excel'){try{xlCloseEditor(_natTab,false);}catch(e2){}}return;}
+    if(e.key==='+'||e.key==='='){if(_natTab.kind==='word')nvWordZoom(_natTab,0.1);return;}
+    if(e.key==='-'){if(_natTab.kind==='word')nvWordZoom(_natTab,-0.1);return;}
+    return;
+  }
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();doUndo().catch(function(e){console.error(e);});return;}
   if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){e.preventDefault();doRedo().catch(function(e){console.error(e);});return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportPDF().catch(function(e){console.error(e);});return;}
@@ -9238,6 +9463,1217 @@ document.addEventListener('keydown',function(e){
     case 'Delete':case 'Backspace':deleteSelected();break;case 'Escape':selAnn=null;redrawAll();break;
   }
 });
+
+// ════ v2.9.0 — MODOS NATIVOS: infraestructura común ════
+// Los archivos Word/Excel se abren en SU formato original: la vista replica
+// el renderizado fiel (mismas fuentes métricas que el motor PDF v2.8) y las
+// ediciones se guardan parcheando el archivo original (sin reconstruirlo),
+// de modo que lo no editado queda BYTE-IDÉNTICO → cero distorsión.
+
+function nvColName(c){ var s=''; do{ s=String.fromCharCode(65+(c-1)%26)+s; c=Math.floor((c-1)/26); }while(c>0); return s; }
+function nvColCmp(a,b){ if(a.length!==b.length)return a.length-b.length; return a<b?-1:(a>b?1:0); }
+function nvXesc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function nvNormT(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+// texto de un bloque DOM tal como lo guarda Word: tab de docx-preview (\u2003)
+// → \t, <br> → \n, nbsp → espacio
+function nvDomText(el){
+  var out='';
+  (function walk(n){
+    for(var i=0;i<n.childNodes.length;i++){
+      var c=n.childNodes[i];
+      if(c.nodeType===3){ out+=c.nodeValue; continue; }
+      if(c.nodeType!==1) continue;
+      if(c.tagName==='BR'){ out+='\n'; continue; }
+      if(c.tagName==='IMG') continue;
+      walk(c);
+    }
+  })(el);
+  return out.replace(/\u00A0/g,' ').replace(/\u2003/g,'\t');
+}
+
+function nativeTabOpen(kind, name, size, mk){
+  // v2.9.0: NO guardar estado aquí — openFilesList ya guardó antes de crear el
+  // placeholder y llamarlo aquí contaminaba la pestaña vacía con el fileName
+  // global obsoleto (duplicaba pestañas en la apertura multi-archivo)
+  var tab, cur=docTabGet(activeTabId);
+  if(activeTabId&&cur&&!cur.pdfDoc&&!cur.kind&&!cur.nvEl&&!cur.pageOrder.length){
+    tab=cur; // reutiliza la pestaña VACÍA activa (por estado, no por nombre)
+  }else{
+    tab={id:'tab_'+(++_tabIdSeq),fileName:'Sin título',fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};
+    docTabs.push(tab);
+  }
+  tab.kind=kind; tab.fileName=name; tab.fileSize=size||'−'; tab._dirty=false;
+  tab.nvEl=mk?mk(tab):null;
+  pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];rawPdfBytes=null;
+  activeTabId=null;            // forzar el switch completo
+  docTabSwitch(tab.id);
+  return tab;
+}
+function nvMarkDirty(tab){
+  if(!tab._dirty){ tab._dirty=true; renderDocTabs(); }
+  var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName+' ·sin guardar';
+}
+function nativeRefreshRibbon(tab){
+  var saveLbl=document.getElementById('nrbSaveLbl');
+  var zoomGrp=document.getElementById('nrbZoomGrp');
+  var hint=document.getElementById('nativeHint');
+  if(tab&&tab.kind==='word'){
+    if(saveLbl)saveLbl.textContent='Guardar .docx';
+    if(zoomGrp)zoomGrp.style.display='';
+    if(hint)hint.textContent='Edita el texto como en Word · Guardar conserva el formato original · Exportar PDF genera el PDF fiel con tus cambios';
+    nvWordApplyZoom(tab);
+  }else if(tab&&tab.kind==='excel'){
+    if(saveLbl)saveLbl.textContent=(tab._xl&&tab._xl.isXlsSrc)?'Guardar .xlsx (desde .xls)':'Guardar .xlsx';
+    if(zoomGrp)zoomGrp.style.display='none';
+    if(hint)hint.textContent='Edita las celdas como en Excel · clic selecciona · doble clic o F2 edita · Enter/Tab se mueve · Guardar respeta el formato original';
+  }
+}
+
+// ════ v2.9.0 — MODO WORD: apertura y vista editable ════
+async function wordTabOpen(ab, base){
+  try{
+    toast('Abriendo '+base+'.docx en modo Word…');
+    setProg(8);
+    if(!window.docx||!window.JSZip) throw new Error('docx-preview no disponible (revisa tu conexión)');
+    _wzFontCss();
+    var marg=await _wzDocMeta(ab);
+    setProg(22);
+    var holder=document.createElement('div');
+    holder.style.cssText='position:fixed;left:-99999px;top:0;width:0;height:0;overflow:visible;';
+    var wrap=document.createElement('div');
+    holder.appendChild(wrap); document.body.appendChild(holder);
+    var ok=false;
+    try{
+      await window.docx.renderAsync(ab,wrap,null,{
+        inWrapper:true, breakPages:true, ignoreWidth:false, ignoreHeight:false,
+        ignoreFonts:false, ignoreLastRenderedPageBreak:false, useBase64URL:true,
+        experimental:true, debug:false
+      });
+      await _wzPrepareWrap(wrap);   // mismas fuentes métricas que el PDF
+      if(!wrap.querySelectorAll('section.docx').length) throw new Error('DOCX sin contenido renderizable');
+      ok=true;
+    } finally { if(!ok) holder.remove(); }
+    setProg(60);
+    // vista
+    var el=document.createElement('div'); el.className='nv-word';
+    var sheet=document.createElement('div'); sheet.className='nv-sheet';
+    sheet.appendChild(wrap); holder.remove();
+    el.appendChild(sheet);
+    var i;
+    var arts=wrap.querySelectorAll('section.docx article');
+    for(i=0;i<arts.length;i++) arts[i].setAttribute('contenteditable','true');
+    var hfs=wrap.querySelectorAll('section.docx header, section.docx footer');
+    for(i=0;i<hfs.length;i++){ hfs[i].setAttribute('contenteditable','false'); hfs[i].title='Encabezado/pie: se conservan tal cual (no editables en esta versión)'; }
+    var imgs=wrap.querySelectorAll('img');
+    for(i=0;i<imgs.length;i++){
+      var im=imgs[i];
+      im.setAttribute('contenteditable','false'); im.draggable=false;
+      im.addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); });
+    }
+    // pegado = SIEMPRE texto plano (conserva el formato del documento)
+    wrap.addEventListener('paste',function(e){
+      e.preventDefault();
+      var t=(e.clipboardData||window.clipboardData).getData('text/plain');
+      t=String(t||'').replace(/\u2003/g,'\t');
+      try{ document.execCommand('insertText',false,t); }catch(e2){}
+    });
+    wrap.addEventListener('drop',function(e){ e.preventDefault(); });
+    wrap.addEventListener('keydown',function(e){ if(e.key==='Tab')e.preventDefault(); });
+    var tab=nativeTabOpen('word',base,(ab.byteLength/1024).toFixed(1)+' KB',function(t){
+      t._docx={ab:ab.slice(0),marg:marg,wrap:wrap,zoom:1};
+      return el;
+    });
+    wrap.addEventListener('input',function(){ nvMarkDirty(tab); });
+    setProg(100);setTimeout(hideProg,500);
+    toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
+    return true;
+  }catch(e){
+    hideProg();
+    toast('No se pudo abrir el Word: '+(e&&e.message?e.message:e),'err');
+    throw e;
+  }
+}
+function nvWordZoom(tab,d){
+  if(!tab||!tab._docx)return;
+  tab._docx.zoom=Math.min(2.5,Math.max(0.4,(tab._docx.zoom||1)+d));
+  nvWordApplyZoom(tab);
+}
+function nvWordZoomBtn(d){ var t=docTabGet(activeTabId); if(t&&t.kind==='word')nvWordZoom(t,d); }
+function nvWordApplyZoom(tab){
+  if(!tab||!tab._docx)return;
+  var sh=tab.nvEl?tab.nvEl.querySelector('.nv-sheet'):null;
+  if(sh){ try{ sh.style.zoom=tab._docx.zoom; }catch(e){ sh.style.transform='scale('+tab._docx.zoom+')'; } }
+  var z=document.getElementById('nativeZoomVal'); if(z)z.textContent=Math.round(tab._docx.zoom*100)+'%';
+}
+
+// ════ v2.9.0 — WORD → PDF (exporta la vista EDITADA, motor v2.8.1 intacto) ════
+async function wordExportPdfBytes(tab){
+  var d=tab._docx;
+  var clone=d.wrap.cloneNode(true);
+  var ce=clone.querySelectorAll('[contenteditable]');
+  for(var i=0;i<ce.length;i++) ce[i].removeAttribute('contenteditable');
+  return await docxWysiwygToPdf(d.ab, tab.fileName, {preWrap:clone, marg:d.marg});
+}
+
+// v2.9.0 — diff por caracteres (LCS): ops eq/ins alineadas a posiciones del
+// texto viejo; permite asignar cada inserción al run que contiene su posición
+// (varias ediciones en un párrafo conservan cada una su formato). null = grande.
+function _wzCharOps(A, B){
+  var n=A.length, m=B.length;
+  if(n===0) return [{t:'ins', s:B, a:0, b:0}];
+  if(m===0) return [];
+  if(n*m>4000000) return null;
+  var W=m+1;
+  var dp=new Int32Array((n+1)*W);
+  var i, j;
+  for(i=n-1;i>=0;i--){
+    for(j=m-1;j>=0;j--){
+      dp[i*W+j]=(A.charAt(i)===B.charAt(j))?(dp[(i+1)*W+j+1]+1):Math.max(dp[(i+1)*W+j],dp[i*W+j+1]);
+    }
+  }
+  var ops=[], i2=0, j2=0;
+  while(i2<n&&j2<m){
+    if(A.charAt(i2)===B.charAt(j2)){
+      var st=i2;
+      while(i2<n&&j2<m&&A.charAt(i2)===B.charAt(j2)){ i2++; j2++; }
+      ops.push({t:'eq', s:A.slice(st,i2), a:st, b:i2});
+    }else if(dp[(i2+1)*W+j2]>=dp[i2*W+j2+1]){ i2++; }
+    else{ ops.push({t:'ins', s:B.charAt(j2), a:i2, b:i2}); j2++; }
+  }
+  while(j2<m){ ops.push({t:'ins', s:B.charAt(j2), a:i2, b:i2}); j2++; }
+  var out=[];
+  ops.forEach(function(o){
+    var last=out[out.length-1];
+    if(last&&last.t==='ins'&&o.t==='ins'&&last.b===o.a){ last.s+=o.s; last.b=o.b; }
+    else out.push({t:o.t, s:o.s, a:o.a, b:o.b});
+  });
+  return out;
+}
+// ════ v2.9.0 — WORD: GUARDADO .docx por DIFF quirúrgico ════
+// Estrategia: nunca se reconstruye el archivo. Se carga el ZIP original, se
+// analizan los párrafos del document.xml y de la vista, se alinean por texto
+// (LCS) y SÓLO los párrafos editados se reescriben con diff por caracteres:
+// cada inserción hereda el formato del run que contiene su posición (rPr).
+// Párrafos nuevos se insertan clonando el pPr del vecino; los borrados se
+// quitan (en celdas de tabla se vacían, la celda exige ≥1 párrafo).
+async function wordSaveDocx(tab){
+  var d=tab._docx; if(!d) return;
+  toast('Guardando '+tab.fileName+'.docx…');
+  setProg(15);
+  try{
+    var z=await JSZip.loadAsync(d.ab);
+    var xmlStr=await z.file('word/document.xml').async('string');
+    var xdoc=new DOMParser().parseFromString(xmlStr,'application/xml');
+    if(xdoc.getElementsByTagName('parsererror').length) throw new Error('document.xml no se pudo analizar');
+    var body=xdoc.getElementsByTagName('w:body')[0];
+    if(!body) throw new Error('document.xml sin body');
+    var W_NS_SPECIAL={ 'w:drawing':1, 'w:object':1, 'w:pict':1, 'w:fldChar':1, 'w:instrText':1, 'w:footnoteReference':1, 'w:endnoteReference':1 };
+    // ── 1) bloques XML: w:p en orden de documento ──
+    var xblocks=[];
+    (function xwalk(node){
+      for(var i=0;i<node.children.length;i++){
+        var ch=node.children[i], tg=ch.tagName;
+        if(tg==='w:p'){
+          var runs=[], text='';
+          for(var r=0;r<ch.children.length;r++){
+            var rn=ch.children[r];
+            if(rn.tagName!=='w:r') continue;
+            var ts=[], ph=null;
+            for(var g=0;g<rn.children.length;g++){
+              var ge=rn.children[g];
+              if(ge.tagName==='w:t'){ ts.push(ge); text+=ge.textContent; }
+              else if(ge.tagName==='w:tab'){ ph='\t'; text+='\t'; }
+              else if(ge.tagName==='w:br'){ ph=ph||'\n'; text+='\n'; }
+              // drawing/objetos: sin texto, el run queda intacto
+            }
+            runs.push({el:rn, ts:ts, ph:ph, txt:ts.map(function(t){return t.textContent;}).join('')});
+          }
+          xblocks.push({p:ch, runs:runs, text:text, key:nvNormT(text), parent:node});
+        }
+        else if(tg==='w:tbl'){
+          for(var tr=0;tr<ch.children.length;tr++){
+            var trEl=ch.children[tr];
+            if(trEl.tagName!=='w:tr') continue;
+            for(var tc=0;tc<trEl.children.length;tc++){
+              var tcEl=trEl.children[tc];
+              if(tcEl.tagName==='w:tc') xwalk(tcEl);   // tablas anidadas vía recursión
+            }
+          }
+        }
+        else if(tg==='w:tr'||tg==='w:tc'){ xwalk(ch); }
+      }
+    })(body);
+    // ── 2) bloques DOM: bloques hoja del article (orden de documento) ──
+    var dblocks=[];
+    var BLOCK_TAGS={P:1,DIV:1,H1:1,H2:1,H3:1,H4:1,H5:1,H6:1,LI:1,BLOCKQUOTE:1,PRE:1};
+    function hasBlockChild(el){
+      for(var q=0;q<el.children.length;q++) if(BLOCK_TAGS[el.children[q].tagName]) return true;
+      return false;
+    }
+    function dwalk(node){
+      for(var q=0;q<node.children.length;q++){
+        var ch=node.children[q];
+        if(BLOCK_TAGS[ch.tagName]&&!hasBlockChild(ch)){
+          var t=nvDomText(ch);
+          dblocks.push({el:ch, text:t, key:nvNormT(t)});
+        }
+        else dwalk(ch);
+      }
+    }
+    var artsEl=d.wrap.querySelectorAll('section.docx article');
+    for(var ai=0;ai<artsEl.length;ai++) dwalk(artsEl[ai]);
+    // ── 3) alineación LCS por clave de texto (ancla los NO editados) ──
+    var N=xblocks.length, M=dblocks.length;
+    var matchX=new Array(N).fill(-1), matchD=new Array(M).fill(-1);
+    function keysEq(a,b){ return a!==''&&a===b; }
+    if(N&&M&&N*M<=2500000){
+      var W=(M+1);
+      var dp=new Int32Array((N+1)*W);
+      for(var xi=N-1;xi>=0;xi--){
+        for(var yi=M-1;yi>=0;yi--){
+          dp[xi*W+yi]=keysEq(xblocks[xi].key,dblocks[yi].key)?
+            (dp[(xi+1)*W+yi+1]+1):
+            Math.max(dp[(xi+1)*W+yi],dp[xi*W+yi+1]);
+        }
+      }
+      var px=0,py=0;
+      while(px<N&&py<M){
+        if(keysEq(xblocks[px].key,dblocks[py].key)){ matchX[px]=py; matchD[py]=px; px++; py++; }
+        else if(dp[(px+1)*W+py]>=dp[px*W+py+1]) px++;
+        else py++;
+      }
+    }
+    // ── 4) recorrer gaps: pares editados / insertados / borrados ──
+    var changes=0, deleted=0, inserted=0, delList=[];
+    function applyRunDiff(xb, db){
+      var oldText=xb.text;
+      var newText=db.text.replace(/\n/g,' ');
+      if(oldText===newText) return false;
+      if(oldText===''&&newText.trim()==='') return false;
+      // rangos de los runs (sobre oldText; el ph de tab/br ocupa 1 carácter)
+      var pos=0, ri, r;
+      for(ri=0;ri<xb.runs.length;ri++){
+        r=xb.runs[ri];
+        r.a=pos; r.b=pos+r.txt.length+(r.ph?1:0); pos=r.b;
+      }
+      // ── diff por CARACTERES (LCS): cada edición conserva el formato del run
+      // que la contiene (con prefijo/sufijo único, dos ediciones en un mismo
+      // párrafo dejaban la del medio sin su formato) ──
+      var ops=_wzCharOps(oldText,newText);   // [{t:'eq'|'ins', s, a, b}] en orden
+      var runTxt=xb.runs.map(function(){return '';});
+      var pendingIns='';
+      if(ops){
+        function runIndexAt(p){
+          var best=-1;
+          for(var q2=0;q2<xb.runs.length;q2++){
+            var rr=xb.runs[q2];
+            if(rr.ph||!rr.txt) continue;
+            if(rr.a<=p&&p<rr.a+rr.txt.length) return q2;
+            if(p>=rr.a+rr.txt.length) best=q2;
+          }
+          return best;
+        }
+        ops.forEach(function(o){
+          if(o.t==='eq'){
+            xb.runs.forEach(function(r2,rj){
+              if(r2.ph) return;
+              var s0=Math.max(r2.a,o.a), s1=Math.min(r2.a+r2.txt.length,o.b);
+              if(s1>s0) runTxt[rj]+=r2.txt.slice(s0-r2.a,s1-r2.a);
+            });
+          }else{
+            var ti=runIndexAt(o.a);
+            if(ti>=0) runTxt[ti]+=o.s;
+            else pendingIns+=o.s;
+          }
+        });
+      }else{
+        // párrafo enorme: método clásico de anclaje único prefijo/sufijo
+        var P=0;
+        while(P<oldText.length&&P<newText.length&&oldText.charAt(P)===newText.charAt(P))P++;
+        var S=0;
+        while(S<oldText.length-P&&S<newText.length-P&&oldText.charAt(oldText.length-1-S)===newText.charAt(newText.length-1-S))S++;
+        var midTxt=newText.slice(P,newText.length-S);
+        var midRun=null;
+        for(ri=0;ri<xb.runs.length;ri++){
+          r=xb.runs[ri];
+          if(!r.ph&&r.txt&&r.b>P){ midRun=r; break; }
+        }
+        if(!midRun){
+          for(ri=xb.runs.length-1;ri>=0;ri--){
+            r=xb.runs[ri];
+            if(!r.ph&&r.txt){ midRun=r; break; }
+          }
+        }
+        var sStart=oldText.length-S;
+        for(ri=0;ri<xb.runs.length;ri++){
+          r=xb.runs[ri];
+          if(r.ph) continue;
+          var keepPre=(P>r.a)?r.txt.slice(0,Math.min(r.txt.length,P-r.a)):'';
+          var keepSuf=(sStart<r.b)?r.txt.slice(Math.max(0,Math.min(r.txt.length,sStart-r.a)),r.txt.length):'';
+          runTxt[ri]=keepPre+keepSuf;
+          if(r===midRun) runTxt[ri]=keepPre+midTxt+keepSuf;
+        }
+        if(!midRun) pendingIns=midTxt;
+      }
+      for(ri=0;ri<xb.runs.length;ri++){
+        r=xb.runs[ri];
+        if(r.ph) continue;                    // tab/br: el elemento se conserva tal cual
+        var keep=runTxt[ri];
+        for(var ti2=0;ti2<r.ts.length;ti2++){
+          r.ts[ti2].textContent=(ti2===0)?keep:'';
+          try{ r.ts[ti2].setAttribute('xml:space','preserve'); }catch(e2){}
+        }
+        if(!r.ts.length&&keep){
+          var nt=xdoc.createElement('w:t');
+          nt.setAttribute('xml:space','preserve'); nt.textContent=keep;
+          r.el.appendChild(nt);
+        }
+      }
+      if(pendingIns){
+        var rprSrc=null;
+        for(ri=0;ri<xb.runs.length&&!rprSrc;ri++){
+          var kids=xb.runs[ri].el.children;
+          for(var kj=0;kj<kids.length;kj++) if(kids[kj].tagName==='w:rPr'){ rprSrc=kids[kj]; break; }
+        }
+        if(!rprSrc){
+          var pprEl=xb.p.children[0]&&xb.p.children[0].tagName==='w:pPr'?xb.p.children[0]:null;
+          if(pprEl) rprSrc=pprEl.getElementsByTagName('w:rPr')[0]||null;
+        }
+        var nr=xdoc.createElement('w:r');
+        if(rprSrc) nr.appendChild(rprSrc.cloneNode(true));
+        var nt2=xdoc.createElement('w:t');
+        nt2.setAttribute('xml:space','preserve'); nt2.textContent=pendingIns;
+        nr.appendChild(nt2); xb.p.appendChild(nr);
+      }
+      return true;
+    }
+    function emptyRuns(xb){
+      xb.runs.forEach(function(r){
+        r.ts.forEach(function(t){ t.textContent=''; try{ t.setAttribute('xml:space','preserve'); }catch(e){} });
+      });
+    }
+    function insertNewPara(anchor, db){
+      var np=xdoc.createElement('w:p');
+      if(anchor&&anchor.p){
+        var ppr=(anchor.p.children[0]&&anchor.p.children[0].tagName==='w:pPr')?anchor.p.children[0]:null;
+        if(ppr) np.appendChild(ppr.cloneNode(true));
+        var rprSrc=null;
+        for(var ri=0;ri<anchor.runs.length&&!rprSrc;ri++){
+          var kids=anchor.runs[ri].el.children;
+          for(var kj=0;kj<kids.length;kj++) if(kids[kj].tagName==='w:rPr'){ rprSrc=kids[kj]; break; }
+        }
+        var txt=nvDomText(db.el).replace(/\n/g,' ').replace(/\t/g,' ');
+        if(txt){
+          var nr=xdoc.createElement('w:r');
+          if(rprSrc) nr.appendChild(rprSrc.cloneNode(true));
+          var nt=xdoc.createElement('w:t');
+          nt.setAttribute('xml:space','preserve'); nt.textContent=txt;
+          nr.appendChild(nt); np.appendChild(nr);
+        }
+        anchor.p.parentNode.insertBefore(np, anchor.p.nextSibling);
+      }else{
+        body.insertBefore(np, body.firstChild);
+      }
+    }
+    var xi2=0, yi2=0;
+    while(xi2<N||yi2<M){
+      if(xi2<N&&matchX[xi2]>=0){ xi2++; continue; }
+      if(yi2<M&&matchD[yi2]>=0){ yi2++; continue; }
+      var x0=xi2; while(xi2<N&&matchX[xi2]<0)xi2++;
+      var y0=yi2; while(yi2<M&&matchD[yi2]<0)yi2++;
+      var gx=xi2-x0, gy=yi2-y0, prevAnchor=(x0>0)?xblocks[x0-1]:null;
+      for(var p2=0;p2<Math.max(gx,gy);p2++){
+        var xb=(p2<gx)?xblocks[x0+p2]:null;
+        var db=(p2<gy)?dblocks[y0+p2]:null;
+        if(xb&&db){
+          if(xb.key!==db.key){ if(applyRunDiff(xb,db)) changes++; }
+        }
+        else if(xb&&!db){
+          if(xb.key!==''){
+            if(xb.parent.tagName==='w:tc'){ emptyRuns(xb); changes++; }
+            else{ delList.push(xb); deleted++; }
+          }
+        }
+        else if(db&&!xb){
+          if(nvNormT(db.text)!==''){ insertNewPara(prevAnchor,db); inserted++; }
+        }
+        if(xb) prevAnchor=xb;
+      }
+    }
+    // aplicar borrados al final (las inserciones ya referenciaron vecinos vivos)
+    delList.forEach(function(xb){ try{ if(xb.p.parentNode) xb.p.parentNode.removeChild(xb.p); }catch(e){} });
+    // el body nunca debe quedarse sin párrafos
+    if(!body.getElementsByTagName('w:p').length){
+      body.insertBefore(xdoc.createElement('w:p'), body.firstChild);
+    }
+    if(changes||deleted||inserted){
+      var ser=new XMLSerializer().serializeToString(xdoc);
+      ser=String(ser).replace(/^<\?xml[^>]*\?>\s*/,'');   // el serializador puede emitir la suya: una sola declaración canónica
+      ser='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+ser;
+      z.file('word/document.xml',ser);
+    }
+    setProg(70);
+    var out=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    dlBlob(out, tab.fileName+'.docx');
+    tab._dirty=false; renderDocTabs();
+    var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
+    setProg(100);setTimeout(hideProg,500);
+    toast('✅ '+tab.fileName+'.docx guardado — '+(changes+deleted+inserted)+' cambio(s); el resto del archivo queda idéntico al original','ok');
+  }catch(e){
+    hideProg();
+    toast('No se pudo guardar el .docx: '+(e&&e.message?e.message:e),'err');
+    throw e;
+  }
+}
+
+// ════ v2.9.0 — ACCIONES NATIVAS (ribbon / atajos) ════
+async function nativeSaveOriginal(){
+  var tab=docTabGet(activeTabId);
+  if(!tab||!tab.kind) return;
+  try{
+    if(tab.kind==='word') await wordSaveDocx(tab);
+    else if(tab.kind==='excel'){ if(tab._xl.isXlsSrc) await xlsToXlsxSave(tab); else await xlsxPatchSave(tab); }
+  }catch(e){}
+}
+async function nativePdfBytes(tab){
+  if(tab.kind==='word') return await wordExportPdfBytes(tab);
+  if(tab.kind==='excel') return await excelToPdfBytes(null, tab.fileName, tab._xl.isCsv, tab._xl);
+  throw new Error('Pestaña no compatible');
+}
+async function nativeExportPdf(){
+  var tab=docTabGet(activeTabId);
+  if(!tab||!tab.kind) return;
+  try{
+    toast('Generando PDF fiel…');
+    setProg(25);
+    var bytes=await nativePdfBytes(tab);
+    setProg(75);
+    dlBlob(new Blob([bytes],{type:'application/pdf'}), tab.fileName+'.pdf');
+    setProg(100);setTimeout(hideProg,400);
+    toast('✅ PDF exportado con tus ediciones','ok');
+  }catch(e){
+    hideProg();
+    toast('No se pudo exportar: '+(e&&e.message?e.message:e),'err');
+  }
+}
+async function nativeOpenAsPdf(){
+  var tab=docTabGet(activeTabId);
+  if(!tab||!tab.kind) return;
+  try{
+    toast('Convirtiendo a PDF editable…');
+    setProg(25);
+    var bytes=await nativePdfBytes(tab);
+    setProg(65);
+    var f2=new File([bytes], tab.fileName+'.pdf', {type:'application/pdf'});
+    await openFilesList([f2]);
+  }catch(e){
+    hideProg();
+    toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
+  }
+}
+function nativeUndo(){
+  var tab=docTabGet(activeTabId);
+  if(!tab) return;
+  if(tab.kind==='word'){
+    var a=tab._docx&&tab._docx.wrap.querySelector('section.docx article[contenteditable]');
+    if(a){ a.focus(); try{ document.execCommand('undo'); }catch(e){} }
+    return;
+  }
+  if(tab.kind==='excel') xlUndo(tab);
+}
+
+// ════ v2.9.0 — MODO EXCEL: geometría/estilos del modelo (px de pantalla) ════
+function xlGeo(sh){
+  var ws=sh.ws, rg=_formDecodeRef(ws['!ref']);
+  if(!rg) return null;
+  var rowsMeta=ws['!rows']||[], colsMeta=ws['!cols']||[];
+  var DEFH=17, DEFCW=64;
+  function Hpx(r){ var rm=rowsMeta[r-1]; return rm&&rm.hidden?0:(rm&&rm.hpt?Math.max(2,rm.hpt*4/3):DEFH); }
+  function Wpx(c){ var cm=colsMeta[c-1]; return cm&&cm.hidden?0:(cm&&cm.wpx?cm.wpx:(cm&&cm.wch?cm.wch*7+5:DEFCW)); }
+  var merges=[], cover={};
+  (ws['!merges']||[]).forEach(function(m){
+    var a={r0:Math.max(rg.r0,m.s.r+1),r1:Math.min(rg.r1,m.e.r+1),
+           c0:Math.max(rg.c0,m.s.c+1),c1:Math.min(rg.c1,m.e.c+1)};
+    if(a.r0>a.r1||a.c0>a.c1) return;
+    merges.push(a);
+    for(var rr=a.r0;rr<=a.r1;rr++)for(var cc=a.c0;cc<=a.c1;cc++)cover[rr+'_'+cc]=a;
+  });
+  function used(r,c){
+    var k=r+'_'+c;
+    if(_formCellText(ws,r,c)||cover[k]) return true;
+    var st=sh.styles[k];
+    return !!(st&&(st.fill||st.bl||st.br||st.bt||st.bb));
+  }
+  var R0=rg.r0; while(R0<rg.r1&&!(function(){for(var cc=rg.c0;cc<=rg.c1;cc++)if(used(R0,cc))return true;return false;})())R0++;
+  var R1=rg.r1; while(R1>R0&&!(function(){for(var cc2=rg.c0;cc2<=rg.c1;cc2++)if(used(R1,cc2))return true;return false;})())R1--;
+  var C0=rg.c0; while(C0<rg.c1&&!(function(){for(var rr=rg.r0;rr<=rg.r1;rr++)if(used(rr,C0))return true;return false;})())C0++;
+  var C1=rg.c1; while(C1>C0&&!(function(){for(var rr2=rg.r0;rr2<=rg.r1;rr2++)if(used(rr2,C1))return true;return false;})())C1--;
+  if(R1<R0||C1<C0) return null;
+  return {cover:cover, merges:merges, R0:R0, R1:R1, C0:C0, C1:C1, Hpx:Hpx, Wpx:Wpx};
+}
+// texto de celda como lo muestra el PDF (fechas es-PE con formato real);
+// noCollapse=true preserva espacios internos exactos (guardado .xlsx)
+function xlCellText(model, sh, sheetIdx, r, c, noCollapse){
+  var ws=sh.ws;
+  var cell=ws[XLSX.utils.encode_cell({r:r-1,c:c-1})];
+  if(!cell||cell.v===undefined||cell.v===null) return '';
+  if(cell.t==='d'||(cell.v&&cell.v instanceof Date)){
+    var fmt=null;
+    if(model.biff){
+      var xi=model.biff.cells[sh.sIdx+','+(r-1)+','+(c-1)];
+      var xf=xi!==undefined?model.biff.xfs[xi]:null;
+      var ifmt=xf?xf.ifmt:null;
+      if(ifmt!==null&&ifmt!==undefined) fmt=ifmt>=164?(model.biff.fmts[ifmt]||null):_xlsBuiltinFmt(ifmt);
+    }
+    if(!fmt&&cell.z){ fmt=cell.z; if(fmt==='m/d/yy')fmt='d/m/yyyy'; else if(fmt==='m/d/yy h:mm')fmt='d/m/yyyy h:mm'; }
+    if(!fmt) fmt='d/m/yyyy';
+    try{ return _xlsFmtDate(cell.v,fmt); }catch(e){}
+  }
+  var t=(cell.w!==undefined&&cell.w!==null)?String(cell.w):String(cell.v);
+  if(noCollapse) return t;
+  return t.replace(/\s+/g,' ').trim();
+}
+function xlCellDeep(c){
+  if(!c) return null;
+  var o={t:c.t};
+  if(c.v instanceof Date) o.v=new Date(c.v.getTime());
+  else o.v=c.v;
+  if(c.w!==undefined)o.w=c.w;
+  if(c.z!==undefined)o.z=c.z;
+  if(c.f!==undefined)o.f=c.f;
+  return o;
+}
+
+// ════ v2.9.0 — MODO EXCEL: vista (grid + barra + hojas) ════
+function buildXlView(model, tab){
+  var el=document.createElement('div'); el.className='nv-xcel';
+  el.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0;width:100%';
+  var bar=document.createElement('div'); bar.className='xg-fbar';
+  bar.innerHTML='<span class="xg-ref">—</span><input class="xg-val" type="text" spellcheck="false" autocomplete="off" placeholder="Valor de la celda — escribe y presiona Enter">';
+  var wrap=document.createElement('div'); wrap.className='xg-scroll'; wrap.tabIndex=0;
+  var host=document.createElement('div'); host.className='xg-host';
+  wrap.appendChild(host);
+  var sheetsBar=document.createElement('div'); sheetsBar.className='xg-sheets';
+  model.sheets.forEach(function(sh,i){
+    var b=document.createElement('button');
+    b.className='xg-sheet'; b.type='button'; b.textContent=sh.name||('Hoja '+(i+1));
+    b.onclick=function(){ xlRenderSheet(tab,i); };
+    sheetsBar.appendChild(b);
+  });
+  el.appendChild(bar); el.appendChild(wrap); el.appendChild(sheetsBar);
+  tab._xlView={host:host, wrap:wrap, bar:bar, sheetsBar:sheetsBar, sel:null, sheet:0, editor:null, geo:null};
+  // eventos (delegados, una sola vez por pestaña)
+  host.addEventListener('mousedown',function(e){
+    var td=e.target.closest?e.target.closest('td.xg-td'):null;
+    if(td){ xlSelect(tab, +td.getAttribute('data-r'), +td.getAttribute('data-c')); try{wrap.focus();}catch(e2){} }
+  });
+  host.addEventListener('dblclick',function(e){
+    if(e.target.closest&&e.target.closest('td.xg-td')) xlEdit(tab);
+  });
+  wrap.addEventListener('keydown',function(e){ xlKey(tab,e); });
+  var valInp=bar.querySelector('.xg-val');
+  valInp.addEventListener('keydown',function(e){
+    e.stopPropagation();
+    if(e.key==='Enter'){ e.preventDefault(); xlCommitFromBar(tab, valInp.value); try{wrap.focus();}catch(e2){} }
+    else if(e.key==='Escape'){ e.preventDefault(); xlSyncBar(tab); valInp.blur(); }
+  });
+  valInp.addEventListener('focus',function(){ valInp.select(); });
+  return el;
+}
+function xlRenderSheet(tab, sheetIdx){
+  var model=tab._xl, v=tab._xlView;
+  var sh=model.sheets[sheetIdx]; if(!sh) return;
+  var geo=xlGeo(sh);
+  v.sheet=sheetIdx; v.sel=null; v.geo=geo;
+  if(v.editor){ try{v.editor.remove();}catch(e){} v.editor=null; }
+  var host=v.host;
+  host.innerHTML='';
+  // botones de hoja
+  var btns=v.sheetsBar.children;
+  for(var bi=0;bi<btns.length;bi++) btns[bi].className='xg-sheet'+(bi===sheetIdx?' on':'');
+  if(!geo){ host.innerHTML='<div class="xg-empty">Hoja sin datos visibles</div>'; xlSyncBar(tab); return; }
+  var r, c;
+  var tbl=document.createElement('table');
+  tbl.className='xg-table';
+  var cg=document.createElement('colgroup');
+  var colHead=document.createElement('col'); colHead.style.width='44px'; cg.appendChild(colHead);
+  var totalW=44;
+  for(c=geo.C0;c<=geo.C1;c++){ var col=document.createElement('col'); col.style.width=geo.Wpx(c)+'px'; cg.appendChild(col); totalW+=geo.Wpx(c); }
+  tbl.style.width=totalW+'px';   // table-layout:fixed exige ancho definido (si no, auto-distribuye)
+  tbl.appendChild(cg);
+  var thead=document.createElement('thead');
+  var hr=document.createElement('tr');
+  var hc=document.createElement('th'); hc.textContent=''; hr.appendChild(hc);
+  for(c=geo.C0;c<=geo.C1;c++){ var th=document.createElement('th'); th.textContent=nvColName(c); hr.appendChild(th); }
+  thead.appendChild(hr); tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  var BS={1:'1px solid',2:'2px solid',3:'1px dashed',4:'1px dotted',5:'3px solid',6:'2px double',7:'1px solid',8:'1px solid'};
+  for(r=geo.R0;r<=geo.R1;r++){
+    var tr=document.createElement('tr');
+    if(geo.Hpx(r)<=0){ tr.style.display='none'; }
+    else tr.style.height=Math.round(geo.Hpx(r))+'px';
+    var rh=document.createElement('td'); rh.className='xg-rowh'; rh.textContent=r; tr.appendChild(rh);
+    for(c=geo.C0;c<=geo.C1;c++){
+      var key=r+'_'+c, mv=geo.cover[key];
+      if(mv&&!(mv.r0===r&&mv.c0===c)) continue;   // cubierta por merge: no se renderiza
+      var st=sh.styles[key];
+      var td=document.createElement('td');
+      td.className='xg-td';
+      td.setAttribute('data-r',r); td.setAttribute('data-c',c);
+      var hpx=0; for(var rr2=(mv?mv.r0:r);rr2<=(mv?mv.r1:r);rr2++) hpx+=geo.Hpx(rr2);
+      if(hpx>0) td.style.height=Math.round(hpx)+'px';
+      if(mv){ td.colSpan=mv.c1-mv.c0+1; td.rowSpan=mv.r1-mv.r0+1; }
+      var stv=st||{font:{name:'Arial',sz:10,b:false,i:false,u:false,color:'000000'},ha:0,va:1,wrap:false};
+      if(stv.font){
+        td.style.fontFamily='"'+_wzResolveFam(stv.font.name||'Arial')+'"';
+        td.style.fontSize=Math.round(stv.font.sz*4/3)+'px';
+        if(stv.font.b) td.style.fontWeight='700';
+        if(stv.font.i) td.style.fontStyle='italic';
+        if(stv.font.u) td.style.textDecoration='underline';
+        td.style.color='#'+(stv.font.color||'000000');
+      }
+      if(st&&st.fill&&!/^F{6}$/i.test(st.fill)) td.style.background='#'+st.fill;
+      ['bl','br','bt','bb'].forEach(function(sd,ix){
+        var b=stv[sd];
+        if(b&&b.s){
+          var nm=['Left','Right','Top','Bottom'][ix];
+          td.style['border'+nm]=BS[b.s]||'1px solid';
+          td.style['border'+nm+'Color']=(b.c==='auto'||!b.c)?'#141414':('#'+b.c);
+        }
+      });
+      var ha=stv.ha||0;
+      var txt=xlCellText(model,sh,sheetIdx,r,c);
+      var casW=0;
+      if(ha===6){
+        // "centrar a través de la selección": el texto se centra hasta la
+        // próxima celda con contenido o merge (como Excel/LO, sin crear merges)
+        var cE=c;
+        while(cE+1<=geo.C1&&!xlCellText(model,sh,sheetIdx,r,cE+1)&&!geo.cover[r+'_'+(cE+1)])cE++;
+        for(var cw2=c;cw2<=cE;cw2++)casW+=geo.Wpx(cw2);
+      }
+      if(ha===2||ha===5) td.style.textAlign='center';
+      else if(ha===3) td.style.textAlign='right';
+      else td.style.textAlign='left';
+      if(!ha&&/^[-+]?[\d.,:\-]+%?$/.test(txt)) td.style.textAlign='right';
+      if(stv.va===0) td.style.verticalAlign='top';
+      else if(stv.va===2) td.style.verticalAlign='bottom';
+      else td.style.verticalAlign='middle';
+      if(txt){
+        var sp=document.createElement('span');
+        sp.className='xg-tx';
+        if(stv.wrap) sp.style.whiteSpace='pre-wrap';
+        if(ha===6&&casW>0){
+          sp.style.width=casW+'px';
+          sp.style.textAlign='center';
+        }
+        sp.textContent=txt;
+        td.appendChild(sp);
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  host.appendChild(tbl);
+  xlSelect(tab, geo.R0, geo.C0);
+}
+function xlSyncBar(tab){
+  var v=tab._xlView;
+  var refEl=v.bar.querySelector('.xg-ref'), valEl=v.bar.querySelector('.xg-val');
+  if(!v.sel){ if(refEl)refEl.textContent='—'; if(valEl)valEl.value=''; return; }
+  if(refEl) refEl.textContent=nvColName(v.sel.c)+v.sel.r;
+  var sh=tab._xl.sheets[v.sheet];
+  if(valEl) valEl.value=xlCellText(tab._xl,sh,v.sheet,v.sel.r,v.sel.c);
+}
+function xlSelect(tab,r,c){
+  var v=tab._xlView;
+  v.sel={r:r,c:c};
+  var prev=v.host.querySelector('td.xg-sel');
+  if(prev) prev.classList.remove('xg-sel');
+  var td=v.host.querySelector('td.xg-td[data-r="'+r+'"][data-c="'+c+'"]');
+  if(td) td.classList.add('xg-sel');
+  xlSyncBar(tab);
+}
+function xlMove(tab,dc,dr){
+  var v=tab._xlView, geo=v.geo;
+  if(!geo||!v.sel) return;
+  var r=v.sel.r+dr, c=v.sel.c+dc;
+  r=Math.max(geo.R0,Math.min(geo.R1,r));
+  c=Math.max(geo.C0,Math.min(geo.C1,c));
+  var mv=geo.cover[r+'_'+c];
+  if(mv&&!(mv.r0===r&&mv.c0===c)){
+    if(dr>0) r=Math.min(geo.R1,mv.r1+1);
+    else if(dr<0) r=Math.max(geo.R0,mv.r0-1);
+    if(dc>0) c=Math.min(geo.C1,mv.c1+1);
+    else if(dc<0) c=Math.max(geo.C0,mv.c0-1);
+    var mv2=geo.cover[r+'_'+c];
+    if(mv2){ r=mv2.r0; c=mv2.c0; }
+  }
+  xlSelect(tab,r,c);
+  var td=v.host.querySelector('td.xg-td[data-r="'+r+'"][data-c="'+c+'"]');
+  if(td){ try{ td.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }
+}
+function xlEdit(tab, seedChar){
+  var v=tab._xlView;
+  if(!v.sel) return;
+  xlCloseEditor(tab,false);
+  var td=v.host.querySelector('td.xg-td[data-r="'+v.sel.r+'"][data-c="'+v.sel.c+'"]');
+  if(!td) return;
+  var sh=tab._xl.sheets[v.sheet];
+  var inp=document.createElement('input');
+  inp.className='xg-edit'; inp.type='text'; inp.spellcheck=false; inp.autocomplete='off';
+  var cur=xlCellText(tab._xl,sh,v.sheet,v.sel.r,v.sel.c);
+  inp.value=(seedChar!==undefined)?seedChar:cur;
+  var st=sh.styles[v.sel.r+'_'+v.sel.c];
+  if(st&&st.font){
+    inp.style.fontFamily='"'+_wzResolveFam(st.font.name||'Arial')+'"';
+    inp.style.fontSize=Math.round(st.font.sz*4/3)+'px';
+    if(st.font.b) inp.style.fontWeight='700';
+    if(st.font.i) inp.style.fontStyle='italic';
+    inp.style.color='#'+(st.font.color||'000000');
+  }
+  var rc=td.getBoundingClientRect(), rh=v.host.getBoundingClientRect();
+  inp.style.left=(rc.left-rh.left)+'px';
+  inp.style.top=(rc.top-rh.top)+'px';
+  inp.style.width=Math.max(40,rc.width)+'px';
+  inp.style.height=Math.max(20,rc.height)+'px';
+  inp.addEventListener('keydown',function(e){
+    e.stopPropagation();
+    if(e.key==='Enter'){ e.preventDefault(); xlCloseEditor(tab,true); xlMove(tab,0,1); }
+    else if(e.key==='Tab'){ e.preventDefault(); xlCloseEditor(tab,true); xlMove(tab,e.shiftKey?-1:1,0); }
+    else if(e.key==='Escape'){ e.preventDefault(); xlCloseEditor(tab,false); try{v.wrap.focus();}catch(e2){} }
+  });
+  inp.addEventListener('blur',function(){ xlCloseEditor(tab,true); });
+  v.host.appendChild(inp);
+  v.editor=inp;
+  inp.focus();
+  if(seedChar===undefined) inp.select();
+  else inp.setSelectionRange(inp.value.length, inp.value.length);
+}
+function xlCloseEditor(tab,commit){
+  var v=tab._xlView;
+  if(!v.editor) return;
+  var inp=v.editor;
+  v.editor=null;
+  var val=inp.value;
+  inp.remove();
+  if(commit&&v.sel) xlCommit(tab,v.sel.r,v.sel.c,val);
+}
+function xlCommitFromBar(tab,val){
+  var v=tab._xlView;
+  if(v.sel) xlCommit(tab,v.sel.r,v.sel.c,val);
+}
+function xlKey(tab,e){
+  var v=tab._xlView;
+  if(v.editor) return;
+  if(!v.sel) return;
+  var k=e.key;
+  if(k==='ArrowDown'){ e.preventDefault(); xlMove(tab,0,1); }
+  else if(k==='ArrowUp'){ e.preventDefault(); xlMove(tab,0,-1); }
+  else if(k==='ArrowRight'||(k==='Tab'&&!e.shiftKey)){ e.preventDefault(); xlMove(tab,1,0); }
+  else if(k==='ArrowLeft'||(k==='Tab'&&e.shiftKey)){ e.preventDefault(); xlMove(tab,-1,0); }
+  else if(k==='Enter'){ e.preventDefault(); xlMove(tab,0,1); }
+  else if(k==='F2'){ e.preventDefault(); xlEdit(tab); }
+  else if(k==='Delete'||k==='Backspace'){ e.preventDefault(); xlCommit(tab,v.sel.r,v.sel.c,''); }
+  else if(k.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){ e.preventDefault(); xlEdit(tab,k); }
+}
+function xlCommit(tab,r,c,raw){
+  var model=tab._xl, v=tab._xlView;
+  var sh=model.sheets[v.sheet];
+  raw=String(raw==null?'':raw);
+  var addr=XLSX.utils.encode_cell({r:r-1,c:c-1});
+  var ws=sh.ws;
+  var old=ws[addr];
+  var oldDisp=xlCellText(model,sh,v.sheet,r,c);
+  if(raw===oldDisp) return;   // sin cambio
+  var ekey=v.sheet+'!'+addr;
+  if(!model.orig[ekey]) model.orig[ekey]=xlCellDeep(old);
+  model.undo.push({sh:v.sheet,r:r,c:c,addr:addr,old:xlCellDeep(old)});
+  var cell=null;
+  var isDateCell=!!(old&&(old.t==='d'||(old.v&&old.v instanceof Date)));
+  var dm=/^\s*(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\s*$/.exec(raw);
+  if(raw===''){ try{ delete ws[addr]; }catch(e){} }
+  else if(dm&&isDateCell){
+    var yy=+dm[3]; if(yy<100) yy+=2000;
+    var ser=Math.round((Date.UTC(yy,+dm[2]-1,+dm[1])-Date.UTC(1899,11,30))/864e5);
+    cell={t:'n',v:ser,w:raw}; ws[addr]=cell;
+  }
+  else{
+    var numS=raw.replace(',','.').trim();
+    if(numS!==''&&!isNaN(+numS)&&/^[-+]?[\d.,]+$/.test(raw.trim())){
+      cell={t:'n',v:+numS,w:raw}; ws[addr]=cell;
+    }else{
+      cell={t:'s',v:raw,w:raw}; ws[addr]=cell;
+    }
+  }
+  model.edits[ekey]={r:r,c:c,v:raw,num:(cell&&cell.t==='n')?String(cell.v):undefined};
+  nvMarkDirty(tab);
+  // refrescar la celda en el DOM
+  var td=v.host?v.host.querySelector('td.xg-td[data-r="'+r+'"][data-c="'+c+'"]'):null;
+  if(td){
+    var sp=td.querySelector('.xg-tx');
+    if(raw===''){ if(sp) sp.remove(); }
+    else{
+      if(!sp){ sp=document.createElement('span'); sp.className='xg-tx'; td.appendChild(sp); }
+      sp.textContent=raw;
+    }
+  }
+  xlSyncBar(tab);
+}
+function xlUndo(tab){
+  var model=tab._xl;
+  var u=model.undo.pop();
+  if(!u){ toast('Nada que deshacer'); return; }
+  var sh=model.sheets[u.sh], ws=sh.ws;
+  if(u.old===null){ try{ delete ws[u.addr]; }catch(e){} }
+  else ws[u.addr]=u.old;
+  var ekey=u.sh+'!'+u.addr;
+  var restored=xlCellDeep(ws[u.addr]);
+  var orig=model.orig[ekey];
+  var same=(restored===null&&orig===null)||
+    (restored&&orig&&restored.t===orig.t&&String(restored.v)===String(orig.v)&&String(restored.f||'')===String(orig.f||''));
+  if(same) delete model.edits[ekey];
+  else model.edits[ekey]={r:u.r,c:u.c,v:xlCellText(model,sh,u.sh,u.r,u.c)};
+  var v=tab._xlView;
+  if(v&&v.sheet===u.sh){
+    var td=v.host.querySelector('td.xg-td[data-r="'+u.r+'"][data-c="'+u.c+'"]');
+    if(td){
+      var sp=td.querySelector('.xg-tx');
+      var txt=xlCellText(model,sh,u.sh,u.r,u.c);
+      if(txt){ if(!sp){ sp=document.createElement('span'); sp.className='xg-tx'; td.appendChild(sp); } sp.textContent=txt; }
+      else if(sp) sp.remove();
+    }
+    xlSyncBar(tab);
+  }
+  if(!Object.keys(model.edits).length&&tab._dirty){ tab._dirty=false; renderDocTabs(); }
+}
+
+// ════ v2.9.0 — EXCEL: apertura en pestaña nativa ════
+async function excelTabOpen(ab, base){
+  try{
+    if(typeof XLSX==='undefined') throw new Error('SheetJS no disponible (revisa tu conexión)');
+    toast('Abriendo '+base+' en modo Excel…');
+    setProg(15);
+    var model=await _xlBuildModel(ab, base, false);
+    setProg(55);
+    if(!model.sheets.length) throw new Error('El libro no contiene hojas');
+    var tab=nativeTabOpen('excel', base, (ab.byteLength/1024).toFixed(1)+' KB', function(t){
+      t._xl=model;
+      return buildXlView(model, t);
+    });
+    xlRenderSheet(tab, 0);
+    setProg(100);setTimeout(hideProg,500);
+    toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
+    return true;
+  }catch(e){
+    hideProg();
+    toast('No se pudo abrir el Excel: '+(e&&e.message?e.message:e),'err');
+    throw e;
+  }
+}
+
+// ════ v2.9.0 — EXCEL: GUARDADO .xlsx por PARCHE IN-PLACE ════
+// Se reescriben ÚNICAMENTE las celdas editadas dentro del XML original: el
+// resto del libro (estilos, fórmulas, anchos, merges…) queda byte-idéntico.
+async function xlsxPatchSave(tab){
+  var model=tab._xl;
+  toast('Guardando '+tab.fileName+'.xlsx…');
+  setProg(20);
+  try{
+    var z=await JSZip.loadAsync(model.ab);
+    var wbStr=await z.file('xl/workbook.xml').async('string');
+    var relsStr=await z.file('xl/_rels/workbook.xml.rels').async('string');
+    var wbx=new DOMParser().parseFromString(wbStr,'application/xml');
+    var relx=new DOMParser().parseFromString(relsStr,'application/xml');
+    var relMap={}, rels=relx.getElementsByTagName('Relationship'), i;
+    for(i=0;i<rels.length;i++) relMap[rels[i].getAttribute('Id')]=rels[i].getAttribute('Target');
+    var sheetNodes=wbx.getElementsByTagName('sheet');
+    function sheetPath(shName){
+      for(var j=0;j<sheetNodes.length;j++){
+        if(sheetNodes[j].getAttribute('name')===shName){
+          var rid=sheetNodes[j].getAttribute('r:id')||sheetNodes[j].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+          var tgt=relMap[rid]||('');
+          tgt=tgt.replace(/^\//,'');
+          if(!/^xl\//.test(tgt)) tgt='xl/'+tgt;
+          return tgt;
+        }
+      }
+      return null;
+    }
+    // agrupar ediciones por hoja
+    var perSheet={};
+    Object.keys(model.edits).forEach(function(k){
+      var p=k.split('!'), shx=p[0], addr=p[1];
+      (perSheet[shx]=perSheet[shx]||[]).push({addr:addr, e:model.edits[k]});
+    });
+    var removedFormula=false, nEdits=0;
+    for(var shx in perSheet){
+      var sh=model.sheets[+shx]; if(!sh) continue;
+      var path=sheetPath(sh.name);
+      if(!path||!z.file(path)) throw new Error('Hoja no encontrada en el libro: '+sh.name);
+      var xml=await z.file(path).async('string');
+      var edits=perSheet[shx];
+      for(var e2=0;e2<edits.length;e2++){
+        var ed=edits[e2].e, addr=edits[e2].addr;
+        nEdits++;
+        var re=new RegExp('<c r="'+addr+'"(?=[ />])[^>]*?(?:/>|>[\\s\\S]*?</c>)');
+        var m=re.exec(xml);
+        var newC;
+        if(m){
+          var openEnd=m[0].indexOf('>');
+          var openTag=m[0].slice(0,openEnd+1);
+          if(/<f[ >]/.test(m[0])) removedFormula=true;
+          var sM=/(?:^|[" ])s="(\d+)"/.exec(openTag);
+          var sAttr=sM?(' s="'+sM[1]+'"'):'';
+          if(ed.v==='') newC='<c r="'+addr+'"'+sAttr+'/>';
+          else if(ed.num!==undefined) newC='<c r="'+addr+'"'+sAttr+'><v>'+ed.num+'</v></c>';
+          else newC='<c r="'+addr+'"'+sAttr+' t="inlineStr"><is><t xml:space="preserve">'+nvXesc(ed.v)+'</t></is></c>';
+          xml=xml.slice(0,m.index)+newC+xml.slice(m.index+m[0].length);
+        }else{
+          // la celda no existía: insertarla en su fila (y crear la fila si hace falta)
+          var colL=/^[A-Z]+/.exec(addr)[0];
+          var rowN=/^\d+$/.test(addr.slice(colL.length))?+addr.slice(colL.length):ed.r;
+          if(ed.v==='') continue;   // borrar una celda inexistente = no-op
+          var cellXml=(ed.num!==undefined)?
+            ('<c r="'+addr+'"><v>'+ed.num+'</v></c>'):
+            ('<c r="'+addr+'" t="inlineStr"><is><t xml:space="preserve">'+nvXesc(ed.v)+'</t></is></c>');
+          var rm=new RegExp('<row r="'+rowN+'"(?=[ >])[^>]*>').exec(xml);
+          if(rm){
+            var rowOpenEnd=rm.index+rm[0].length;
+            var rowInner=xml.slice(rowOpenEnd);
+            var endIdx=rowInner.indexOf('</row>');
+            var cellsXml=(endIdx>=0)?rowInner.slice(0,endIdx):'';
+            var insertAt=null, cm2;
+            var cre=/<c r="([A-Z]+)\d+"[^>]*(?:\/>|>[\s\S]*?<\/c>)/g;
+            while((cm2=cre.exec(cellsXml))){
+              if(nvColCmp(cm2[1],colL)>0){ insertAt=rowOpenEnd+cm2.index; break; }
+            }
+            if(insertAt===null) insertAt=rowOpenEnd+((endIdx>=0)?endIdx:cellsXml.length);
+            xml=xml.slice(0,insertAt)+cellXml+xml.slice(insertAt);
+          }else{
+            var rowXml='<row r="'+rowN+'">'+cellXml+'</row>';
+            var rre=/<row r="(\d+)"/g, rm2, insRow=null;
+            while((rm2=rre.exec(xml))){ if(+rm2[1]>rowN){ insRow=rm2.index; break; } }
+            if(insRow===null){
+              var sd=xml.indexOf('</sheetData>');
+              insRow=(sd>=0)?sd:xml.indexOf('</worksheet>');
+              if(insRow<0) insRow=xml.length;
+            }
+            xml=xml.slice(0,insRow)+rowXml+xml.slice(insRow);
+          }
+        }
+      }
+      z.file(path,xml);
+    }
+    if(nEdits===0){
+      hideProg();
+      toast('No hay cambios que guardar','ok');
+      return;
+    }
+    // si se pisó una fórmula: sin calcChain + recálculo completo al abrir
+    if(removedFormula&&z.file('xl/calcChain.xml')){
+      z.remove('xl/calcChain.xml');
+      try{
+        var ct=await z.file('[Content_Types].xml').async('string');
+        z.file('[Content_Types].xml', ct.replace(/<Override[^>]*calcChain\.xml[^>]*\/>/,''));
+        var wr=await z.file('xl/_rels/workbook.xml.rels').async('string');
+        z.file('xl/_rels/workbook.xml.rels', wr.replace(/<Relationship[^>]*calcChain\.xml[^>]*\/>/,''));
+      }catch(e){}
+      try{
+        var wx=await z.file('xl/workbook.xml').async('string');
+        if(!/<calcPr/.test(wx)) wx=wx.replace('</workbook>','<calcPr fullCalcOnLoad="1"/></workbook>');
+        else wx=wx.replace(/<calcPr([^>]*?)\/>/,'<calcPr$1 fullCalcOnLoad="1"/>');
+        z.file('xl/workbook.xml',wx);
+      }catch(e){}
+    }
+    setProg(70);
+    var out=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    dlBlob(out, tab.fileName+'.xlsx');
+    tab._dirty=false; renderDocTabs();
+    var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
+    setProg(100);setTimeout(hideProg,500);
+    toast('✅ '+tab.fileName+'.xlsx guardado — '+nEdits+' celda(s) actualizada(s); el resto del libro queda idéntico al original','ok');
+  }catch(e){
+    hideProg();
+    toast('No se pudo guardar el .xlsx: '+(e&&e.message?e.message:e),'err');
+    throw e;
+  }
+}
+
+// ════ v2.9.0 — EXCEL: .xls → .xlsx (escritor completo con estilos reales) ════
+// El binario .xls no se reescribe (formato legado): se genera un .xlsx con
+// TODOS los formatos del original (fuentes, rellenos, bordes, alineación,
+// anchos, altos y merges) tomados del parser BIFF8 propio.
+async function xlsToXlsxSave(tab){
+  var model=tab._xl;
+  toast('Generando '+tab.fileName+'.xlsx con todos los formatos…');
+  setProg(20);
+  try{
+    var z=new JSZip();
+    var fonts=[], fills=[], borders=[], xfs=[], combo={};
+    function styleXf(st){
+      var f=st.font||{name:'Arial',sz:10,color:'000000'};
+      var fkey=JSON.stringify([f.name,f.sz,!!f.b,!!f.i,!!f.u,f.color]);
+      if(combo['f'+fkey]===undefined){ combo['f'+fkey]=fonts.length; fonts.push(f); }
+      var fillIdx=-1;
+      if(st.fill){
+        var fk='s'+st.fill;
+        if(combo['fi'+fk]===undefined){ combo['fi'+fk]=fills.length; fills.push(st.fill); }
+        fillIdx=combo['fi'+fk];
+      }
+      var b={l:st.bl||null,r:st.br||null,t:st.bt||null,b:st.bb||null};
+      var bk=JSON.stringify(b);
+      if(combo['b'+bk]===undefined){ combo['b'+bk]=borders.length; borders.push(b); }
+      var ha=st.ha||0, va=(st.va===undefined||st.va===null)?1:st.va, wrap=!!st.wrap;
+      var xk=JSON.stringify([combo['f'+fkey],fillIdx,combo['b'+bk],ha,va,wrap]);
+      if(combo['x'+xk]===undefined){
+        combo['x'+xk]=xfs.length;
+        xfs.push({f:combo['f'+fkey],fi:fillIdx,bi:combo['b'+bk],ha:ha,va:va,wrap:wrap});
+      }
+      return combo['x'+xk];
+    }
+    model.sheets.forEach(function(sh){
+      for(var k in sh.styles){ try{ sh.styles[k].__xf=styleXf(sh.styles[k]); }catch(e){} }
+    });
+    var BMAP={1:'thin',2:'medium',3:'dashed',4:'dotted',5:'thick',6:'double',7:'hair',8:'mediumDashed'};
+    var HAMAP={0:'',1:'',2:'center',3:'right',5:'justify',6:'centerContinuous'};
+    var VAMAP={0:'top',1:'center',2:'bottom'};
+    var fs='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+    fs+='<fonts count="'+(fonts.length+1)+'"><font><sz val="10"/><name val="Arial"/></font>';
+    fonts.forEach(function(f){
+      fs+='<font>'+(f.b?'<b/>':'')+(f.i?'<i/>':'')+(f.u?'<u val="single"/>':'')+
+        '<sz val="'+(+f.sz||10)+'"/><color rgb="FF'+(f.color||'000000')+'"/><name val="'+nvXesc(f.name||'Arial')+'"/></font>';
+    });
+    fs+='</fonts><fills count="'+(fills.length+2)+'"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>';
+    fills.forEach(function(fl){
+      fs+='<fill><patternFill patternType="solid"><fgColor rgb="FF'+fl+'"/><bgColor indexed="64"/></patternFill></fill>';
+    });
+    fs+='</fills><borders count="'+(borders.length+1)+'"><border><left/><right/><top/><bottom/><diagonal/></border>';
+    borders.forEach(function(b){
+      function sd(s){ return (s&&s.s)?(' style="'+(BMAP[s.s]||'thin')+'"')+'':''; }
+      function col(s){ return (s&&s.s)?('<color rgb="FF'+((s.c&&s.c!=='auto')?s.c:'000000')+'"/>'):''; }
+      fs+='<border><left'+sd(b.l)+'>'+col(b.l)+'</left><right'+sd(b.r)+'>'+col(b.r)+'</right>'+
+        '<top'+sd(b.t)+'>'+col(b.t)+'</top><bottom'+sd(b.b)+'>'+col(b.b)+'</bottom><diagonal/></border>';
+    });
+    fs+='</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>';
+    fs+='<cellXfs count="'+(xfs.length+1)+'"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+    xfs.forEach(function(x){
+      var haA=HAMAP[x.ha], vaA=VAMAP[x.va];
+      var al=(haA||vaA||x.wrap)?
+        ('<alignment'+(haA?(' horizontal="'+haA+'"'):'')+(vaA?(' vertical="'+vaA+'"'):'')+(x.wrap?' wrapText="1"':'')+'/>'):'';
+      fs+='<xf numFmtId="0" fontId="'+(x.f+1)+'" fillId="'+(x.fi>=0?(x.fi+2):0)+'" borderId="'+(x.bi+1)+
+        '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">'+al+'</xf>';
+    });
+    fs+='</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    z.file('xl/styles.xml',fs);
+    // hojas
+    var sheetRefs=[];
+    model.sheets.forEach(function(sh,si){
+      var geo=xlGeo(sh);
+      var stp=sh.setup||{};
+      var useFit=(stp.fitW>0&&stp.fitH>0);   // el FPL imprime fit-to-page 1×1
+      var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+      if(useFit) x+='<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';
+      var rowsMeta=sh.ws['!rows']||[], colsMeta=sh.ws['!cols']||[];
+      if(geo){
+        x+='<cols>';
+        for(var c=geo.C0;c<=geo.C1;c++){
+          var cm=colsMeta[c-1];
+          var wch=(cm&&cm.wch)?cm.wch:((cm&&cm.wpx)?Math.round(((cm.wpx-5)/7)*100)/100:8.43);
+          x+='<col min="'+c+'" max="'+c+'" width="'+wch+'" customWidth="1"/>';
+        }
+        x+='</cols>';
+      }
+      x+='<sheetData>';
+      if(geo){
+        for(var r=geo.R0;r<=geo.R1;r++){
+          var rm=rowsMeta[r-1];
+          var hpt=(rm&&rm.hpt)?(Math.round(rm.hpt*100)/100):null;
+          x+='<row r="'+r+'"'+((hpt&&hpt>0)?(' ht="'+hpt+'" customHeight="1"'):'')+'>';
+          for(c=geo.C0;c<=geo.C1;c++){
+            var key=r+'_'+c, mv=geo.cover[key];
+            if(mv&&!(mv.r0===r&&mv.c0===c)) continue;
+            var st=sh.styles[key];
+            var sAttr=(st&&st.__xf!==undefined)?(' s="'+(st.__xf+1)+'"'):'';
+            var addr=nvColName(c)+r;
+            var cell=sh.ws[XLSX.utils.encode_cell({r:r-1,c:c-1})];
+            if(!cell&&!st) continue;   // vacía y sin estilo: Excel la omite
+            var txt=xlCellText(model,sh,si,r,c,true);   // texto exacto (espacios internos intactos)
+            if(cell&&cell.t==='n'&&(cell.v!==null&&cell.v!==undefined)&&String(cell.v)===String(txt)&&(cell.v instanceof Date)===false){
+              x+='<c r="'+addr+'"'+sAttr+'><v>'+cell.v+'</v></c>';
+            }
+            else if(txt!==''){
+              x+='<c r="'+addr+'"'+sAttr+' t="inlineStr"><is><t xml:space="preserve">'+nvXesc(txt)+'</t></is></c>';
+            }
+            else{
+              x+='<c r="'+addr+'"'+sAttr+'/>';
+            }
+          }
+          x+='</row>';
+        }
+      }
+      x+='</sheetData>';
+      var mgs=sh.ws['!merges']||[];
+      if(mgs.length){
+        x+='<mergeCells count="'+mgs.length+'">';
+        mgs.forEach(function(m){ x+='<mergeCell ref="'+XLSX.utils.encode_range(m)+'"/>'; });
+        x+='</mergeCells>';
+      }
+      // v2.9.0 — setup de impresión REAL del .xls (márgenes/escala/fit): el PDF
+      // impreso del .xlsx sale igual al del original
+      var mg=sh.marg||{};
+      function mnum(v,def){ v=+v; return (v>=0&&v<3)?(Math.round(v*1000)/1000):def; }
+      x+='<pageMargins left="'+mnum(mg.l,0.7)+'" right="'+mnum(mg.r,0.7)+'" top="'+mnum(mg.t,0.75)+'" bottom="'+mnum(mg.b,0.75)+'" header="'+mnum(mg.h,0.3)+'" footer="'+mnum(mg.f,0.3)+'"/>';
+      var scl=(stp.scale&&stp.scale>=10&&stp.scale<=400)?Math.round(stp.scale):100;
+      x+='<pageSetup '+(useFit?('fitToWidth="'+stp.fitW+'" fitToHeight="'+stp.fitH+'"'):('scale="'+scl+'"'))+' paperSize="'+(stp.paper||9)+'" orientation="portrait"/></worksheet>';
+      var p='xl/worksheets/sheet'+(si+1)+'.xml';
+      z.file(p,x);
+      sheetRefs.push({p:p, name:sh.name||('Hoja'+(si+1))});
+    });
+    // workbook + rels + content types
+    var wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '+
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+      '<sheets>';
+    var relsW='', ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+      '<Default Extension="xml" ContentType="application/xml"/>'+
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+    sheetRefs.forEach(function(sr,si){
+      wb+='<sheet name="'+nvXesc(sr.name)+'" sheetId="'+(si+1)+'" r:id="rId'+(si+1)+'"/>';
+      relsW+='<Relationship Id="rId'+(si+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(si+1)+'.xml"/>';
+      ct+='<Override PartName="/xl/worksheets/sheet'+(si+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    });
+    wb+='</sheets></workbook>';
+    ct+='</Types>';
+    z.file('xl/workbook.xml',wb);
+    z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      relsW+
+      '<Relationship Id="rIdSty" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+      '</Relationships>');
+    z.file('[Content_Types].xml',ct);
+    z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      '<Relationship Id="rIdWb" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+      '</Relationships>');
+    setProg(70);
+    var out=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    dlBlob(out, tab.fileName+'.xlsx');
+    tab._dirty=false; renderDocTabs();
+    var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
+    setProg(100);setTimeout(hideProg,500);
+    toast('✅ '+tab.fileName+'.xlsx generado con los formatos del .xls original (el .xls no se modifica)','ok');
+  }catch(e){
+    hideProg();
+    toast('No se pudo generar el .xlsx: '+(e&&e.message?e.message:e),'err');
+    throw e;
+  }
+}
 
 // ── INIT ──
 (async function(){
