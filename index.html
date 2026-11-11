@@ -6709,13 +6709,15 @@ async function _xlBuildModel(ab, name, isCsv){
             if(need) ws0['!ref'] = XLSX.utils.encode_range({r: rg0.r0 - 1, c: rg0.c0 - 1}, {r: r1m - 1, c: c1m - 1});
           }
         }
-        // anchos COLINFO reales (SheetJS subestima wch del BIFF)
+        // anchos COLINFO reales: wch exacto (para el guardado .xlsx); el wpx
+        // de SheetJS se CONSERVA porque normaliza con la fuente base real del
+        // libro (el FPL: 3.28 chars ≈ 23px con su MDW≈5.5, no 28 con MDW=7)
         var ci0 = bcols[si0] || [];
         if(ci0.length){
           var cm0 = ws0['!cols'] = ws0['!cols'] || [];
           ci0.forEach(function(ci){
             for(var cc0 = ci.c0; cc0 <= ci.c1; cc0++){
-              cm0[cc0] = {wch: ci.wch, wpx: Math.round(ci.wch * 7 + 5), hidden: ci.hidden};
+              cm0[cc0] = {wch: ci.wch, wpx: (cm0[cc0] && cm0[cc0].wpx) ? cm0[cc0].wpx : Math.round(ci.wch * 7 + 5), hidden: ci.hidden};
             }
           });
         }
