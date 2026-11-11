@@ -257,6 +257,28 @@ button{font-family:"Inter",sans-serif;cursor:pointer}
 body.nativemode .eribbon:not(.nribbon){display:none}
 body.nativemode #nativeRibbon{display:flex !important}
 #nativeRibbon .rb{width:auto;min-width:46px;padding:0 9px}
+/* v2.9.2 — sellos directos sobre la vista nativa */
+.nv-stamp-layer{position:absolute;top:0;left:0;pointer-events:none}
+.nv-sello,.nv-stamp-el{position:absolute;z-index:5;pointer-events:auto;user-select:none;cursor:move}
+.nv-sello .nv-sello-box{border:2.5px solid #c00000;border-radius:5px;background:transparent;text-align:center;font-family:Inter,sans-serif;padding:5px 2px 4px;box-sizing:border-box}
+.nv-sello img.nv-sello-logo{display:block;margin:0 auto;height:30px;max-width:88%;object-fit:contain}
+.nv-sello .nv-sello-sep{border-top:0.7px solid rgba(192,0,0,.35);margin:3px 8px 0}
+.nv-sello .nv-t1{font-size:11px;font-weight:800;color:#c00000;margin-top:4px}
+.nv-sello .nv-t2{font-size:10.5px;font-weight:700;color:#c00000;font-family:"JetBrains Mono",monospace;margin-top:2px}
+.nv-sello .nv-t3{font-size:9.5px;font-weight:700;color:#c00000;font-family:"JetBrains Mono",monospace;margin-top:2px}
+.nv-sello .nv-t4{font-size:9px;font-weight:700;color:#1a4fa0;margin-top:4px}
+.nv-sello .nv-t5{font-size:8px;font-weight:600;color:#1a4fa0;margin-top:1px}
+.nv-sello .nv-sig{display:flex;align-items:center;justify-content:center;height:120px;margin-top:6px}
+.nv-sello .nv-sig img{max-width:100%;max-height:120px;object-fit:contain}
+.nv-sello .nv-sig-ph{width:90px;height:104px;border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;font-size:8px;color:#bbb;font-family:Inter,sans-serif}
+.nv-stamp-el .nv-stamp-box{border:2px solid;border-radius:4px;padding:8px 10px;display:flex;align-items:center;gap:6px;font-weight:700;font-family:Inter,sans-serif;white-space:nowrap}
+.nv-stamp-el .nv-stamp-box .nv-emoji{font-size:20px;line-height:1}
+.nv-del{position:absolute;top:-9px;right:-9px;width:18px;height:18px;border-radius:50%;border:1.5px solid #d5d9e2;background:#fff;color:#8a94a6;font-size:10px;line-height:15px;text-align:center;cursor:pointer;opacity:0;transition:opacity .12s;box-shadow:0 1px 4px rgba(15,23,42,.2)}
+.nv-sello:hover .nv-del,.nv-stamp-el:hover .nv-del{opacity:1}
+.nv-sello:hover{outline:1.5px dashed rgba(79,142,247,.55);outline-offset:2px}
+.nv-stamp-el:hover{outline:1.5px dashed rgba(79,142,247,.55);outline-offset:2px}
+body.nv-arm .nv-word,body.nv-arm .xg-scroll{cursor:crosshair!important}
+body.nv-arm .nv-sello,body.nv-arm .nv-stamp-el{cursor:crosshair!important;pointer-events:none!important}
 body.nativemode .elside{display:none}
 body.nativemode .evtb{display:none}
 #nativeBox{width:100%;max-width:none;flex:1 1 auto;align-self:stretch;display:flex;flex-direction:column;min-height:0}
@@ -727,7 +749,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.1 · Word y Excel editables en su formato original · sellos de recepción integrados</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.2 · Word y Excel editables en su formato original · sello de recepción directo sobre el documento</div>
   </div>
 </div>
 
@@ -1104,8 +1126,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     </div>
     <div class="rv"></div>
     <div class="erg">
-      <button class="rb" onclick="nativeSelloRecepcion()" title="Prepara una copia PDF del documento (con tus ediciones) y activa el sello de recepción — luego haz clic donde quieras colocarlo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="rb-lbl">Sello Rec.</span></button>
-      <button class="rb" onclick="nativeSelloPersonal()" title="Prepara una copia PDF del documento y abre los sellos (APROBADO, URGENTE, texto personalizado…)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg><span class="rb-lbl">Sello</span></button>
+      <button class="rb" onclick="nativeSelloRecepcion()" title="Activa el sello de recepción — luego haz clic directamente sobre el documento para colocarlo (se arrastra, doble clic edita la hora)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="rb-lbl">Sello Rec.</span></button>
+      <button class="rb" onclick="nativeSelloPersonal()" title="Sellos APROBADO, URGENTE, texto personalizado… — se colocan con un clic sobre el documento"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg><span class="rb-lbl">Sello</span></button>
     </div>
     <div class="rv"></div>
     <div class="erg" id="nrbZoomGrp" style="display:none">
@@ -2438,6 +2460,7 @@ function docTabNew(file){
 }
 function docTabSwitch(id){
   if(activeTabId===id)return;
+  nvDisarm();   // v2.9.2 — el sello armado no sobrevive al cambio de pestaña
   saveProjectNow();
   // Save current scroll position
   if(activeTabId){var ct=docTabGet(activeTabId);if(ct){var pb=document.getElementById('pagesBox');if(pb)ct._scrollTop=pb.scrollTop;}}
@@ -2674,7 +2697,12 @@ function buildStampGrid(){
   });
 }
 function openStampModal(){document.getElementById('stampModal').classList.add('show');}
-function applyStamp(s){document.getElementById('stampModal').classList.remove('show');pendingStamp=s;setTool('stamp-place');toast('Haz clic para colocar el sello','ok');}
+function applyStamp(s){
+  document.getElementById('stampModal').classList.remove('show');
+  var t=docTabGet(activeTabId);
+  if(t&&t.kind){ nvArmStamp(s); return; }   // v2.9.2 — colocación directa en Word/Excel
+  pendingStamp=s;setTool('stamp-place');toast('Haz clic para colocar el sello','ok');
+}
 function applyCustomStamp(){var txt=document.getElementById('customStampTxt').value.trim();if(!txt)return;applyStamp({emoji:'',label:txt,color:annColor});}
 
 // ── SIG LIBRARY UI ──
@@ -6506,9 +6534,11 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
     var BLACK = lib.rgb(.08, .08, .1);
     var page = null, pgN = 0, flowBase = 0;
     var usableH = PH - mT - mB;
+    var pagesLog = [];   // v2.9.2 — {page, flowBase} para mapear sellos
     function newPage(rStart){
       page = doc.addPage([PW, PH]); pgN++;
       flowBase = ys[rStart - R0];
+      pagesLog.push({page: page, flowBase: flowBase});
     }
     function xOf(c){ return mL + xs[c - C0] * scale; }
     function wOf(c0, c1){ return (xs[c1 - C0 + 1] - xs[c0 - C0]) * scale; }
@@ -6656,6 +6686,29 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
         });
       }
     }
+    // ── v2.9.2 — sellos nativos sobre la hoja (grid px → página PDF) ──
+    if(ctx.nvSellos && ctx.nvSellos.length && pagesLog.length && ctx.nvSelloFonts){
+      var uSl = 0.75 * scale;   // grid px → pt (incluida la escala de impresión)
+      ctx.nvSellos.forEach(function(sv){
+        try{
+          var cyPt = sv.y * 0.75;   // contenido pt desde el techo de la hoja
+          var pk = pagesLog.length - 1;
+          for(var qi = 0; qi < pagesLog.length; qi++){
+            if(cyPt >= pagesLog[qi].flowBase - 0.01){ pk = qi; }
+          }
+          var pgl = pagesLog[pk];
+          var aSl = Object.assign({}, sv, {
+            x: (mL + sv.x * 0.75 * scale) / uSl,
+            y: (mT + (cyPt - pgl.flowBase) * scale) / uSl
+          });
+          if(sv.type === 'stamp'){
+            _paintStampPdfNative(lib, pgl.page, PH, uSl, aSl, ctx.nvSelloFonts.hb);
+          }else{
+            _paintSelloPdf(lib, pgl.page, PW, PH, uSl, uSl, aSl, ctx.nvSelloFonts, ctx.nvSelloAssets);
+          }
+        }catch(e){}
+      });
+    }
     return pgN;
   }catch(e){
     try{ console.warn('wysiwyg-xls:', e); }catch(e2){}
@@ -6747,7 +6800,7 @@ async function _xlBuildModel(ab, name, isCsv){
     isXlsSrc: !!biff, edits: {}, orig: {}, undo: []
   };
 }
-async function excelToPdfBytes(ab, name, isCsv, model){
+async function excelToPdfBytes(ab, name, isCsv, model, nvSellos){
   var PDFLib = window.PDFLib;
   if(!PDFLib) throw new Error('pdf-lib no disponible');
   if(typeof XLSX === 'undefined') throw new Error('SheetJS no disponible (revisa tu conexión)');
@@ -6762,6 +6815,18 @@ async function excelToPdfBytes(ab, name, isCsv, model){
   var PW = 841.89, PH = 595.28, MG = 34, fs = 8.5, LH = 10.5, ROWMIN = 17;
   var INK = PDFLib.rgb(.13, .14, .17), HEAD = PDFLib.rgb(.10, .22, .44), GRID = PDFLib.rgb(.72, .77, .84), BAND = PDFLib.rgb(.955, .965, .985), WHITE = PDFLib.rgb(1, 1, 1);
   var availW = PW - 2 * MG, pgTotal = 0, any = false;
+  // v2.9.2 — fuentes/assets de sellos nativos (una sola vez, aquí sí hay await)
+  var nvSelloFontsG = null, nvSelloAssetsG = null;
+  if(nvSellos && nvSellos.length){
+    try{
+      nvSelloFontsG = {
+        hb: await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),
+        cB: await doc.embedFont(PDFLib.StandardFonts.CourierBold),
+        hv: await doc.embedFont(PDFLib.StandardFonts.Helvetica)
+      };
+      nvSelloAssetsG = await _nvSelloAssets(doc, nvSellos);
+    }catch(e){}
+  }
   var base = pdfSafeText(name || '');
   var measure = function(t, hdr){ return _pdfMeasure(hdr ? fHB : fH, pdfSafeText(t), fs); };
   // v2.8.0 — familias usadas según los estilos reales → fuentes embebidas
@@ -6793,6 +6858,8 @@ async function excelToPdfBytes(ab, name, isCsv, model){
     try{
       if(sh.rich){
         var ectx = {lib: PDFLib, fH: fH, fHB: fHB, stdFonts: [fH, fHB], sheetNo: sh.sIdx, drawings: biffDraws,
+          nvSellos: (nvSellos || []).filter(function(sv){ return sv.sec === model.sheets.indexOf(sh); }) || [],
+          nvSelloFonts: nvSelloFontsG, nvSelloAssets: nvSelloAssetsG,
           ttfFor: function(nm, b3, i3){
             var fam = _wzResolveFam(nm || 'Arial');
             return embedMap[fam + '|' + (b3 ? 1 : 0) + '|' + (i3 ? 1 : 0)] || null;
@@ -7623,6 +7690,11 @@ async function docxWysiwygToPdf(ab, name, opts){
       var ftrTop = ftrEl ? (ftrEl.getBoundingClientRect().top - sr.top) : 0;
       var ftrH = ftrEl ? ftrEl.getBoundingClientRect().height : 0;
       var items = [], trs = [];
+      // v2.9.2 — sellos nativos de esta sección (coords de vista, sin zoom)
+      (opts.sellos || []).forEach(function(sv){
+        if(sv.sec !== si) return;
+        items.push({k: 'sello', z: '', x: sv.x, y: sv.y, w: sv.w || 220, h: nvStampH(sv), s: sv});
+      });
       var els = sec.querySelectorAll('*');
       for(i = 0; i < els.length; i++){
         el = els[i];
@@ -7712,6 +7784,11 @@ async function docxWysiwygToPdf(ab, name, opts){
         var yb = it.k === 'tx' ? it.base : (it.y + (it.h || it.t || 0));
         if(yb > contentBottom) contentBottom = yb;
       });
+      (opts.sellos || []).forEach(function(sv){
+        if(sv.sec !== si) return;
+        var yb2 = sv.y + nvStampH(sv);
+        if(yb2 > contentBottom) contentBottom = yb2;
+      });
       var nPgMax = Math.ceil((contentBottom - padTop) / U) + 1;
       for(var bi = 0; bi < nPgMax; bi++){
         var yB = padTop + (bi + 1) * U; // fin del área útil de la página bi
@@ -7741,6 +7818,13 @@ async function docxWysiwygToPdf(ab, name, opts){
           it.pg = pageOf(yc);
           it.y = shy(it.y) - it.pg * U;
           norm.push(it);
+        }else if(it.k === 'sello'){
+          // v2.9.2 — sello nativo: página por centro y rebase del ancla;
+          // se clona la anotación con las coords ya rebasadas
+          var ycS = shy(it.y + it.h / 2);
+          it.pg = pageOf(ycS);
+          var yS = shy(it.y) - it.pg * U;
+          norm.push({k: 'sello', pg: it.pg, x: it.x, y: yS, w: it.w, h: it.h, s: Object.assign({}, it.s, {x: it.x, y: yS})});
         }else if(it.k === 'ln'){
           var y0 = shy(it.y);
           it.pg = pageOf(y0 + (it.horiz ? 0 : it.t / 2));
@@ -7815,6 +7899,19 @@ async function docxWysiwygToPdf(ab, name, opts){
       }
       fMap[fk.key] = font;
     }
+    // ── v2.9.2 — assets/fuentes de sellos nativos ──
+    var nvSl = (opts.sellos || []);
+    var selloAssetsN = null, selloFontsN = null;
+    if(nvSl.length){
+      try{ selloAssetsN = await _nvSelloAssets(doc, nvSl); }catch(e){ selloAssetsN = {logo:null,sigs:{}}; }
+      try{
+        selloFontsN = {
+          hb: await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),
+          cB: await doc.embedFont(PDFLib.StandardFonts.CourierBold),
+          hv: await doc.embedFont(PDFLib.StandardFonts.Helvetica)
+        };
+      }catch(e){ selloFontsN = null; }
+    }
     // ── dibujar ──
     var K = 0.75;
     for(var pi = 0; pi < pages.length; pi++){
@@ -7854,6 +7951,18 @@ async function docxWysiwygToPdf(ab, name, opts){
           }
         }catch(e){}
       });
+      // v2.9.2 — sellos nativos (recepción vectorial + stamps personales)
+      if(buckets.sello && selloFontsN){
+        buckets.sello.forEach(function(it){
+          try{
+            if(it.s && it.s.type === 'stamp'){
+              _paintStampPdfNative(PDFLib, page, ph, K, it.s, selloFontsN.hb);
+            }else{
+              _paintSelloPdf(PDFLib, page, Pg.w, ph, K, K, it.s, selloFontsN, selloAssetsN);
+            }
+          }catch(e){}
+        });
+      }
       // fusionar palabras contiguas (mismo estilo + baseline) en runs extraíbles
       var txs = buckets.tx.sort(function(a, b){ return (a.base - b.base) || (a.x - b.x); });
       var runs = [];
@@ -8547,6 +8656,17 @@ function openSelloEdit(slot,idx,cv){
   if(_selloEditCtx)applySelloEdit();
   var a=annotations[slot]&&annotations[slot][idx];
   if(!a||a.type!=='sello_recepcion')return;
+  _openSelloEditCommon(a,cv);_selloEditCtx={slot:slot,idx:idx,cv:cv};
+}
+// v2.9.2 — sello nativo (vista Word/Excel): mismo editor, otro destino
+function openNvSelloEdit(tab,idx,anchorEl){
+  if(_selloEditCtx)applySelloEdit();
+  var a=(tab.nvStamps||[])[idx];
+  if(!a||a.type!=='sello_recepcion')return;
+  _openSelloEditCommon(a,anchorEl);
+  _selloEditCtx={nvTab:tab,nvIdx:idx};
+}
+function _openSelloEditCommon(a,nearEl){
   _selloEditEl();
   var parsed=parseSelloTs(a.timestamp);
   document.getElementById('seRxDate').value=parsed.date;
@@ -8554,13 +8674,15 @@ function openSelloEdit(slot,idx,cv){
   document.getElementById('seTxTime').value=a.txTime||'';
   document.getElementById('seTxInit').value=a.txInitials||'';
   var el=document.getElementById('selloEditPop');
-  var r=cv.getBoundingClientRect();
-  var px=r.left+a.x*(r.width/cv.width),py=r.top+a.y*(r.height/cv.height);
+  var px,py;
+  try{
+    var r=nearEl.getBoundingClientRect();
+    px=r.left+18;py=r.top+18;
+  }catch(e){ px=window.innerWidth/2-140; py=120; }
   el.style.display='block';
   var ew=el.offsetWidth||272,eh=el.offsetHeight||240;
   el.style.left=Math.max(8,Math.min(px+18,window.innerWidth-ew-8))+'px';
   el.style.top=Math.max(8,Math.min(py+18,window.innerHeight-eh-8))+'px';
-  _selloEditCtx={slot:slot,idx:idx,cv:cv};
   try{document.getElementById('seRxTime').focus();document.getElementById('seRxTime').select();}catch(e){}
 }
 function selloEditNow(){
@@ -8571,6 +8693,23 @@ function selloEditNow(){
 }
 function applySelloEdit(){
   if(!_selloEditCtx)return;
+  // v2.9.2 — sello de una vista nativa (Word/Excel)
+  if(_selloEditCtx.nvTab){
+    var tabN=_selloEditCtx.nvTab,aN=(tabN.nvStamps||[])[_selloEditCtx.nvIdx];
+    if(aN&&aN.type==='sello_recepcion'){
+      var ndN=((document.getElementById('seRxDate')||{}).value)||'';
+      var ntN=((document.getElementById('seRxTime')||{}).value)||'';
+      var ttN=normTxTimeVal(((document.getElementById('seTxTime')||{}).value)||'');
+      var tiN=(((document.getElementById('seTxInit')||{}).value)||'').toUpperCase().trim().replace(/\s+/g,' ');
+      var newTsN=selloStampTs(ndN,ntN);
+      if(aN.timestamp!==newTsN||(aN.txTime||'')!==ttN||(aN.txInitials||'')!==tiN){
+        aN.timestamp=newTsN;aN.txTime=ttN;aN.txInitials=tiN;
+        nvRenderStamps(tabN);
+        toast('Sello actualizado: '+newTsN,'ok');
+      }
+    }
+    closeSelloEdit();return;
+  }
   var slot=_selloEditCtx.slot,idx=_selloEditCtx.idx,cv=_selloEditCtx.cv;
   var a=annotations[slot]&&annotations[slot][idx];
   if(a&&a.type==='sello_recepcion'){
@@ -9527,12 +9666,12 @@ function nativeRefreshRibbon(tab){
   if(tab&&tab.kind==='word'){
     if(saveLbl)saveLbl.textContent='Guardar .docx';
     if(zoomGrp)zoomGrp.style.display='';
-    if(hint)hint.textContent='Edita como en Word · Guardar conserva el formato · Sello Rec. coloca el sello de recepción sobre una copia PDF';
+    if(hint)hint.textContent='Edita como en Word · Guardar conserva el formato · Sello Rec. coloca el sello directamente sobre el documento (doble clic edita su hora)';
     nvWordApplyZoom(tab);
   }else if(tab&&tab.kind==='excel'){
     if(saveLbl)saveLbl.textContent=(tab._xl&&tab._xl.isXlsSrc)?'Guardar .xlsx (desde .xls)':'Guardar .xlsx';
     if(zoomGrp)zoomGrp.style.display='none';
-    if(hint)hint.textContent='Edita como en Excel · doble clic o F2 edita · Guardar respeta el formato · Sello Rec. coloca el sello sobre una copia PDF';
+    if(hint)hint.textContent='Edita como en Excel · doble clic o F2 edita · Guardar respeta el formato · Sello Rec. coloca el sello directamente sobre la hoja';
   }
 }
 
@@ -9586,10 +9725,15 @@ async function wordTabOpen(ab, base){
     });
     wrap.addEventListener('drop',function(e){ e.preventDefault(); });
     wrap.addEventListener('keydown',function(e){ if(e.key==='Tab')e.preventDefault(); });
+    // v2.9.2 — sellos directos: secciones posicionables (ancla del overlay)
+    var secsW=wrap.querySelectorAll('section.docx');
+    for(i=0;i<secsW.length;i++){ try{secsW[i].style.position='relative';}catch(e){} }
+    el.addEventListener('mousedown',function(e){ nvMaybePlaceWord(tab,e); },true);
     var tab=nativeTabOpen('word',base,(ab.byteLength/1024).toFixed(1)+' KB',function(t){
       t._docx={ab:ab.slice(0),marg:marg,wrap:wrap,zoom:1};
       return el;
     });
+    nvRenderStamps(tab);
     wrap.addEventListener('input',function(){ nvMarkDirty(tab); });
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
@@ -9619,7 +9763,7 @@ async function wordExportPdfBytes(tab){
   var clone=d.wrap.cloneNode(true);
   var ce=clone.querySelectorAll('[contenteditable]');
   for(var i=0;i<ce.length;i++) ce[i].removeAttribute('contenteditable');
-  return await docxWysiwygToPdf(d.ab, tab.fileName, {preWrap:clone, marg:d.marg});
+  return await docxWysiwygToPdf(d.ab, tab.fileName, {preWrap:clone, marg:d.marg, sellos:(tab.nvStamps||[])});
 }
 
 // v2.9.0 — diff por caracteres (LCS): ops eq/ins alineadas a posiciones del
@@ -9933,6 +10077,291 @@ async function wordSaveDocx(tab){
   }
 }
 
+
+// ════ v2.9.2 — SELLOS DIRECTOS SOBRE LA VISTA NATIVA (Word/Excel) ════
+// Flujo: «Sello Rec.» arma → clic sobre el documento coloca el sello EN
+// SITIO (overlay HTML dentro de la vista) → arrastrar lo mueve, doble
+// clic edita su hora, ✕ lo borra. En «Exportar PDF»/«Abrir como PDF»
+// se pinta vectorial en la página correcta (motor de fidelidad intacto).
+// El guardado .docx/.xlsx NO se toca: el sello es una capa de anotación.
+var nvPendingSello=false, nvPendingStamp=null;
+
+function nvStampH(s){
+  if(s.type==='stamp') return 52;
+  return ((s.txTime||s.txInitials)?103:90)+6+120;
+}
+function nvArmSello(){
+  nvPendingSello=true; nvPendingStamp=null;
+  document.body.classList.add('nv-arm');
+  updateSelloPreview();
+  toast('Haz clic sobre el documento para colocar el sello · Esc cancela','ok');
+}
+function nvArmStamp(s){
+  nvPendingStamp=s; nvPendingSello=false;
+  document.body.classList.add('nv-arm');
+  if(s) toast('Haz clic sobre el documento para colocar el sello «'+(s.label||'')+'» · Esc cancela','ok');
+}
+function nvDisarm(){
+  nvPendingSello=false; nvPendingStamp=null;
+  document.body.classList.remove('nv-arm');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&(nvPendingSello||nvPendingStamp)){ nvDisarm(); toast('Colocación del sello cancelada'); }
+});
+
+// Anotación nueva de recepción con los valores vigentes del panel
+function nvBuildSelloAnn(){
+  var _txT=normTxTimeVal((document.getElementById('selloTxTime')||{}).value||'');
+  var _txI=((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().trim().replace(/\s+/g,' ');
+  var _rxTs=selloStampTs(((document.getElementById('selloRxDate')||{}).value||''),((document.getElementById('selloRxTime')||{}).value||''));
+  var sig=getActiveSig();
+  return {type:'sello_recepcion',w:220,timestamp:_rxTs,txTime:_txT,txInitials:_txI,sigImg:sig?sig.src:null,opacity:annOpacity};
+}
+
+// ── WORD: clic → sección + coords sin zoom ──
+function nvMaybePlaceWord(tab,e){
+  if(!nvPendingSello&&!nvPendingStamp)return;
+  if(e.button!==0)return;
+  var d=tab&&tab._docx; if(!d||!tab.nvEl)return;
+  e.preventDefault(); e.stopPropagation();
+  var zoom=d.zoom||1;
+  var secs=d.wrap.querySelectorAll('section.docx');
+  if(!secs.length){ nvDisarm(); return; }
+  var si=-1,best=1e12,bx=0,by=0;
+  for(var i=0;i<secs.length;i++){
+    var r=secs[i].getBoundingClientRect();
+    if(r.width<2&&r.height<2)continue;
+    var cx=Math.max(r.left,Math.min(e.clientX,r.right));
+    var cy=Math.max(r.top,Math.min(e.clientY,r.bottom));
+    var dist=Math.hypot(e.clientX-cx,e.clientY-cy);
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dist=-1;
+    if(dist<best){best=dist;si=i;bx=(e.clientX-r.left)/zoom;by=(e.clientY-r.top)/zoom;}
+  }
+  if(si<0){ nvDisarm(); return; }
+  // clamp: el sello no debe salirse de la página/hoja (el PDF recorta en 0)
+  var secW=secs[si].getBoundingClientRect().width/zoom;
+  function nvClamp(v,min,max){ return Math.max(min,Math.min(v,max)); }
+  var s;
+  if(nvPendingSello){
+    s=nvBuildSelloAnn();
+    s.sec=si; s.x=nvClamp(bx-((s.w||220)/2),0,Math.max(0,secW-(s.w||220))); s.y=Math.max(0,by-(((s.txTime||s.txInitials)?103:90)/2));
+  }else{
+    var p=nvPendingStamp;
+    s={type:'stamp',sec:si,text:p.label||'',emoji:p.emoji||'',color:p.color||annColor,size:annSize||14,x:bx,y:by+10};
+  }
+  if(!tab.nvStamps)tab.nvStamps=[];
+  tab.nvStamps.push(s);
+  nvRenderStamps(tab);
+  nvDisarm();
+  toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
+}
+
+// ── EXCEL: clic → coords de contenido (px del grid, sin zoom) ──
+function nvMaybePlaceExcel(tab,e){
+  if(!nvPendingSello&&!nvPendingStamp)return;
+  if(e.button!==0)return;
+  var v=tab&&tab._xlView; if(!v||!v.host)return;
+  e.preventDefault(); e.stopPropagation();
+  var tbl=v.host.querySelector('table.xg-table');
+  if(!tbl){ nvDisarm(); return; }
+  // origen de contenido: primera celda visible (esquina R0/C0)
+  var tds=tbl.querySelectorAll('td.xg-td');
+  var ox=0,oy=0,found=false;
+  for(var i=0;i<tds.length;i++){
+    var rr=tds[i].getBoundingClientRect();
+    if(rr.width>1&&rr.height>1){ox=rr.left;oy=rr.top;found=true;break;}
+  }
+  if(!found){ nvDisarm(); return; }
+  var geo=v.geo;
+  var x=Math.max(0,(e.clientX-ox)), y=Math.max(0,(e.clientY-oy));
+  if(geo){
+    var maxX=0;for(var c=geo.C0;c<=geo.C1;c++)maxX+=geo.Wpx(c);
+    var maxY=0;for(var r2=geo.R0;r2<=geo.R1;r2++)maxY+=geo.Hpx(r2);
+    x=Math.min(x,Math.max(0,maxX-20)); y=Math.min(y,Math.max(0,maxY-20));
+  }
+  var maxX2=0;
+  if(geo){for(var c3=geo.C0;c3<=geo.C1;c3++)maxX2+=geo.Wpx(c3);}
+  var s;
+  if(nvPendingSello){
+    s=nvBuildSelloAnn();
+    s.sec=v.sheet;
+    s.x=Math.max(0,Math.min(x-((s.w||220)/2),Math.max(0,maxX2-(s.w||220))));
+    s.y=Math.max(0,y-(((s.txTime||s.txInitials)?103:90)/2));
+  }else{
+    var p=nvPendingStamp;
+    s={type:'stamp',sec:v.sheet,text:p.label||'',emoji:p.emoji||'',color:p.color||annColor,size:annSize||14,x:x+10,y:y+12};
+  }
+  if(!tab.nvStamps)tab.nvStamps=[];
+  tab.nvStamps.push(s);
+  nvRenderStamps(tab);
+  nvDisarm();
+  toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
+}
+
+// ── Render del overlay ──
+function nvSelloDom(tab,idx){
+  var s=tab.nvStamps[idx];
+  var el=document.createElement('div');
+  el.className=s.type==='stamp'?'nv-stamp-el':'nv-sello';
+  el.dataset.nvi=String(idx);
+  el.style.left=s.x+'px'; el.style.top=s.y+'px';
+  if(s.type==='stamp'){
+    var fs=s.size||14;
+    var box=document.createElement('div');
+    box.className='nv-stamp-box';
+    box.style.borderColor=s.color||'#c0392b';
+    box.style.background=(s.color||'#c0392b')+'22';
+    box.style.color=s.color||'#c0392b';
+    box.style.fontSize=fs+'px';
+    if(s.emoji){var em=document.createElement('span');em.className='nv-emoji';em.textContent=s.emoji;box.appendChild(em);}
+    var tx=document.createElement('span');tx.textContent=s.text||'';box.appendChild(tx);
+    el.appendChild(box);
+  }else{
+    var hasTx=!!(s.txTime||s.txInitials);
+    var box=document.createElement('div');
+    box.className='nv-sello-box';
+    box.style.width=(s.w||220)+'px';
+    box.style.opacity=(s.opacity==null?1:s.opacity)||1;
+    try{
+      var lg=document.createElement('img');lg.className='nv-sello-logo';
+      if(typeof CORPAC_LOGO!=='undefined')lg.src=CORPAC_LOGO;
+      box.appendChild(lg);
+    }catch(e){}
+    var sep=document.createElement('div');sep.className='nv-sello-sep';box.appendChild(sep);
+    var sedeCode=currentUser?(currentUser.sede||'SPHI'):'SPHI';
+    var sedeTxt=sedeCode;
+    try{var db2=getDB();var so=db2&&db2.sedes&&db2.sedes.find(function(z){return z.code===sedeCode;});if(so)sedeTxt=so.code+' – '+so.city;}catch(e){}
+    var d1=document.createElement('div');d1.className='nv-t1';d1.textContent='RECIBIDO / RECEIVED';box.appendChild(d1);
+    var d2=document.createElement('div');d2.className='nv-t2';d2.textContent=s.timestamp||'';box.appendChild(d2);
+    if(hasTx){
+      var d3=document.createElement('div');d3.className='nv-t3';
+      d3.textContent=selloTxLine(s.txTime||'',(s.txInitials||'').toUpperCase());box.appendChild(d3);
+    }
+    var d4=document.createElement('div');d4.className='nv-t4';d4.textContent='AIS/ARO \u2013 CORPAC S.A.';box.appendChild(d4);
+    var d5=document.createElement('div');d5.className='nv-t5';d5.textContent=sedeTxt;box.appendChild(d5);
+    el.appendChild(box);
+    var sig=document.createElement('div');sig.className='nv-sig';
+    if(s.sigImg){var im=document.createElement('img');im.src=s.sigImg;sig.appendChild(im);}
+    else{var ph=document.createElement('div');ph.className='nv-sig-ph';ph.textContent='Sello Personal';sig.appendChild(ph);}
+    el.appendChild(sig);
+  }
+  // ✕ eliminar (visible al pasar el ratón)
+  var del=document.createElement('div');del.className='nv-del';del.title='Quitar sello';del.textContent='✕';
+  del.addEventListener('mousedown',function(ev){ev.stopPropagation();});
+  del.addEventListener('click',function(ev){
+    ev.stopPropagation();
+    var i2=+el.dataset.nvi;
+    if(!isNaN(i2)&&tab.nvStamps&&tab.nvStamps[i2]===s){tab.nvStamps.splice(i2,1);nvRenderStamps(tab);}
+  });
+  el.appendChild(del);
+  // doble clic → editar hora (solo recepción)
+  el.addEventListener('dblclick',function(ev){
+    ev.preventDefault();ev.stopPropagation();
+    if(s.type!=='sello_recepcion')return;
+    openNvSelloEdit(tab,+el.dataset.nvi,el);
+  });
+  // arrastrar para mover
+  nvMakeDraggable(el,tab,s);
+  return el;
+}
+function nvMakeDraggable(el,tab,s){
+  var st=null;
+  el.addEventListener('mousedown',function(ev){
+    if(ev.button!==0)return;
+    if(ev.target.classList.contains('nv-del'))return;
+    ev.preventDefault();ev.stopPropagation();
+    var zoom=(tab.kind==='word'&&tab._docx)?(tab._docx.zoom||1):1;
+    // el elemento puede llevar un offset del contenedor (Excel: cabeceras);
+    // se arrastra por delta visual y el modelo s.x/s.y se mueve igual
+    st={sx:ev.clientX,sy:ev.clientY,ox:s.x,oy:s.y,z:zoom,
+        ol:parseFloat(el.style.left)||0,ot:parseFloat(el.style.top)||0,mv:false};
+    function mm(e2){
+      if(!st)return;
+      // umbral 4px: un doble clic (micro-movimiento) no arrastra el sello
+      if(!st.mv){ if(Math.hypot(e2.clientX-st.sx,e2.clientY-st.sy)<4)return; st.mv=true; }
+      var dx=(e2.clientX-st.sx)/st.z, dy=(e2.clientY-st.sy)/st.z;
+      s.x=st.ox+dx; s.y=st.oy+dy;
+      el.style.left=(st.ol+dx)+'px';el.style.top=(st.ot+dy)+'px';
+    }
+    function mu(){
+      document.removeEventListener('mousemove',mm,true);
+      document.removeEventListener('mouseup',mu,true);
+      st=null;
+    }
+    document.addEventListener('mousemove',mm,true);
+    document.addEventListener('mouseup',mu,true);
+  });
+}
+function nvRenderStamps(tab){
+  if(!tab||!tab.nvEl)return;
+  var olds=tab.nvEl.querySelectorAll('.nv-sello,.nv-stamp-el');
+  for(var i=0;i<olds.length;i++){try{olds[i].remove();}catch(e){}}
+  var stamps=tab.nvStamps||[];
+  if(!stamps.length)return;
+  if(tab.kind==='word'&&tab._docx){
+    var secs=tab._docx.wrap.querySelectorAll('section.docx');
+    stamps.forEach(function(s,idx){
+      if(s.sec==null||!secs[s.sec])return;
+      secs[s.sec].appendChild(nvSelloDom(tab,idx));
+    });
+  }else if(tab.kind==='excel'&&tab._xlView){
+    var v=tab._xlView;
+    var tbl=v.host.querySelector('table.xg-table');
+    if(!tbl)return;
+    var tds=tbl.querySelectorAll('td.xg-td');
+    var ox=0,oy=0,found=false;
+    for(var k=0;k<tds.length;k++){
+      var rr=tds[k].getBoundingClientRect();
+      if(rr.width>1&&rr.height>1){ox=rr.left;oy=rr.top;found=true;break;}
+    }
+    if(!found)return;
+    var hr=v.host.getBoundingClientRect();
+    stamps.forEach(function(s,idx){
+      if(s.sec!==v.sheet)return;
+      var el=nvSelloDom(tab,idx);
+      el.style.left=(s.x+(ox-hr.left))+'px';
+      el.style.top=(s.y+(oy-hr.top))+'px';
+      v.host.appendChild(el);
+    });
+  }
+}
+
+// ── Export helpers: assets del sello para PDF nativo ──
+async function _nvSelloAssets(pdfLibDoc, stamps){
+  var assets={logo:null,sigs:{}};
+  try{ assets.logo=await _embedDataUrlImg(pdfLibDoc,(typeof CORPAC_LOGO!=='undefined')?CORPAC_LOGO:null); }catch(e){}
+  var seen={};
+  (stamps||[]).forEach(function(s){
+    if(s&&s.type==='sello_recepcion'&&s.sigImg)seen[s.sigImg]=1;
+  });
+  var urls=Object.keys(seen);
+  for(var i=0;i<urls.length;i++){
+    try{ assets.sigs[urls[i]]=await _embedDataUrlImg(pdfLibDoc,urls[i]); }catch(e){ assets.sigs[urls[i]]=null; }
+  }
+  return assets;
+}
+// Réplica vectorial del sello personal (stamp) — como en canvas:
+// caja (x-10, y-30, tw+20+emoji·26, 42), texto en baseline y
+function _paintStampPdfNative(PDFLib, page, ph, U, a, fHB){
+  try{
+    var col=hexToRgb01(a.color||'#c0392b');
+    var fs=Math.max(4,(a.size||14)*U);
+    var lbl=a.text||'';
+    var tw=0; try{ tw=fHB.widthOfTextAtSize(lbl,fs); }catch(e){}
+    var pad=10*U, exW=(a.emoji?26*U:0);
+    var w=tw+pad*2+exW, h=42*U;
+    try{
+      page.drawRectangle({x:(a.x-10)*U,y:ph-(a.y+12)*U,width:w,height:h,
+        color:PDFLib.rgb(col[0],col[1],col[2]),opacity:.13,
+        borderColor:PDFLib.rgb(col[0],col[1],col[2]),borderWidth:Math.max(.5,2*U)});
+    }catch(e){}
+    try{ page.drawText(lbl,{x:a.x*U,y:(ph-a.y*U),size:fs,font:fHB,color:PDFLib.rgb(col[0],col[1],col[2])}); }catch(e){}
+    if(a.emoji){
+      try{ page.drawText(a.emoji,{x:(a.x-22)*U,y:(ph-a.y*U),size:20*U,font:fHB,color:PDFLib.rgb(col[0],col[1],col[2])}); }catch(e){}
+    }
+  }catch(e){}
+}
+
 // ════ v2.9.0 — ACCIONES NATIVAS (ribbon / atajos) ════
 async function nativeSaveOriginal(){
   var tab=docTabGet(activeTabId);
@@ -9944,7 +10373,7 @@ async function nativeSaveOriginal(){
 }
 async function nativePdfBytes(tab){
   if(tab.kind==='word') return await wordExportPdfBytes(tab);
-  if(tab.kind==='excel') return await excelToPdfBytes(null, tab.fileName, tab._xl.isCsv, tab._xl);
+  if(tab.kind==='excel') return await excelToPdfBytes(null, tab.fileName, tab._xl.isCsv, tab._xl, tab.nvStamps||[]);
   throw new Error('Pestaña no compatible');
 }
 async function nativeExportPdf(){
@@ -9978,42 +10407,17 @@ async function nativeOpenAsPdf(){
     toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
   }
 }
-// v2.9.1 — sellos desde el modo nativo: copia PDF fiel (con las
-// ediciones vivas del documento) en pestaña PDF y sello armado
-async function nativeSelloSnapshot(){
+// v2.9.2 — sellos DIRECTOS: se colocan con un clic sobre el propio
+// documento Word/Excel que se está editando (nada de copias intermedias).
+// El sello viaja solo en «Exportar PDF» / «Abrir como PDF» (vectorial) y
+// jamás toca el .docx/.xlsx al guardar en formato original.
+function nativeSelloRecepcion(){
   var tab=docTabGet(activeTabId);
-  if(!tab||!tab.kind) return false;
-  toast('Preparando copia PDF para el sello…');
-  setProg(20);
-  var bytes=await nativePdfBytes(tab);
-  setProg(60);
-  var f2=new File([bytes], tab.fileName+'.pdf', {type:'application/pdf'});
-  await openFilesList([f2]);
-  if(!pdfDoc||docTabGet(activeTabId).kind){
-    hideProg();
-    toast('No se pudo abrir la copia PDF del documento','err');
-    return false;
-  }
-  setProg(100);setTimeout(hideProg,400);
-  return true;
+  if(tab&&tab.kind){ nvArmSello(); return; }
+  placeSelloRecepcion();
 }
-async function nativeSelloRecepcion(){
-  try{
-    if(!await nativeSelloSnapshot())return;
-    placeSelloRecepcion();
-  }catch(e){
-    hideProg();
-    toast('No se pudo preparar el sello: '+(e&&e.message?e.message:e),'err');
-  }
-}
-async function nativeSelloPersonal(){
-  try{
-    if(!await nativeSelloSnapshot())return;
-    openStampModal();
-  }catch(e){
-    hideProg();
-    toast('No se pudo preparar el sello: '+(e&&e.message?e.message:e),'err');
-  }
+function nativeSelloPersonal(){
+  openStampModal();   // v2.9.2 — el sello elegido se coloca con un clic en el documento
 }
 function nativeUndo(){
   var tab=docTabGet(activeTabId);
@@ -10107,6 +10511,9 @@ function buildXlView(model, tab){
   el.appendChild(bar); el.appendChild(wrap); el.appendChild(sheetsBar);
   tab._xlView={host:host, wrap:wrap, bar:bar, sheetsBar:sheetsBar, sel:null, sheet:0, editor:null, geo:null};
   // eventos (delegados, una sola vez por pestaña)
+  // v2.9.2 — sello armado: el clic coloca el sello (capture, antes que la
+  // selección de celdas); si no, la selección normal sigue su curso
+  wrap.addEventListener('mousedown',function(e){ nvMaybePlaceExcel(tab,e); },true);
   host.addEventListener('mousedown',function(e){
     var td=e.target.closest?e.target.closest('td.xg-td'):null;
     if(td){ xlSelect(tab, +td.getAttribute('data-r'), +td.getAttribute('data-c')); try{wrap.focus();}catch(e2){} }
@@ -10220,6 +10627,7 @@ function xlRenderSheet(tab, sheetIdx){
   tbl.appendChild(tbody);
   host.appendChild(tbl);
   xlSelect(tab, geo.R0, geo.C0);
+  nvRenderStamps(tab);   // v2.9.2 — overlay de sellos de esta hoja
 }
 function xlSyncBar(tab){
   var v=tab._xlView;
