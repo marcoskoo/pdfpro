@@ -749,7 +749,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.2 · Word y Excel editables en su formato original · sello de recepción directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.3 · Word y Excel editables en su formato original · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1260,7 +1260,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <input class="f-input" id="selloRxTime" inputmode="numeric" maxlength="4" placeholder="ahora" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);updateSelloPreview()">
             </div>
           </div>
-          <div style="font-size:9.5px;color:var(--t3);margin:-2px 0 8px">Recepción: vacío = fecha/hora actuales. Doble clic sobre un sello colocado edita su hora.</div>
+          <div style="font-size:9.5px;color:var(--t3);margin:-2px 0 8px">Recepción: vacío = fecha/hora actuales. El sello colocado es este mismo: recepción + tu sello personal activo. Doble clic sobre un sello colocado edita su hora.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Hora Transmisión (UTC)</label>
@@ -1563,6 +1563,28 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
   </div>
   <div id="mpSigs" class="mp-section" style="display:none">
     <div class="mp-title">✍ Firmas y Sellos</div>
+    <!-- v2.9.3 — la MISMA ficha del sello (la barra lateral derecha está
+         oculta en pantallas pequeñas): formulario + vista previa en vivo -->
+    <div style="font-size:12px;font-weight:700;color:var(--t2);margin:2px 0 6px">Sello de Recepción (UTC)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <div>
+        <label class="f-label" style="font-size:10px;margin-bottom:2px">Fecha Recepción</label>
+        <input type="date" class="f-input" id="mobSelloRxDate" style="font-size:13px;padding:9px 8px" oninput="mobSelloSync(true)">
+      </div>
+      <div>
+        <label class="f-label" style="font-size:10px;margin-bottom:2px">Hora Recepción</label>
+        <input class="f-input" id="mobSelloRxTime" inputmode="numeric" maxlength="4" placeholder="ahora" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);mobSelloSync(true)">
+      </div>
+      <div>
+        <label class="f-label" style="font-size:10px;margin-bottom:2px">Hora Transmisión</label>
+        <input class="f-input" id="mobSelloTxTime" inputmode="numeric" maxlength="4" placeholder="0830" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);mobSelloSync(true)">
+      </div>
+      <div>
+        <label class="f-label" style="font-size:10px;margin-bottom:2px">Operador</label>
+        <input class="f-input" id="mobSelloTxInitials" maxlength="6" placeholder="EJ: MK" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z.\s]/g,'');mobSelloSync(true)">
+      </div>
+    </div>
+    <div id="mobSelloPreview" style="text-align:center;border:1.5px solid rgba(192,0,0,.45);border-radius:8px;padding:9px 8px;margin:9px 0;background:rgba(255,255,255,.04)"></div>
     <button class="mob-action-btn pri" onclick="placeSelloRecepcion();closeMobPanel()">⏱ Colocar Sello Recepción</button>
     <div class="mp-title" style="margin-top:4px">Sellos personales</div>
     <div id="mobSigGrid" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -4459,7 +4481,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.3',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -8825,7 +8847,15 @@ function toggleBold(){annBold=!annBold;document.getElementById('fbBold').style.b
 function toggleItalic(){annItalic=!annItalic;document.getElementById('fbItalic').style.background=annItalic?'var(--accg)':'var(--s2)';document.getElementById('fbItalic').style.color=annItalic?'var(--acc)':'var(--t2)';}
 
 // ── SELLO RECEPCIÓN ──
-function placeSelloRecepcion(){pendingSello=true;setTool('sello-place');updateSelloPreview();toast('Haz clic en el documento para colocar el sello · doble clic sobre un sello edita su hora','ok');}
+function placeSelloRecepcion(){
+  // v2.9.3 — la FICHA DE SELLO manda en todos los modos: con una pestaña
+  // nativa (Word/Excel) activa, el sello de recepción (recepción + sello
+  // personal, tal como se ve en la ficha) se coloca con un clic DIRECTO
+  // sobre el propio documento que se está editando.
+  var _t=docTabGet(activeTabId);
+  if(_t&&_t.kind){ nvArmSello(); return; }
+  pendingSello=true;setTool('sello-place');updateSelloPreview();toast('Haz clic en el documento para colocar el sello · doble clic sobre un sello edita su hora','ok');
+}
 
 // ── UNDO/REDO ──
 // ── Text layer undo helpers ──
@@ -9523,18 +9553,46 @@ function openMobPanel(name){
   mobPanelCurrent=name;
   ['style','sigs','menu'].forEach(function(n){var el=document.getElementById('mp'+n.charAt(0).toUpperCase()+n.slice(1));if(el)el.style.display=n===name?'block':'none';});
   if(name==='sigs'){
+    // v2.9.3 — la ficha móvil se muestra AL INSTANTE con los valores
+    // vigentes (no espera a Supabase: si la red va lenta el formulario
+    // debe estar igualmente listo y jamás vacío)
+    mobSelloSync(false);
     // Refresh sig library from Supabase
     (async function(){
       sigLibrary=await getSigLibrarySync();
       activeSigId=await getActiveSigIdRemote();
       renderMobSigGridFull();
-      updateSelloPreview();
+      mobSelloSync(false);
     })();
   }
   document.getElementById('mobPanelOverlay').classList.add('show');
   document.getElementById('mobPanel').classList.add('show');
 }
 function closeMobPanel(){document.getElementById('mobPanelOverlay').classList.remove('show');document.getElementById('mobPanel').classList.remove('show');}
+// v2.9.3 — sincroniza la ficha móvil con la ficha canónica (mismos valores
+// en escritorio y móvil; el sello colocado siempre es el de la ficha)
+function mobSelloSync(fromMob){
+  var P=[['mobSelloRxDate','selloRxDate'],['mobSelloRxTime','selloRxTime'],['mobSelloTxTime','selloTxTime'],['mobSelloTxInitials','selloTxInitials']];
+  P.forEach(function(p){
+    var m=document.getElementById(p[0]),c=document.getElementById(p[1]);
+    if(!m||!c)return;
+    if(fromMob)c.value=m.value;else m.value=c.value;
+  });
+  updateSelloPreview();
+  var pv=document.getElementById('mobSelloPreview');
+  if(!pv)return;
+  var ts=selloStampTs((document.getElementById('selloRxDate')||{}).value||'',(document.getElementById('selloRxTime')||{}).value||'');
+  var txT=normTxTimeVal((document.getElementById('selloTxTime')||{}).value||'');
+  var txI=((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().trim().replace(/\s+/g,' ');
+  var sedeCode=currentUser?(currentUser.sede||'SPHI'):'SPHI';var sedeTxt=sedeCode;
+  try{var db2=getDB();var so=db2&&db2.sedes&&db2.sedes.find(function(z){return z.code===sedeCode;});if(so)sedeTxt=so.code+' – '+so.city;}catch(e){}
+  var ln=selloTxLine(txT,txI);
+  pv.innerHTML='<div style="font-size:11.5px;color:#c00000;font-weight:800">RECIBIDO / RECEIVED</div>'
+    +'<div style="font-size:10.5px;color:#c00000;font-weight:700;font-family:JetBrains Mono,monospace;margin-top:2px">'+escH(ts)+'</div>'
+    +(ln?'<div style="font-size:9.5px;color:#c00000;font-weight:700;font-family:JetBrains Mono,monospace;margin-top:1px">'+escH(ln)+'</div>':'')
+    +'<div style="font-size:9.5px;color:#1a4fa0;font-weight:700;margin-top:3px">AIS/ARO – CORPAC S.A.</div>'
+    +'<div style="font-size:8.5px;color:#1a4fa0;font-weight:600">'+escH(sedeTxt)+'</div>';
+}
 document.getElementById('mobPanel').addEventListener('touchstart',function(e){this._startY=e.touches[0].clientY;});
 document.getElementById('mobPanel').addEventListener('touchend',function(e){if(e.changedTouches[0].clientY-this._startY>80)closeMobPanel();});
 
