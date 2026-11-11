@@ -727,7 +727,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.0 · Word y Excel editables en su formato original — guardar y exportar sin distorsión</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.1 · Word y Excel editables en su formato original · sellos de recepción integrados</div>
   </div>
 </div>
 
@@ -1101,6 +1101,11 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <button class="rb" onclick="nativeExportPdf()" title="Descarga un PDF fiel al original, con tus ediciones"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/></svg><span class="rb-lbl">Exportar PDF</span></button>
       <button class="rb" onclick="nativeOpenAsPdf()" title="Abre el documento (con tus ediciones) como pestaña PDF para aplicar sellos y herramientas"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="rb-lbl">Abrir como PDF</span></button>
       <button class="rb" onclick="nativeUndo()" title="Deshacer (Ctrl+Z)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7v6h6M3.51 13a9 9 0 102.13-9.36L3 7"/></svg><span class="rb-lbl">Deshacer</span></button>
+    </div>
+    <div class="rv"></div>
+    <div class="erg">
+      <button class="rb" onclick="nativeSelloRecepcion()" title="Prepara una copia PDF del documento (con tus ediciones) y activa el sello de recepción — luego haz clic donde quieras colocarlo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="rb-lbl">Sello Rec.</span></button>
+      <button class="rb" onclick="nativeSelloPersonal()" title="Prepara una copia PDF del documento y abre los sellos (APROBADO, URGENTE, texto personalizado…)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg><span class="rb-lbl">Sello</span></button>
     </div>
     <div class="rv"></div>
     <div class="erg" id="nrbZoomGrp" style="display:none">
@@ -9522,12 +9527,12 @@ function nativeRefreshRibbon(tab){
   if(tab&&tab.kind==='word'){
     if(saveLbl)saveLbl.textContent='Guardar .docx';
     if(zoomGrp)zoomGrp.style.display='';
-    if(hint)hint.textContent='Edita el texto como en Word · Guardar conserva el formato original · Exportar PDF genera el PDF fiel con tus cambios';
+    if(hint)hint.textContent='Edita como en Word · Guardar conserva el formato · Sello Rec. coloca el sello de recepción sobre una copia PDF';
     nvWordApplyZoom(tab);
   }else if(tab&&tab.kind==='excel'){
     if(saveLbl)saveLbl.textContent=(tab._xl&&tab._xl.isXlsSrc)?'Guardar .xlsx (desde .xls)':'Guardar .xlsx';
     if(zoomGrp)zoomGrp.style.display='none';
-    if(hint)hint.textContent='Edita las celdas como en Excel · clic selecciona · doble clic o F2 edita · Enter/Tab se mueve · Guardar respeta el formato original';
+    if(hint)hint.textContent='Edita como en Excel · doble clic o F2 edita · Guardar respeta el formato · Sello Rec. coloca el sello sobre una copia PDF';
   }
 }
 
@@ -9971,6 +9976,43 @@ async function nativeOpenAsPdf(){
   }catch(e){
     hideProg();
     toast('No se pudo convertir: '+(e&&e.message?e.message:e),'err');
+  }
+}
+// v2.9.1 — sellos desde el modo nativo: copia PDF fiel (con las
+// ediciones vivas del documento) en pestaña PDF y sello armado
+async function nativeSelloSnapshot(){
+  var tab=docTabGet(activeTabId);
+  if(!tab||!tab.kind) return false;
+  toast('Preparando copia PDF para el sello…');
+  setProg(20);
+  var bytes=await nativePdfBytes(tab);
+  setProg(60);
+  var f2=new File([bytes], tab.fileName+'.pdf', {type:'application/pdf'});
+  await openFilesList([f2]);
+  if(!pdfDoc||docTabGet(activeTabId).kind){
+    hideProg();
+    toast('No se pudo abrir la copia PDF del documento','err');
+    return false;
+  }
+  setProg(100);setTimeout(hideProg,400);
+  return true;
+}
+async function nativeSelloRecepcion(){
+  try{
+    if(!await nativeSelloSnapshot())return;
+    placeSelloRecepcion();
+  }catch(e){
+    hideProg();
+    toast('No se pudo preparar el sello: '+(e&&e.message?e.message:e),'err');
+  }
+}
+async function nativeSelloPersonal(){
+  try{
+    if(!await nativeSelloSnapshot())return;
+    openStampModal();
+  }catch(e){
+    hideProg();
+    toast('No se pudo preparar el sello: '+(e&&e.message?e.message:e),'err');
   }
 }
 function nativeUndo(){
