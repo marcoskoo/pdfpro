@@ -1,0 +1,97 @@
+  var timer=setInterval(function(){
+    try{
+      if(!w||w.closed){clearInterval(timer);return;}
+      var loc=w.location.href||'';
+      if(!loc.includes('code='))return;
+      clearInterval(timer);
+      var params=new URLSearchParams(w.location.search);
+      var code=params.get('code');
+      var retState=params.get('state');
+      w.close();
+      if(retState!==sessionStorage.getItem('gdrive_state')){toast('Error OAuth: state mismatch','err');return;}
+      // Exchange code for token via Edge Function
+      fetch(GDRIVE_TOKEN_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON_KEY},
+        body:JSON.stringify({code:code,redirect_uri:redirectUri})
+      }).then(function(r){return r.json();}).then(function(data){
+        if(data.error){toast('Error OAuth: '+data.error,'err');return;}
+        gdriveToken=data.access_token;
+        var exp=parseInt(data.expires_in||3600);
+        gdriveTokenExpiry=Date.now()+(exp-60)*1000;
+        sessionStorage.removeItem('gdrive_state');
+        sessionStorage.removeItem('gdrive_callback');
+        toast('✅ Google Drive conectado','ok');
+        updateDriveConnectBtn();
+  loadNotifications().catch(function(e){});
+        if(callback)callback();
+      }).catch(function(e){toast('Error al conectar Drive','err');console.error(e);});
+    }catch(e){}
+  },500);
+}
+
+function updateDriveConnectBtn(){
+  var btn=document.getElementById('driveConnectBtn');
+  if(!btn)return;
+  if(gdriveIsConnected()){
+    btn.textContent='✅ Drive conectado';btn.style.background='rgba(48,201,126,.15)';btn.style.color='var(--ok)';btn.style.border='1px solid rgba(48,201,126,.3)';
+  } else {
+    btn.textContent='🔗 Conectar con Google Drive';btn.style.background='';btn.style.color='';btn.style.border='';
+  }
+}
+
+async function gdriveGetOrCreateFolder(parentId,name){
+  // Search for existing folder
+  var searchRes=await fetch(
+    'https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent('name="'+name+'" and mimeType="application/vnd.google-apps.folder" and "'+(parentId||'root')+'" in parents and trashed=false')+'&fields=files(id,name)',
+    {headers:{Authorization:'Bearer '+gdriveToken}}
+  );
+  var searchData=await searchRes.json();
+  if(searchData.files&&searchData.files.length)return searchData.files[0].id;
+  // Create folder
+  var createRes=await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',headers:{Authorization:'Bearer '+gdriveToken,'Content-Type':'application/json'},
+    body:JSON.stringify({name:name,mimeType:'application/vnd.google-apps.folder',parents:[parentId||'root']})
+  });
+  var createData=await createRes.json();
+  return createData.id;
+}
+
+async function gdriveUploadPDF(pdfBlob,filename){
+  var db=getDB()||{};var cfg=db.driveConfig||{};
+  var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var yearFolder=(cfg.folderName||'FPL')+new Date().getFullYear();
+  var monthFolder=months[new Date().getMonth()];
+  toast('Creando carpeta en Drive…');
+  var yearId=await gdriveGetOrCreateFolder(null,yearFolder);
+  var monthId=await gdriveGetOrCreateFolder(yearId,monthFolder);
+  toast('Subiendo PDF…');
+  var meta={name:filename,parents:[monthId]};
+  var form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',pdfBlob);
+  var uploadRes=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',{
+    method:'POST',headers:{Authorization:'Bearer '+gdriveToken},body:form
+  });
+  var uploadData=await uploadRes.json();
+  if(uploadData.id){
+    toast('✅ Subido a Drive: '+yearFolder+' / '+monthFolder,'ok');
+    var box=document.getElementById('driveStatusBox');
+    if(box){box.style.display='block';box.innerHTML='<div style="background:rgba(48,201,126,.08);border:1px solid rgba(48,201,126,.25);border-radius:var(--r);padding:12px 14px;font-size:12.5px"><strong style="color:var(--ok)">✅ Archivo subido exitosamente</strong><br><br>📁 Ruta: <strong>'+yearFolder+' / '+monthFolder+'</strong><br>📄 Archivo: <strong>'+filename+'</strong><br><br><a href="'+
+  } else {
+    toast('Error al subir a Drive','err');console.error(uploadData);
+  }
+}
+
+// ── GOOGLE DRIVE SAVE ──
+// ════ v2.4.0 — SELLO DE RECEPCIÓN VECTORIAL EN EL PDF EXPORTADO ════
+// BUG pre-existente corregido: la anotación sello_recepcion NO tenía rama en
+// exportPDF/saveToDrive → el sello se perdía en la exportación vectorial.
+// Ahora se dibuja fiel al canvas: borde rojo redondeado, logo, textos
+// vectoriales reales (extraíbles) e imagen del sello personal.
+async function _embedDataUrlImg(doc,url){
+  try{
+    if(!url)return null;
+    if(/^data:image\/jpe?g/i.test(url))return await doc.embedJpg(url);
+    return await doc.embedPng(url);
+  }catch(e){return null;}

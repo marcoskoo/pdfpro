@@ -1,0 +1,103 @@
+════════════════════════════════════════════════════════════════════
+  PDFPro 2.9.4 — Versión de escritorio para Windows
+  PDF Editor Pro · CORPAC AIS/ARO SPHI
+════════════════════════════════════════════════════════════════════
+
+CONTENIDO DE ESTE PAQUETE
+─────────────────────────
+  PDFPro-Setup-2.9.4.exe      Instalador (NSIS, un clic, por usuario)
+  PDFPro-Portable-2.9.4.exe   Versión portable (un solo archivo, sin instalación)
+  pdfpro-fuentes-v2.9.4.zip   Proyecto completo para recompilar o modificar
+
+INSTALACIÓN (PDFPro-Setup-2.9.4.exe)
+────────────────────────────────────
+  1. Doble clic al archivo. No pide permisos de administrador
+     (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
+  2. Se instalan automáticamente: acceso directo de escritorio,
+     acceso en el menú Inicio y entrada en "Abrir con" para PDF
+     (clic derecho sobre un .pdf → Abrir con → PDFPro; no cambia tu
+     visor de PDF predeterminado).
+  3. Incluye desinstalador estándar en Configuración → Aplicaciones.
+  4. La app se abre sola al terminar (se puede desinstalar normalmente).
+
+VERSIÓN PORTABLE (PDFPro-Portable-2.9.4.exe)
+────────────────────────────────────────────
+  Un solo archivo ejecutable: no instala nada, no toca el registro.
+  Doble clic y listo. Ideal para memorias USB o equipos restringidos.
+  Los datos de sesión se guardan junto al usuario de Windows que la ejecute.
+
+AVISO DE SMARTSCREEN (importante)
+─────────────────────────────────
+  Los ejecutables no están firmados digitalmente (la firma de código
+  cuesta ~200-400 USD/año). La primera vez Windows puede mostrar
+  "Windows protegió tu PC". Para continuar:
+     Clic en "Más información" → "Ejecutar de todas formas".
+  Esto es normal en aplicaciones fuera de la tienda de Microsoft.
+
+QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
+─────────────────────────────────────────────────
+  ✓ 100% SIN INTERNET (todo va dentro del programa):
+    · Editor PDF completo (texto, párrafos, anotaciones, sellos, firmas,
+      marcas de agua, comparador de PDFs, sello de recepción)
+    · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas
+    · OCR en español e inglés (Tesseract + diccionarios incluidos)
+    · Exportar a PDF / Word / Excel / imágenes, impresión
+    · Decodificador aeronáutico (METAR/TAF/FPL...), gestor AIRAC,
+      METAR gráfico, lectura en voz alta (TTS)
+    · Todas las fuentes (Inter, JetBrains Mono, Arial/Times/Courier/
+      Calibri/Cambria equivalentes) embebidas para exportar PDF
+  ⚠ REQUIEREN INTERNET (servicios en la nube de la plataforma):
+    · Inicio de sesión / registro / suscripciones (Supabase)
+    · Panel de administración y biblioteca de firmas remota
+    · Google Drive (conexión OAuth y subida de archivos)
+    · Mapas AIRAC (teselas de OpenStreetMap)
+
+NOVEDADES RESPECTO DE LA VERSIÓN WEB
+────────────────────────────────────
+  · Ventana nativa con menú en español (Archivo/Edición/Ver/Ayuda)
+  · "Abrir con" de Windows para .pdf/.docx/.xlsx/.xls/.csv
+  · Descargas con diálogo Guardar como nativo de Windows
+  · OAuth de Google Drive en ventana nativa (sin popups bloqueados)
+  · prompt() sustituido por diálogos propios (zoom, token, contraseña)
+  · Se eliminó el alert() de depuración que aparecía al conectar Drive
+  · Instancia única: reabrir un archivo enfoca la ventana existente
+
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.4.zip)
+──────────────────────────────────────────────────
+  1. Descomprime el ZIP en cualquier carpeta.
+  2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
+  3. Doble clic a build-windows.bat  →  genera ambos .exe en dist\.
+     (equivale a: npm install && npx electron-builder --win nsis portable --x64)
+
+  Estructura del proyecto:
+    src/main.js             Proceso principal Electron (menú, protocolo app://,
+                            OAuth, apertura de archivos, descargas)
+    src/preload.js          Puente seguro renderer↔Electron
+    src/app/index.html      La aplicación original v2.9.4 con rutas locales
+    src/app/desktop-bridge.js  Integraciones de escritorio (OCR offline,
+                            Drive nativo, prompt propio, fuentes locales)
+    src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib, xlsx,
+                            mammoth, jszip, docx-preview, fontkit, leaflet,
+                            tesseract + idiomas, fuentes)
+    build/icon.ico          Icono de la aplicación
+    build/pdfdoc.ico        Icono para archivos PDF asociados
+    build/installer.nsi     Script NSIS del instalador (desinstalador
+                            estándar WriteUninstaller; compila sin Wine)
+
+  Cambiar versión/nombre: editar "version" y "productName" en package.json.
+  Cambiar icono: reemplazar build/icon.ico (y pdfdoc.ico si se desea).
+
+  Nota para compilar en Linux/macOS: el instalador usa un script NSIS
+  propio (build/installer.nsi) que no necesita Wine; solo el portable
+  se genera igual con electron-builder.
+
+VERIFICACIÓN REALIZADA
+──────────────────────
+  · Prueba automática (headless) de la app empaquetada: las 7 librerías
+    cargan, login visible, almacenamiento local operativo.
+  · Worker de PDF.js: responde "ready" desde dentro del paquete.
+  · OCR offline completo: reconoce texto en español sin internet.
+  · Instalador y portable: estructura NSIS verificada (payload, plugins,
+    iconos, desinstalador y asociación de archivos presentes).
+
+PDFPro 2.9.4 · © 2026 CORPAC AIS/ARO SPHI
