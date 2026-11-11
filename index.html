@@ -693,7 +693,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.8.0 · Word y Excel se abren con su formato original (fuentes, tablas y colores intactos)</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.8.1 · Word y Excel idénticos al original: fuentes, tablas, flechas y fechas reales</div>
   </div>
 </div>
 
@@ -4353,7 +4353,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.8.0',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.8.1',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5957,11 +5957,82 @@ function _biffIcv(idx, pal){
 var _biffBorderW = {0: 0, 1: 0.75, 2: 1.5, 3: 0.75, 4: 0.75, 5: 2.25, 6: 1.5, 7: 0.4, 8: 1.1};
 var _biffBorderStyle = {0: '', 1: 'solid', 2: 'solid', 3: 'dashed', 4: 'dotted', 5: 'solid', 6: 'double', 7: 'solid', 8: 'solid'};
 
+// ════ v2.8.1 — DIBUJOS ESCHER (.xls): líneas y flechas de la capa de dibujo ════
+// Los formularios FPL llevan flechas "→" y guiones como formas de línea. Se
+// decodifica el stream Escher de los registros MSODRAWING (0x00EC) de cada
+// hoja: cada SpgrContainer trae un Sp (0xF00B, con propiedades OPT y nombre)
+// y un ancla de 18 bytes [flags][c1,dx1,r1,dy1][c2,dx2,r2,dy2] en unidades de
+// 1/1024 del ancho/alto de la celda. La propiedad 0x01D0/0x01D1 (lineStart/
+// EndArrowhead) con valor >0 marca punta de flecha en ese extremo.
+function _biffParseDrawings(wbU8){
+  var out = [];
+  try{
+    var dvD = new DataView(wbU8.buffer, wbU8.byteOffset, wbU8.byteLength);
+    var posD = 0, sheetN = 0, inSheet = false;
+    var bySheet = {};
+    while(posD + 4 < wbU8.length){
+      var idD = dvD.getUint16(posD, true), szD = dvD.getUint16(posD + 2, true);
+      if(idD === 0x0809){
+        var tD = dvD.getUint16(posD + 6, true);
+        inSheet = (tD === 0x0010);
+        if(inSheet){ sheetN++; bySheet[sheetN] = bySheet[sheetN] || []; }
+      }else if(inSheet && idD === 0x00EC){
+        (bySheet[sheetN] = bySheet[sheetN] || []).push(wbU8.subarray(posD + 4, posD + 4 + szD));
+      }
+      posD += 4 + szD;
+    }
+    for(var sn in bySheet){
+      if(!Object.prototype.hasOwnProperty.call(bySheet, sn)) continue;
+      var chunks = bySheet[sn];
+      if(!chunks || !chunks.length) continue;
+      var tot = 0, i;
+      chunks.forEach(function(c){ tot += c.length; });
+      var es = new Uint8Array(tot), off2 = 0;
+      chunks.forEach(function(c){ es.set(c, off2); off2 += c.length; });
+      var ev = new DataView(es.buffer);
+      var shapes = [], cur = null;
+      function walk(st, en){
+        var p = st;
+        while(p + 8 <= en){
+          var rawInst = ev.getUint16(p, true), ty = ev.getUint16(p + 2, true), sz2 = ev.getUint32(p + 4, true);
+          var ver = rawInst & 0xF;
+          if(ver === 0xF){
+            if(sz2 > 0 && p + 8 + sz2 <= en) walk(p + 8, p + 8 + sz2);
+          }else if(ty === 0xF00A){
+            cur = {}; shapes.push(cur);
+          }else if(ty === 0xF00B && cur){
+            var pay = es.subarray(p + 8, p + 8 + sz2);
+            // punta de flecha: prop 0x01D0 (inicio) / 0x01D1 (fin) con valor>0
+            for(var q = 4; q + 6 <= pay.length; q++){
+              if(pay[q] === 0xD0 && pay[q + 1] === 0x01 && (pay[q + 2] | pay[q + 3] | pay[q + 4] | pay[q + 5]) > 0 && (pay[q + 3] | pay[q + 4] | pay[q + 5]) === 0) cur.aStart = true;
+              if(pay[q] === 0xD1 && pay[q + 1] === 0x01 && (pay[q + 2] | pay[q + 3] | pay[q + 4] | pay[q + 5]) > 0 && (pay[q + 3] | pay[q + 4] | pay[q + 5]) === 0) cur.aEnd = true;
+            }
+          }else if(ty === 0xF010 && cur){
+            var o = p + 8;
+            cur.a = {
+              c1: ev.getUint16(o + 2, true), dx1: ev.getUint16(o + 4, true),
+              r1: ev.getUint16(o + 6, true), dy1: ev.getUint16(o + 8, true),
+              c2: ev.getUint16(o + 10, true), dx2: ev.getUint16(o + 12, true),
+              r2: ev.getUint16(o + 14, true), dy2: ev.getUint16(o + 16, true)
+            };
+          }
+          p += 8 + sz2;
+        }
+      }
+      walk(0, tot);
+      shapes.forEach(function(sh){
+        if(sh && sh.a) out.push({ sheet: +sn, a: sh.a, aStart: !!sh.aStart, aEnd: !!sh.aEnd });
+      });
+    }
+  }catch(e){}
+  return out;
+}
+
 // ── parser principal: estilos + XF por celda + setup de impresión ──
 function _biffParseStyles(wbU8){
   var out = {
     fonts: [], xfs: [], pal: null, setup: null, margins: null,
-    setups: {}, marginsBy: {},
+    setups: {}, marginsBy: {}, fmts: {},
     cells: {}            // "sheetN,r,c" → xfIdx
   };
   var dv = new DataView(wbU8.buffer, wbU8.byteOffset, wbU8.byteLength);
@@ -5998,7 +6069,13 @@ function _biffParseStyles(wbU8){
           hpt: h / 20, bold: (wt >= 600) || !!(fl & 0x01), italic: !!(fl & 0x02),
           strike: !!(fl & 0x04), underline: uls, icvIdx: icv, name: nm
         });
-      }else if(id === 0x041E){ // FORMAT (nombre, no crítico)
+      }else if(id === 0x041E){ // FORMAT: cadenas de formato del libro (ifmt>=164)
+        try{
+          var fIdx = u16(d), cch = wbU8[d + 2], uniF = wbU8[d + 3] & 1, fStr = '';
+          if(uniF){ for(var fq = 0; fq < cch && d + 4 + fq * 2 + 1 < wbU8.length; fq++) fStr += String.fromCharCode(u16(d + 4 + fq * 2)); }
+          else{ for(fq = 0; fq < cch && d + 4 + fq < wbU8.length; fq++) fStr += String.fromCharCode(wbU8[d + 4 + fq]); }
+          out.fmts[fIdx] = fStr;
+        }catch(e){}
       }else if(id === 0x0092){ // PALETTE
         var n = u16(d);
         out.pal = [];
@@ -6013,6 +6090,7 @@ function _biffParseStyles(wbU8){
         var icvLR = u16(d + 12), icvTB = u16(d + 14); // colores de borde (7 bits c/u)
         var fillA = u16(d + 16), fillB = u16(d + 18); // patrón + icvFore/icvBack
         out.xfs.push({
+          ifmt: ifmt,                                  // formato numérico (14=fecha corta locale)
           fontIdx: ifnt > 0 && out.fonts[ifnt - 1] ? ifnt - 1 : 0, // índice 1-based
           halign: (algn1 & 0x07),
           valign: ((algn1 >> 4) & 0x03),
@@ -6073,6 +6151,7 @@ function _biffParseStyles(wbU8){
   return out;
 }
 
+
 // ════ v2.8.0 — EXCEL WYSIWYG: formato idéntico al original ════
 // Combina la geometría real del libro (anchos/altos/merges, como el modo
 // formulario) con los ESTILOS REALES por celda: para .xls vienen del parser
@@ -6080,6 +6159,84 @@ function _biffParseStyles(wbU8){
 // y color, rellenos sólidos, alineación h/v, wrap) y para .xlsx de SheetJS.
 // La paginación usa el setup de impresión del libro (escala, orientación,
 // márgenes). Ante fallo se cae a los paths anteriores (formulario/cebrado).
+
+// ════ v2.8.1 — FECHAS con el formato real del libro (es-PE) ════
+// SheetJS renderiza ifmt 14/22 como "m/d/yy" (en-US). En Excel es-PE el
+// formato 14 es la fecha corta del sistema: d/m/yyyy con año de 4 dígitos.
+var _XLS_MES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var _XLS_MES_FULL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function _xlsBuiltinFmt(id){
+  var M = {14:'d/m/yyyy',15:'d-mmm-yy',16:'d-mmm',17:'mmm-yy',18:'h:mm AM/PM',19:'h:mm:ss AM/PM',
+    20:'h:mm',21:'h:mm:ss',22:'d/m/yyyy h:mm',45:'mm:ss',46:'[h]:mm:ss',47:'mmss.0'};
+  return M[id] || null;
+}
+function _xlsFmtDate(v, fmt){
+  try{
+    var d = (v instanceof Date) ? v : new Date(Math.round((v - 25569) * 86400000));
+    if(isNaN(d.getTime())) return null;
+    var D = d.getUTCDate(), MO = d.getUTCMonth(), Y = d.getUTCFullYear();
+    var H = d.getUTCHours(), MI = d.getUTCMinutes(), SE = d.getUTCSeconds();
+    var ampm = /AM\/PM|A\/P/i.test(fmt);
+    var h12 = H % 12; if(h12 === 0) h12 = 12;
+    var out = '', i = 0;
+    fmt = fmt.replace(/\[\$-[^\]]*\]/g, '');
+    while(i < fmt.length){
+      var c = fmt.charAt(i);
+      if(c === '"' || c === '\\'){ // literal citado o escapado
+        var q = c === '"' ? '"' : '';
+        var j = i + 1;
+        while(j < fmt.length && fmt.charAt(j) !== (q || fmt.charAt(j))) { if(c === '\\'){ break; } j++; }
+        if(c === '"'){ out += fmt.slice(i + 1, j); i = j + 1; }
+        else { out += fmt.charAt(i + 1) || ''; i += 2; }
+        continue;
+      }
+      if(c === '['){ // [h]:mm:ss etc.
+        var cb = fmt.indexOf(']', i);
+        if(cb < 0) break;
+        var inner = fmt.slice(i + 1, cb).toLowerCase();
+        if(inner === 'h') out += String(Math.floor((d.getTime() - Date.UTC(1899, 11, 30)) / 3600000));
+        else if(inner === 'mm') out += _p2(MI);
+        else if(inner === 'ss') out += _p2(SE);
+        i = cb + 1;
+        continue;
+      }
+      // tokens
+      var rest = fmt.slice(i);
+      var m2;
+      if((m2 = /^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|A\/P)/i.exec(rest))){
+        var tk = m2[1], tl = tk.toLowerCase();
+        if(tl === 'yyyy') out += Y;
+        else if(tl === 'yy') out += String(Y % 100).padStart(2, '0');
+        else if(tl === 'mmmm') out += _XLS_MES_FULL[MO];
+        else if(tl === 'mmm') out += _XLS_MES_ABR[MO];
+        else if(tl === 'dddd') out += ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getUTCDay()];
+        else if(tl === 'ddd') out += ['dom','lun','mar','mié','jue','vie','sáb'][d.getUTCDay()];
+        else if(tl === 'dd') out += String(D).padStart(2, '0');
+        else if(tl === 'd') out += D;
+        else if(tl === 'hh') out += _p2(ampm ? h12 : H);
+        else if(tl === 'h') out += ampm ? h12 : H;
+        else if(tl === 'ss') out += _p2(SE);
+        else if(tl === 's') out += SE;
+        else if(tl === 'mm' || tl === 'm'){
+          // m mes vs minuto: minuto si va tras h/hh o antes de s/ss
+          var antes = fmt.slice(0, i).toLowerCase();
+          var despues = fmt.slice(i + tk.length).toLowerCase();
+          var esMin = /h\)?\s*$/.test(antes) || /^\s*s/.test(despues) || /\[h\]\s*$/.test(antes);
+          if(tl === 'mm') out += _p2(esMin ? MI : (MO + 1));
+          else out += esMin ? MI : (MO + 1);
+        }
+        else if(tk === 'AM/PM') out += H < 12 ? 'AM' : 'PM';
+        else if(tk === 'A/P') out += H < 12 ? 'A' : 'P';
+        i += tk.length;
+        continue;
+      }
+      out += c;
+      i++;
+    }
+    return out;
+  }catch(e){ return null; }
+}
+function _p2(n){ return String(n).padStart(2, '0'); }
 
 function _biffStyleCells(biff, sheetN){
   var out = {};
@@ -6230,6 +6387,12 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
       return ctx.stdFonts[st.font.b ? 1 : 0];
     }
     newPage(R0);
+    var xDr = function(c, dx){
+      var ci = c - C0;
+      var base = ci >= 0 && ci < xs.length ? xs[ci] : 0;
+      var cw = ci >= 0 && ci < xs.length ? (xs[ci + 1] - xs[ci]) : (xs[xs.length - 1] || 40);
+      return mL + (base + dx / 1024 * cw) * scale;
+    };
     for(rr = R0; rr <= R1; rr++){
       if(H(rr) <= 0) continue;
       if(rr > R0 && (ys[rr - R0] + H(rr) - flowBase) * scale > usableH + 0.5){
@@ -6275,6 +6438,14 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
         if(W(cc) <= 0) continue;
         var k2 = rr + '_' + cc;
         var text = _formCellText(ws, rr, cc);
+        // v2.8.1 — fechas con el formato real del libro (no el en-US de SheetJS)
+        if(ctx.dateText){
+          var celD = ws[XLSX.utils.encode_cell({r: rr - 1, c: cc - 1})];
+          if(celD && (celD.t === 'd' || (celD.v && celD.v instanceof Date))){
+            var dtTxt = ctx.dateText(celD, rr, cc);
+            if(dtTxt) text = dtTxt;
+          }
+        }
         if(!text) continue;
         var mv2 = cover[k2];
         if(mv2 && !(mv2.r0 === rr && mv2.c0 === cc)) continue;
@@ -6327,6 +6498,29 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
           }
         }
       }
+      // v2.8.1 — formas de la capa de dibujo ancladas a esta fila (flechas
+      // "→" y guiones del FPL): unidades 1/1024 del ancho/alto de celda,
+      // punta de flecha según prop Escher 0x01D0/0x01D1
+      if(ctx.drawings && ctx.drawings.length){
+        var DTH = Math.max(0.4, 0.75 * scale);
+        ctx.drawings.forEach(function(dr){
+          if(!dr || !dr.a || dr.sheet !== ctx.sheetNo) return;
+          if(dr.a.r1 + 1 !== rr) return;
+          var a = dr.a;
+          var yD = yOf(rr) - (a.dy1 / 1024) * H(rr) * scale;
+          var x1 = xDr(a.c1, a.dx1), x2 = xDr(a.c2, a.dx2);
+          try{
+            page.drawLine({start: {x: x1, y: yD}, end: {x: x2, y: yD}, thickness: DTH, color: BLACK});
+            function chev(xt, dir){
+              var L = 6.9 * scale, an = 0.46;
+              page.drawLine({start: {x: xt, y: yD}, end: {x: xt - dir * L * Math.cos(an), y: yD - L * Math.sin(an)}, thickness: DTH, color: BLACK});
+              page.drawLine({start: {x: xt, y: yD}, end: {x: xt - dir * L * Math.cos(an), y: yD + L * Math.sin(an)}, thickness: DTH, color: BLACK});
+            }
+            if(dr.aEnd) chev(x2, x2 >= x1 ? 1 : -1);
+            if(dr.aStart) chev(x1, x1 >= x2 ? 1 : -1);
+          }catch(e){}
+        });
+      }
     }
     return pgN;
   }catch(e){
@@ -6334,6 +6528,7 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
     return 0;
   }
 }
+
 
 async function excelToPdfBytes(ab,name,isCsv){
   var PDFLib=window.PDFLib;
@@ -6350,18 +6545,21 @@ async function excelToPdfBytes(ab,name,isCsv){
   }catch(e){throw new Error('No se pudo leer el Excel/CSV: '+(e&&e.message?e.message:e));}
   // v2.8.0 — estilos reales: .xls → parser BIFF8 propio (SheetJS no expone
   // fuentes/bordes de BIFF); .xlsx → cell.s de SheetJS
-  var biff=null;
+  var biff=null, biffStream=null;
   if(!isCsv){
     try{
       var u8b=new Uint8Array(ab);
       // .xls = contenedor CFB (D0 CF 11 E0); el nombre llega sin extensión
       var isXls=/\.xls$/i.test(String(name||''))||(u8b[0]===0xD0&&u8b[1]===0xCF&&u8b[2]===0x11&&u8b[3]===0xE0);
       if(isXls){
-        var stream=_cfbReadStream(u8b,'Workbook')||_cfbReadStream(u8b,'Book');
-        if(stream)biff=_biffParseStyles(stream);
+        biffStream=_cfbReadStream(u8b,'Workbook')||_cfbReadStream(u8b,'Book');
+        if(biffStream)biff=_biffParseStyles(biffStream);
       }
     }catch(e){biff=null;}
   }
+  // v2.8.1 — formas de la capa de dibujo (flechas/guiones del FPL)
+  var biffDraws=[];
+  if(biffStream){try{biffDraws=_biffParseDrawings(biffStream);}catch(e){biffDraws=[];}}
   var doc=await PDFLib.PDFDocument.create();
   try{if(window.fontkit&&doc.registerFontkit)doc.registerFontkit(window.fontkit);}catch(e){}
   var fH=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -6408,10 +6606,30 @@ async function excelToPdfBytes(ab,name,isCsv){
         var setup=biff?(biff.setups&&biff.setups[sIdx]):null;
         if(setup)setup.landscape=false; // orientación por aspecto (como imprime LibreOffice)
         var marg=biff?(biff.marginsBy&&biff.marginsBy[sIdx]):null;
-        var ectx={lib:PDFLib,fH:fH,fHB:fHB,stdFonts:[fH,fHB],
+        var ectx={lib:PDFLib,fH:fH,fHB:fHB,stdFonts:[fH,fHB],sheetNo:sIdx,drawings:biffDraws,
           ttfFor:function(nm,b3,i3){
             var fam=_wzResolveFam(nm||'Arial');
             return embedMap[fam+'|'+(b3?1:0)+'|'+(i3?1:0)]||null;
+          },
+          dateText:function(cel,r1,c1){
+            // v2.8.1 — fechas con el formato real del libro (ifmt BIFF o z de
+            // SheetJS); builtin 14/22 = fecha corta es-PE (d/m/yyyy)
+            try{
+              var fmt=null;
+              if(biff){
+                var xi=biff.cells[sIdx+','+(r1-1)+','+(c1-1)];
+                var xf=xi!==undefined?biff.xfs[xi]:null;
+                var ifmt=xf?xf.ifmt:null;
+                if(ifmt!==null&&ifmt!==undefined)fmt=ifmt>=164?(biff.fmts[ifmt]||null):_xlsBuiltinFmt(ifmt);
+              }
+              if(!fmt&&cel.z){
+                fmt=cel.z;
+                if(fmt==='m/d/yy')fmt='d/m/yyyy';
+                else if(fmt==='m/d/yy h:mm')fmt='d/m/yyyy h:mm';
+              }
+              if(!fmt)fmt='d/m/yyyy';
+              return _xlsFmtDate(cel.v,fmt);
+            }catch(e){return null;}
           }};
         var npg=_excelWysiwygSheet(doc,ws,styles,ectx,setup,marg);
         if(npg>0){any=true;pgTotal+=npg;return;}
@@ -6882,83 +7100,138 @@ function _wzMetrics(fam, sizePx, bold, ital){
   }catch(e){ _wzMC[key] = {asc: sizePx * 0.8, desc: sizePx * 0.2}; }
   return _wzMC[key];
 }
-// metadatos del documento: márgenes del último sectPr (twips) + regla de
-// interlineado de cada w:p del cuerpo EN ORDEN. Word: lineRule="auto" usa la
-// ALTURA NATURAL de la fuente (single ≈ 1.15em en Arial/Calibri), pero
-// docx-preview deja line-height = line/240 (single = 1em) → todo compactado.
-// Con las reglas por párrafo se corrige a lo que imprime Word.
+// metadatos del documento: márgenes del último sectPr (twips) + estilo EFECTIVO
+// de cada párrafo de cada parte (document/header/footer). La resolución por
+// atributo sigue la cadena de Word: docDefaults < estilo de tabla < estilo de
+// párrafo < formato directo. (v2.8.0 usaba docDefaults para todo y la zona de
+// integrantes salía con after=8pt de más: el estilo de tabla TableGrid1 define
+// after=0 line=240 y manda sobre docDefaults.) También tblInd de cada tabla,
+// que docx-preview no aplica.
+function _wzSpOf(el){
+  var r = {}, m;
+  if((m = /w:line="(-?\d+)"/.exec(el))) r.line = parseInt(m[1], 10);
+  if((m = /w:lineRule="(\w+)"/.exec(el))) r.rule = m[1];
+  if((m = /w:after="(-?\d+)"/.exec(el))) r.after = parseInt(m[1], 10);
+  if((m = /w:before="(-?\d+)"/.exec(el))) r.before = parseInt(m[1], 10);
+  return r;
+}
 async function _wzDocMeta(ab){
-  var out = {hdr: 720, ftr: 720, top: 1440, rules: null};
+  var out = {hdr: 720, ftr: 720, top: 1440, parts: {}, defs: {after: 160, before: 0, line: 259, rule: 'auto'}};
+  var z = await window.JSZip.loadAsync(ab);
+  var docXml = await z.file('word/document.xml').async('string');
+  // sectPr (márgenes)
+  var sps = docXml.match(/<w:sectPr[\s\S]*?<\/w:sectPr>/g) || [];
+  var sp = sps[sps.length - 1] || '';
+  var mg = /<w:pgMar[^>]*>/.exec(sp);
+  if(mg){
+    var tw = function(a){
+      var m2 = new RegExp('w:' + a + '="(-?\\d+)"').exec(mg[0]);
+      return m2 ? parseInt(m2[1], 10) : null;
+    };
+    if(tw('header') !== null) out.hdr = tw('header');
+    if(tw('footer') !== null) out.ftr = tw('footer');
+    if(tw('top') !== null) out.top = tw('top');
+  }
+  // tamaño por defecto del marcador de párrafo (rPrDefault sz, en pt)
+  var markDef = 11;
   try{
-    var z = await window.JSZip.loadAsync(ab);
-    var xml = await z.file('word/document.xml').async('string');
-    var sps = xml.match(/<w:sectPr[\s\S]*?<\/w:sectPr>/g) || [];
-    var sp = sps[sps.length - 1] || '';
-    var mg = /<w:pgMar[^>]*>/.exec(sp);
-    if(mg){
-      var tw = function(a){
-        var m2 = new RegExp('w:' + a + '="(-?\\d+)"').exec(mg[0]);
-        return m2 ? parseInt(m2[1], 10) : null;
-      };
-      var h = tw('header'), f = tw('footer');
-      if(h !== null) out.hdr = h;
-      if(f !== null) out.ftr = f;
-      if(tw('top') !== null) out.top = tw('top');
+    var mrd = /<w:rPrDefault>[\s\S]*?<\/w:rPrDefault>/.exec(sx);
+    if(mrd){
+      var msz = /<w:sz w:val="(\d+)"/.exec(mrd[0]);
+      if(msz) markDef = parseInt(msz[1], 10) / 2;
     }
-    try{
-      var bodyM = /<w:body>([\s\S]*)<\/w:body>/.exec(xml);
-      if(bodyM){
-        var ps = bodyM[1].match(/<w:p[\s>][\s\S]*?<\/w:p>|<w:p\/>/g) || [];
-        out.rules = ps.map(function(px){
-          var spc = /<w:spacing[^>]*\/>/.exec(px);
-          if(!spc) return null;
-          var r = {}, any = false;
-          var line = /w:line="(-?\d+)"/.exec(spc[0]);
-          if(line){ r.line = parseInt(line[1], 10); any = true; }
-          var rule = /w:lineRule="(\w+)"/.exec(spc[0]);
-          if(rule) r.rule = rule[1];
-          var af = /w:after="(-?\d+)"/.exec(spc[0]);
-          if(af){ r.after = parseInt(af[1], 10); any = true; }
-          var bf = /w:before="(-?\d+)"/.exec(spc[0]);
-          if(bf){ r.before = parseInt(bf[1], 10); any = true; }
-          return any ? r : null;
+  }catch(e){}
+  // estilos: styleId → spacing
+  var styleSp = {};
+  try{
+    var sx = await z.file('word/styles.xml').async('string');
+    var dd = /<w:pPrDefault>([\s\S]*?)<\/w:pPrDefault>/.exec(sx);
+    if(dd){
+      var dsp = /<w:spacing[^>]*\/>/.exec(dd[1]);
+      if(dsp){
+        var d = _wzSpOf(dsp[0]);
+        ['line', 'rule', 'after', 'before'].forEach(function(k){
+          if(d[k] !== undefined) out.defs[k] = d[k];
         });
-        out.pTexts = ps.map(function(px){
-          return (px.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []).map(function(t){
-            return t.replace(/<[^>]+>/g, '');
-          }).join('').replace(/\s+/g, ' ').trim();
-        });
-        // vAlign por celda de cada tabla plana del cuerpo (en orden)
-        try{
-          var tbls = bodyM[1].match(/<w:tbl>[\s\S]*?<\/w:tbl>/g) || [];
-          out.tblVA = tbls.map(function(tx){
-            var tcs = tx.match(/<w:tc>[\s\S]*?<\/w:tc>/g) || [];
-            return tcs.map(function(cx){
-              var va = /<w:vAlign w:val="(\w+)"\/>/.exec(cx);
-              if(!va) return '';
-              return va[1] === 'center' ? 'middle' : (va[1] === 'bottom' ? 'bottom' : 'top');
-            });
-          });
-        }catch(e){}
       }
-    }catch(e){}
+    }
+    (sx.match(/<w:style [^>]*>[\s\S]*?<\/w:style>/g) || []).forEach(function(st){
+      var sid = /w:styleId="([^"]+)"/.exec(st);
+      var sp2 = /<w:spacing[^>]*\/>/.exec(st);
+      if(sid && sp2) styleSp[sid[1]] = _wzSpOf(sp2[0]);
+    });
+  }catch(e){}
+  // partes: document + headers + footers (numerados)
+  var partFiles = {document: 'word/document.xml', header: [], footer: []};
+  for(var fn in z.files){
+    if(!Object.prototype.hasOwnProperty.call(z.files, fn)) continue;
+    var mh = /^word\/(header|footer)(\d+)\.xml$/.exec(fn);
+    if(mh) partFiles[mh[1] === 'header' ? 'header' : 'footer'].push(fn);
+  }
+  partFiles.header.sort(); partFiles.footer.sort();
+  function parsePart(xml){
+    var part = {rules: [], pTexts: [], tblInds: []};
     try{
-      var sx = await z.file('word/styles.xml').async('string');
-      var dd = /<w:pPrDefault>([\s\S]*?)<\/w:pPrDefault>/.exec(sx);
-      out.defs = {after: 160, before: 0, line: 259, rule: 'auto'};
-      if(dd){
-        var sp = /<w:spacing[^>]*\/>/.exec(dd[1]);
-        if(sp){
-          var a2 = /w:after="(-?\d+)"/.exec(sp[0]), b2 = /w:before="(-?\d+)"/.exec(sp[0]),
-              l2 = /w:line="(-?\d+)"/.exec(sp[0]), r2 = /w:lineRule="(\w+)"/.exec(sp[0]);
-          if(a2) out.defs.after = parseInt(a2[1], 10);
-          if(b2) out.defs.before = parseInt(b2[1], 10);
-          if(l2) out.defs.line = parseInt(l2[1], 10);
-          if(r2) out.defs.rule = r2[1];
+      // barrido con pila de tablas: spans, estilo de tabla y tblInd en orden
+      var tok = /<w:tbl>|<\/w:tbl>|<w:p[ >][\s\S]*?<\/w:p>|<w:p\/>/g;
+      var stack = [], m2, pats = [];
+      while((m2 = tok.exec(xml))){
+        var t = m2[0];
+        if(t === '<w:tbl>'){
+          // leer tblPr del contenido que sigue
+          var rest = xml.slice(m2.index, m2.index + 4000);
+          var tpr = /<w:tblPr>[\s\S]*?<\/w:tblPr>/.exec(rest);
+          var stl = tpr && /<w:tblStyle w:val="([^"]+)"/.exec(tpr[0]);
+          var ind = tpr && /<w:tblInd w:w="(-?\d+)"/.exec(tpr[0]);
+          part.tblInds.push(ind ? parseInt(ind[1], 10) : 0);
+          stack.push(stl ? stl[1] : null);
+        }else if(t === '</w:tbl>'){
+          stack.pop();
+        }else{
+          var txt = (t.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []).map(function(x){
+            return x.replace(/<[^>]+>/g, '');
+          }).join('').replace(/\s+/g, ' ').trim();
+          var dsp2 = /<w:spacing[^>]*\/>/.exec(t);
+          var pst = /<w:pStyle w:val="([^"]+)"/.exec(t);
+          var msz2 = /<w:sz w:val="(\d+)"/.exec(t);
+          var eff = {line: out.defs.line, rule: out.defs.rule, after: out.defs.after, before: out.defs.before,
+            markSz: msz2 ? parseInt(msz2[1], 10) / 2 : markDef};
+          var chain = [];
+          if(stack.length && stack[stack.length - 1] && styleSp[stack[stack.length - 1]]) chain.push(styleSp[stack[stack.length - 1]]);
+          if(pst && styleSp[pst[1]]) chain.push(styleSp[pst[1]]);
+          if(dsp2) chain.push(_wzSpOf(dsp2[0]));
+          chain.forEach(function(o){
+            if(o.line !== undefined) eff.line = o.line;
+            if(o.rule !== undefined) eff.rule = o.rule;
+            if(o.after !== undefined) eff.after = o.after;
+            if(o.before !== undefined) eff.before = o.before;
+          });
+          part.rules.push(eff);
+          part.pTexts.push(txt);
         }
       }
     }catch(e){}
-  }catch(e){}
+    return part;
+  }
+  out.parts.document = parsePart(docXml);
+  out.parts.header = {rules: [], pTexts: [], tblInds: []};
+  out.parts.footer = {rules: [], pTexts: [], tblInds: []};
+  for(var hi = 0; hi < partFiles.header.length; hi++){
+    try{
+      var hp = parsePart(await z.file(partFiles.header[hi]).async('string'));
+      out.parts.header.rules = out.parts.header.rules.concat(hp.rules);
+      out.parts.header.pTexts = out.parts.header.pTexts.concat(hp.pTexts);
+      out.parts.header.tblInds = out.parts.header.tblInds.concat(hp.tblInds);
+    }catch(e){}
+  }
+  for(var fi = 0; fi < partFiles.footer.length; fi++){
+    try{
+      var fp = parsePart(await z.file(partFiles.footer[fi]).async('string'));
+      out.parts.footer.rules = out.parts.footer.rules.concat(fp.rules);
+      out.parts.footer.pTexts = out.parts.footer.pTexts.concat(fp.pTexts);
+      out.parts.footer.tblInds = out.parts.footer.tblInds.concat(fp.tblInds);
+    }catch(e){}
+  }
   return out;
 }
 // razón natural line-height/font-size de una familia (medida en vivo)
@@ -7019,73 +7292,95 @@ async function docxWysiwygToPdf(ab, name){
     Object.keys(need).forEach(function(sh){ loads.push(document.fonts.load(sh)); });
     try{ await Promise.all(loads); await document.fonts.ready; }catch(e){}
     _wzMC = {}; // invalidar métricas: ahora están las fuentes reales
-    // ── interlineado y espaciado como Word ──
-    // lineRule="auto" usa la altura NATURAL de la fuente (single≈1.15em) y
-    // w:after/w:before heredan de docDefaults (docx-preview los deja en 0).
-    // Las reglas se alinean al DOM por TEXTO del párrafo (tolerante a párrafos
-    // vacíos inyectados). vAlign de celdas se aplica desde el XML.
-    try{
-      var domPs = wrap.querySelectorAll('section.docx article p');
-      var rules = marg.rules, pTexts = marg.pTexts;
-      var defs = marg.defs || {after: 160, before: 0, line: 259, rule: 'auto'};
-      var aligned = null;
-      if(rules && pTexts && domPs.length && Math.abs(domPs.length - rules.length) <= 10){
-        var res = [], jx = 0, dp, k;
-        var domTexts = [];
-        for(dp = 0; dp < domPs.length; dp++) domTexts.push((domPs[dp].textContent || '').replace(/\s+/g, ' ').trim());
-        for(dp = 0; dp < domPs.length; dp++){
-          var dt = domTexts[dp];
-          if(dt === ''){
-            if(jx < rules.length && pTexts[jx] === ''){ res.push(rules[jx]); jx++; }
-            else res.push('__MISS__');
-          }else{
-            var found = -1;
-            for(k = jx; k < Math.min(jx + 4, rules.length); k++){ if(pTexts[k] === dt){ found = k; break; } }
-            if(found < 0) res.push('__MISS__');
-            else { res.push(rules[found]); jx = found + 1; }
-          }
+    // ── v2.8.1 — interlineado/espaciado EFECTIVOS por zona ──
+    // Cada <p> del DOM se alinea por TEXTO a su parte XML (document/header/
+    // footer) y recoge su regla resuelta (directo > pStyle > tblStyle >
+    // docDefaults). lineRule "auto" = múltiplo de la altura natural de la
+    // fuente; "exact"/"atLeast" en puntos. Además tblInd (sangría de tabla)
+    // que docx-preview no aplica.
+    function applyZone(domList, part){
+      var rules = part.rules, pTexts = part.pTexts;
+      var res = [], jx = 0, dp, k;
+      var domTexts = [];
+      for(dp = 0; dp < domList.length; dp++) domTexts.push((domList[dp].textContent || '').replace(/\s+/g, ' ').trim());
+      for(dp = 0; dp < domList.length; dp++){
+        var dt = domTexts[dp];
+        if(dt === ''){
+          if(jx < pTexts.length && pTexts[jx] === ''){ res.push(rules[jx]); jx++; }
+          else res.push('__MISS__');
+        }else{
+          var found = -1;
+          for(k = jx; k < Math.min(jx + 4, pTexts.length); k++){ if(pTexts[k] === dt){ found = k; break; } }
+          if(found < 0) res.push('__MISS__');
+          else { res.push(rules[found]); jx = found + 1; }
         }
-        // ¿la alineación consumió la mayoría? (los null ALINEADOS son válidos:
-        // párrafos sin spacing propio → heredan docDefaults)
-        var hit = 0;
-        for(k = 0; k < res.length; k++) if(res[k] !== '__MISS__') hit++;
-        if(hit >= Math.floor(domPs.length * 0.6)) aligned = res.map(function(x){
-          return x === '__MISS__' ? null : x;
-        });
       }
-      for(dp = 0; dp < domPs.length; dp++){
-        var r = aligned ? aligned[dp] : null;
-        var lineV = r && r.line != null ? r.line : defs.line;
-        var ruleV = r && r.line != null ? (r.rule || 'auto') : defs.rule;
-        var afV = r && r.after != null ? r.after : defs.after;
-        var bfV = r && r.before != null ? r.before : defs.before;
-        var pcs = getComputedStyle(domPs[dp]);
+      var hit = 0;
+      for(k = 0; k < res.length; k++) if(res[k] !== '__MISS__') hit++;
+      for(dp = 0; dp < domList.length; dp++){
+        var el = domList[dp], r = res[dp];
+        var pcs = getComputedStyle(el);
         var fs2 = parseFloat(pcs.fontSize) || 16;
         var nat = _wzNatRatio(_wzResolveFam(pcs.fontFamily), fs2);
-        if(ruleV === 'auto'){
-          var mult = Math.min(3.4, Math.max(0.4, lineV / 240));
-          domPs[dp].style.lineHeight = String(Math.round(mult * nat * 1000) / 1000);
-        }
-        domPs[dp].style.marginBottom = (afV > 0 ? (afV / 20) : 0) + 'pt';
-        domPs[dp].style.marginTop = (bfV > 0 ? (bfV / 20) : 0) + 'pt';
-      }
-    }catch(e){}
-    // vAlign de celdas (center/bottom) desde el XML, por tabla en orden
-    try{
-      if(marg.tblVA){
-        var domTbls = wrap.querySelectorAll('section.docx article table');
-        if(domTbls.length === marg.tblVA.length){
-          for(var tv = 0; tv < domTbls.length; tv++){
-            var vaSeq = marg.tblVA[tv];
-            if(!vaSeq || !vaSeq.length) continue;
-            var domTds = domTbls[tv].querySelectorAll('tr td');
-            if(domTds.length !== vaSeq.length) continue;
-            for(var tv2 = 0; tv2 < domTds.length; tv2++){
-              if(vaSeq[tv2] && vaSeq[tv2] !== 'top') domTds[tv2].style.verticalAlign = vaSeq[tv2];
+        if(r && r !== '__MISS__'){
+          if(domTexts[dp] === ''){
+            // párrafo vacío: docx-preview lo deja sin caja de línea y su alto
+            // queda = 1em (min-height) → se infla el fontSize al interlineado
+            // real del marcador (markSz × mult × natural, como Word/LO)
+            var mSz = r.markSz || 11;
+            if(r.rule === 'auto' || !r.rule){
+              var mMult = Math.min(3.4, Math.max(0.4, (r.line || 240) / 240));
+              el.style.fontSize = (Math.round(mSz * mMult * nat * 100) / 100) + 'pt';
+            }else if(r.rule === 'exact'){
+              el.style.fontSize = mSz + 'pt';
+              el.style.height = ((r.line || 240) / 20) + 'pt';
+            }else{
+              el.style.fontSize = Math.max(mSz * nat, (r.line || 240) / 20) + 'pt';
             }
+          }else{
+            // strut del párrafo = formato del marcador (como Word): afecta a
+            // la altura de línea cuando el marcador es mayor que los runs
+            if(r.markSz) el.style.fontSize = r.markSz + 'pt';
+          }
+          if(r.rule === 'auto' || !r.rule){
+            var mult = Math.min(3.4, Math.max(0.4, (r.line || 240) / 240));
+            el.style.lineHeight = String(Math.round(mult * nat * 1000) / 1000);
+          }else if(r.rule === 'atLeast'){
+            var ptA = (r.line || 240) / 20;
+            el.style.lineHeight = Math.max(ptA, Math.round(nat * fs2 * 1000) / 1000) + 'px';
+          }else{ // exact
+            el.style.lineHeight = ((r.line || 240) / 20) + 'pt';
+          }
+          el.style.marginTop = ((r.before || 0) / 20) + 'pt';
+          el.style.marginBottom = ((r.after || 0) / 20) + 'pt';
+        }else{
+          // sin regla (párrafo inyectado por docx-preview): corregir sólo
+          // line-height si docx-preview dejó un múltiplo entero de em
+          var lh = parseFloat(pcs.lineHeight);
+          if(lh && lh / fs2 > 0.94 && lh / fs2 < 3.06 && Math.abs(lh / fs2 - Math.round(lh / fs2)) < 0.06){
+            el.style.lineHeight = String(Math.round(Math.round(lh / fs2) * nat * 1000) / 1000);
           }
         }
       }
+      return hit;
+    }
+    try{
+      var zArt = wrap.querySelectorAll('section.docx article p');
+      var zHdr = wrap.querySelectorAll('section.docx header p');
+      var zFtr = wrap.querySelectorAll('section.docx footer p');
+      applyZone(zArt, marg.parts.document);
+      if(zHdr.length) applyZone(zHdr, marg.parts.header);
+      if(zFtr.length) applyZone(zFtr, marg.parts.footer);
+    }catch(e){}
+    // tblInd (sangría de tabla) por zona
+    try{
+      [['article', marg.parts.document], ['header', marg.parts.header], ['footer', marg.parts.footer]].forEach(function(zz){
+        var ts = wrap.querySelectorAll('section.docx ' + zz[0] + ' table');
+        var inds = zz[1].tblInds;
+        for(var ti = 0; ti < Math.min(ts.length, inds.length); ti++){
+          if(inds[ti] > 0) ts[ti].style.marginLeft = (inds[ti] / 20) + 'pt';
+        }
+      });
     }catch(e){}
     // ── recolectar items por sección ──
     var styleCache = new WeakMap();
@@ -7188,6 +7483,20 @@ async function docxWysiwygToPdf(ab, name){
       // el flujo continuo se ventana en páginas: pág = floor((y-padTop)/U).
       var padTop = parseFloat(getComputedStyle(sec).paddingTop) || 0;
       var padBot = parseFloat(getComputedStyle(sec).paddingBottom) || 0;
+      // v2.8.1 — área útil como Word: el cuerpo empieza bajo el encabezado
+      // real (docx-preview lo deja en flujo) y termina sobre el pie; si el
+      // pie no cabe en el margen inferior el cuerpo se reduce
+      try{
+        var artEl = sec.querySelector('article');
+        if(artEl){
+          var artOff = artEl.getBoundingClientRect().top - sr.top;
+          if(artOff > padTop && artOff < pageCssH * 0.5) padTop = artOff;
+        }
+        if(ftrEl){
+          var ftrRes = Math.max(padBot, ftrMargCss + ftrEl.getBoundingClientRect().height);
+          if(ftrRes > padBot && ftrRes < pageCssH * 0.5) padBot = ftrRes;
+        }
+      }catch(e){}
       var U = pageCssH - padTop - padBot;
       if(!(U > 300)) U = pageCssH * 0.8;
       function pageOf(y){ return Math.max(0, Math.floor((y - padTop) / U)); }
@@ -7392,6 +7701,7 @@ async function docxWysiwygToPdf(ab, name){
     holder.remove();
   }
 }
+
 
 async function docxToPdfBytes(ab,name){
   // v2.8.0 — WYSIWYG primero: formato idéntico al original; mammoth = fallback
