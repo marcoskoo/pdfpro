@@ -297,7 +297,7 @@ body.nativemode .evtb{display:none}
 .xg-table th{position:sticky;top:0;z-index:3;background:#2a3b52;color:#cdd9ea;font-size:10px;font-weight:600;padding:3px 2px;text-align:center;border-right:1px solid #3d5270;border-bottom:1px solid #3d5270;overflow:hidden;user-select:none}
 .xg-table th:first-child{position:sticky;left:0;z-index:4}
 .xg-rowh{position:sticky;left:0;z-index:2;background:#2a3b52;color:#cdd9ea;font-size:10px;text-align:center;padding:3px 2px;border-right:1px solid #3d5270;border-bottom:1px solid #3d5270;user-select:none}
-.xg-td{padding:0 3px;overflow:visible;white-space:pre;vertical-align:middle;cursor:cell;background:#fff}
+.xg-td{padding:0 3px;overflow:visible;white-space:pre;vertical-align:middle;cursor:cell;background:#fff;border-right:1px solid #d9d9d9;border-bottom:1px solid #d9d9d9}
 .xg-td .xg-tx{display:block;min-height:1.15em;line-height:1.22}
 .xg-td.xg-sel{outline:2px solid #2563eb;outline-offset:-2px;position:relative;z-index:1}
 .xg-edit{position:absolute;z-index:6;border:2px solid #2563eb;background:#fff;color:#000;padding:0 3px;outline:none;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
@@ -749,7 +749,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.3 · Word y Excel editables en su formato original · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.4 · Word y Excel editables en su formato original · toda la hoja del Libro visible con retícula completa · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4481,7 +4481,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.3',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.4',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10491,7 +10491,7 @@ function nativeUndo(){
 // ════ v2.9.0 — MODO EXCEL: geometría/estilos del modelo (px de pantalla) ════
 function xlGeo(sh){
   var ws=sh.ws, rg=_formDecodeRef(ws['!ref']);
-  if(!rg) return null;
+  if(!rg) rg={r0:1,r1:1,c0:1,c1:1};   // v2.9.4 — hoja sin !ref: partir de A1
   var rowsMeta=ws['!rows']||[], colsMeta=ws['!cols']||[];
   var DEFH=17, DEFCW=64;
   function Hpx(r){ var rm=rowsMeta[r-1]; return rm&&rm.hidden?0:(rm&&rm.hpt?Math.max(2,rm.hpt*4/3):DEFH); }
@@ -10514,7 +10514,15 @@ function xlGeo(sh){
   var R1=rg.r1; while(R1>R0&&!(function(){for(var cc2=rg.c0;cc2<=rg.c1;cc2++)if(used(R1,cc2))return true;return false;})())R1--;
   var C0=rg.c0; while(C0<rg.c1&&!(function(){for(var rr=rg.r0;rr<=rg.r1;rr++)if(used(rr,C0))return true;return false;})())C0++;
   var C1=rg.c1; while(C1>C0&&!(function(){for(var rr2=rg.r0;rr2<=rg.r1;rr2++)if(used(rr2,C1))return true;return false;})())C1--;
-  if(R1<R0||C1<C0) return null;
+  if(R1<R0||C1<C0){ R0=rg.r0; R1=rg.r0; C0=rg.c0; C1=rg.c0; }   // v2.9.4 — hoja sin celdas usadas: nunca null (antes «Hoja sin datos visibles»)
+  // v2.9.4 — TODA LA HOJA como la pantalla de Excel: la retícula completa
+  // desde A1 — no sólo la columna que lleva texto. Mínimo A–T (20 columnas)
+  // × 40 filas y +4 filas/columnas bajo/derecha del área usada para que la
+  // hoja crezca al editar el borde. Así se ven y se pueden editar también
+  // las hojas vacías del Libro (toda la hoja, todo el Libro).
+  R0=1; C0=1;
+  R1=Math.max(R1+4, 40);
+  C1=Math.max(C1+4, 20);
   return {cover:cover, merges:merges, R0:R0, R1:R1, C0:C0, C1:C1, Hpx:Hpx, Wpx:Wpx};
 }
 // texto de celda como lo muestra el PDF (fechas es-PE con formato real);
@@ -10818,6 +10826,16 @@ function xlCommit(tab,r,c,raw){
   }
   model.edits[ekey]={r:r,c:c,v:raw,num:(cell&&cell.t==='n')?String(cell.v):undefined};
   nvMarkDirty(tab);
+  // v2.9.4 — escritura fuera de !ref: ampliar el rango como Excel
+  // (la nueva celda viaja al PDF y al guardado, no sólo a la vista)
+  if(raw!==''){
+    try{
+      var rgC=_formDecodeRef(ws['!ref']);
+      if(!rgC) ws['!ref']=XLSX.utils.encode_range({r:r-1,c:c-1},{r:r-1,c:c-1});
+      else if(r<rgC.r0||r>rgC.r1||c<rgC.c0||c>rgC.c1)
+        ws['!ref']=XLSX.utils.encode_range({r:Math.min(rgC.r0,r)-1,c:Math.min(rgC.c0,c)-1},{r:Math.max(rgC.r1,r)-1,c:Math.max(rgC.c1,c)-1});
+    }catch(e){}
+  }
   // refrescar la celda en el DOM
   var td=v.host?v.host.querySelector('td.xg-td[data-r="'+r+'"][data-c="'+c+'"]'):null;
   if(td){
@@ -10829,6 +10847,17 @@ function xlCommit(tab,r,c,raw){
     }
   }
   xlSyncBar(tab);
+  // v2.9.4 — la edición llegó al borde de la retícula: re-geometría
+  // (la hoja crece como en Excel), conservando scroll y selección
+  try{
+    var g=v.geo;
+    if(g&&(r>g.R1-2||c>g.C1-2)){
+      var scT=v.wrap.scrollTop, scL=v.wrap.scrollLeft;
+      xlRenderSheet(tab, v.sheet);
+      v.wrap.scrollTop=scT; v.wrap.scrollLeft=scL;
+      xlSelect(tab, r, c);
+    }
+  }catch(e){}
 }
 function xlUndo(tab){
   var model=tab._xl;
@@ -10973,6 +11002,20 @@ async function xlsxPatchSave(tab){
           }
         }
       }
+      // v2.9.4 — <dimension> acorde al rango real: si la edición insertó
+      // celdas fuera del rango original, ampliarlo (sólo si crece; nunca
+      // se toca en un guardado normal → el resto sigue byte-idéntico)
+      try{
+        var dref=sh.ws&&sh.ws['!ref'];
+        if(dref){
+          var dm=/<dimension ref="([^"]+)"\s*\/?>/.exec(xml);
+          if(dm){
+            var dOld=_formDecodeRef(dm[1]), dNew=_formDecodeRef(dref);
+            if(dOld&&dNew&&(dNew.r0<dOld.r0||dNew.c0<dOld.c0||dNew.r1>dOld.r1||dNew.c1>dOld.c1))
+              xml=xml.replace(dm[0],'<dimension ref="'+dref+'"/>');
+          }
+        }
+      }catch(e){}
       z.file(path,xml);
     }
     if(nEdits===0){
