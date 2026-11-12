@@ -305,6 +305,7 @@ body.nativemode .evtb{display:none}
 .xg-sheet{background:var(--s2);border:1px solid var(--bdr);color:var(--t2);border-radius:6px;font-size:11px;padding:4px 10px;cursor:pointer}
 .xg-sheet.on{background:rgba(59,130,246,.15);border-color:var(--acc);color:var(--t1);font-weight:600}
 .xg-empty{color:var(--t3);font-size:12px;padding:30px;text-align:center}
+.xg-wimg{position:absolute;z-index:3;pointer-events:none;user-select:none;image-rendering:auto}
 .dt-ico{font-size:9px;font-weight:800;border-radius:3px;padding:1px 3px;margin-right:3px;flex:none}
 .dt-ico.dt-word{background:#2b579a;color:#fff}
 .dt-ico.dt-xcel{background:#217346;color:#fff}
@@ -749,7 +750,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.4 · Word y Excel editables en su formato original · toda la hoja del Libro visible con retícula completa · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.6 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4481,7 +4482,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.4',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.6',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -6557,15 +6558,42 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
     var page = null, pgN = 0, flowBase = 0;
     var usableH = PH - mT - mB;
     var pagesLog = [];   // v2.9.2 — {page, flowBase} para mapear sellos
+    // v2.9.6 — printOptions del libro: horizontalCentered/verticalCentered.
+    // Excel/LibreOffice centran el área impresa en la hoja; sin estos
+    // desplazamientos el formulario queda pegado al margen izquierdo y los
+    // títulos («PLAN DE VUELO»/«Flight Plan») salen descentrados respecto de
+    // la impresión real. oX es constante; oY se calcula por página.
+    var oX = (setup && setup.hc && contentW * scale < PW - mL - mR - 0.5) ?
+      (PW - mL - mR - contentW * scale) / 2 : 0;
+    // pre-cálculo de saltos de página (idéntico al bucle de dibujo) para
+    // conocer la altura de contenido de CADA página y centrarla verticalmente
+    var brkR = [], stR = R0, rrB;
+    for(rrB = R0; rrB <= R1; rrB++){
+      if(H(rrB) <= 0) continue;
+      if(rrB > stR && (ys[rrB - R0] + H(rrB) - ys[stR - R0]) * scale > usableH + 0.5){ brkR.push(stR); stR = rrB; }
+    }
+    brkR.push(stR);
+    var pgOffY = {};   // fila inicial de página → desfase vertical de centrado
+    if(setup && setup.vc){
+      for(var bi = 0; bi < brkR.length; bi++){
+        var rEndB = (bi + 1 < brkR.length) ? brkR[bi + 1] : R1 + 1;
+        var rLastB = rEndB - 1;
+        while(rLastB > brkR[bi] && H(rLastB) <= 0) rLastB--;
+        var hPgB = (rLastB >= brkR[bi]) ? (ys[rLastB - R0 + 1] - ys[brkR[bi] - R0]) * scale : 0;
+        pgOffY[brkR[bi]] = (hPgB < usableH - 0.5) ? (usableH - hPgB) / 2 : 0;
+      }
+    }
     function newPage(rStart){
       page = doc.addPage([PW, PH]); pgN++;
       flowBase = ys[rStart - R0];
-      pagesLog.push({page: page, flowBase: flowBase});
+      flowOff = pgOffY[rStart] || 0;
+      pagesLog.push({page: page, flowBase: flowBase, off: flowOff});
     }
-    function xOf(c){ return mL + xs[c - C0] * scale; }
+    var flowOff = 0;   // desfase vertical de la página actual (verticalCentered)
+    function xOf(c){ return mL + oX + xs[c - C0] * scale; }
     function wOf(c0, c1){ return (xs[c1 - C0 + 1] - xs[c0 - C0]) * scale; }
     function hOf(r0, r1){ return (ys[r1 - R0 + 1] - ys[r0 - R0]) * scale; }
-    function yOf(r){ return PH - mT - (ys[r - R0] - flowBase) * scale; }
+    function yOf(r){ return PH - mT - flowOff - (ys[r - R0] - flowBase) * scale; }
     // ── fuentes: lookup de las pre-embebidas por el llamador (woff→ttf) ──
     function fontFor(st){
       var f = ctx.ttfFor ? ctx.ttfFor(st.font.name || 'Arial', st.font.b, st.font.i) : null;
@@ -6577,7 +6605,7 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
       var ci = c - C0;
       var base = ci >= 0 && ci < xs.length ? xs[ci] : 0;
       var cw = ci >= 0 && ci < xs.length ? (xs[ci + 1] - xs[ci]) : (xs[xs.length - 1] || 40);
-      return mL + (base + dx / 1024 * cw) * scale;
+      return mL + oX + (base + dx / 1024 * cw) * scale;
     };
     for(rr = R0; rr <= R1; rr++){
       if(H(rr) <= 0) continue;
@@ -6624,6 +6652,17 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
         if(W(cc) <= 0) continue;
         var k2 = rr + '_' + cc;
         var text = _formCellText(ws, rr, cc);
+        // v2.9.6 — cadena CRUDA (espacios reales) cuando la celda trae
+        // relleno: el FPL original centra «     Flight Plan     » con sus
+        // espacios, y Excel imprime el texto ligeramente a la izquierda del
+        // centro del rango; colapsar los espacios movía el título ~7 pt.
+        if(text){
+          var celR2 = ws[XLSX.utils.encode_cell({r: rr - 1, c: cc - 1})];
+          if(celR2 && celR2.t === 's' && typeof celR2.v === 'string' &&
+             celR2.v.indexOf('\n') < 0 && /(^ | $|  )/.test(celR2.v)){
+            text = String(celR2.w != null && celR2.w !== '' ? celR2.w : celR2.v);
+          }
+        }
         // v2.8.1 — fechas con el formato real del libro (no el en-US de SheetJS)
         if(ctx.dateText){
           var celD = ws[XLSX.utils.encode_cell({r: rr - 1, c: cc - 1})];
@@ -6708,6 +6747,30 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
         });
       }
     }
+    // ── v2.9.5 — imágenes del libro (logo del formulario) en su anclaje real ──
+    if(ctx.images && ctx.images.length && pagesLog.length){
+      ctx.images.forEach(function(im){
+        try{
+          var a = im.a;
+          var colI = a.col + 1, rowI = a.row + 1;
+          if(colI < C0 || colI > C1 + 1) return;
+          var xImg = mL + oX + ((colI >= C0 ? xs[colI - C0] : 0) + (a.colOff || 0) / 12700) * scale;
+          var wImg = (a.cx != null) ? (a.cx / 12700) * scale : 0;
+          var hImg = (a.cy != null) ? (a.cy / 12700) * scale : 0;
+          if((!wImg || !hImg) && a.to){
+            var xT2 = mL + oX + ((a.to.col + 1 >= C0 ? xs[Math.min(a.to.col + 1 - C0, xs.length - 1)] : 0) + (a.to.colOff || 0) / 12700) * scale;
+            if(!wImg) wImg = Math.max(1, xT2 - xImg);
+          }
+          var rowIdx = Math.max(0, Math.min(ys.length - 1, rowI - R0));
+          var yCont = (rowI >= R0 ? ys[rowIdx] : 0) + (a.rowOff || 0) / 12700;
+          var pk3 = 0;
+          for(var q3 = 0; q3 < pagesLog.length; q3++){ if(yCont >= pagesLog[q3].flowBase - 0.01) pk3 = q3; }
+          var pgl3 = pagesLog[pk3];
+          var yTopPg = PH - mT - (pgl3.off || 0) - (yCont - pgl3.flowBase) * scale;
+          pgl3.page.drawImage(im.img, {x: xImg, y: yTopPg - hImg, width: wImg, height: hImg});
+        }catch(e){}
+      });
+    }
     // ── v2.9.2 — sellos nativos sobre la hoja (grid px → página PDF) ──
     if(ctx.nvSellos && ctx.nvSellos.length && pagesLog.length && ctx.nvSelloFonts){
       var uSl = 0.75 * scale;   // grid px → pt (incluida la escala de impresión)
@@ -6720,8 +6783,8 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
           }
           var pgl = pagesLog[pk];
           var aSl = Object.assign({}, sv, {
-            x: (mL + sv.x * 0.75 * scale) / uSl,
-            y: (mT + (cyPt - pgl.flowBase) * scale) / uSl
+            x: (mL + oX + sv.x * 0.75 * scale) / uSl,
+            y: (mT + (pgl.off || 0) + (cyPt - pgl.flowBase) * scale) / uSl
           });
           if(sv.type === 'stamp'){
             _paintStampPdfNative(lib, pgl.page, PH, uSl, aSl, ctx.nvSelloFonts.hb);
@@ -6738,6 +6801,294 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
   }
 }
 
+
+// ═══ v2.9.5 — ESTILOS/IMÁGENES REALES DE .xlsx (SheetJS CE no expone cell.s) ═══
+// SheetJS (edición comunitaria) NO parsea fuentes/bordes/alineación de los
+// .xlsx: las líneas del formulario no se veían y los títulos centrados
+// («Plan de Vuelo»/«Flight Plan») salían pegados a la izquierda. Aquí se lee
+// el XML del propio zip: styles.xml (fuentes/rellenos/bordes/alineación),
+// theme1.xml (colores theme→rgb), sheetN.xml (atributo s= de TODAS las
+// celdas — también de las vacías: las cajitas del formulario viven ahí),
+// drawings (logo/imágenes ancladas) y pageSetup/pageMargins reales.
+// El formato de salida es el mismo que usan _xlsxStyleCells/_biffStyleCells.
+var _XLSX_IDX_PAL = ['000000','FFFFFF','FF0000','00FF00','0000FF','FFFF00','FF00FF','00FFFF',
+  '000000','FFFFFF','FF0000','00FF00','0000FF','FFFF00','FF00FF','00FFFF',
+  '800000','008000','000080','808000','800080','008080','C0C0C0','808080',
+  '9999FF','993366','FFFFCC','CCFFFF','660066','FF8080','0066CC','CCCCFF',
+  '000080','FF00FF','FFFF00','00FFFF','800080','800000','008080','0000FF',
+  '00CCFF','CCFFFF','CCFFCC','FFFF99','99CCFF','FF99CC','CC99FF','FFCC99',
+  '3366FF','33CCCC','99CC00','CC99FF','FFCC00','FF9900','FF6600','666699',
+  '969696','003366','339966','003300','333300','993300','993366','000000','FFFFFF'];
+var _XLSX_THEME_PAL = null;
+function _xlsxTint(hex, t){
+  if(!t || !isFinite(t)) return hex;
+  try{
+    var n = parseInt(hex, 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    if(t < 0){ r *= 1 + t; g *= 1 + t; b *= 1 + t; }
+    else{ r = r * (1 - t) + 255 * t; g = g * (1 - t) + 255 * t; b = b * (1 - t) + 255 * t; }
+    var o = (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
+    var s = o.toString(16); while(s.length < 6) s = '0' + s;
+    return s.toUpperCase();
+  }catch(e){ return hex; }
+}
+function _xColorTag(xml){
+  if(!xml) return 'auto';
+  var m = /rgb="([0-9A-Fa-f]{8})"/.exec(xml) || /rgb="([0-9A-Fa-f]{6})"/.exec(xml);
+  if(m) return m[1].slice(-6).toUpperCase();
+  var th = /theme="(\d+)"/.exec(xml);
+  if(th){
+    var c = _XLSX_THEME_PAL ? _XLSX_THEME_PAL[+th[1]] : null;
+    if(!c) return 'auto';
+    var ti = /tint="(-?[\d.]+)"/.exec(xml);
+    return ti ? _xlsxTint(c, parseFloat(ti[1])) : c;
+  }
+  var ix = /indexed="(\d+)"/.exec(xml);
+  if(ix){ var n = +ix[1]; if(n === 64 || n === 65) return 'auto'; return _XLSX_IDX_PAL[n] || 'auto'; }
+  return 'auto';
+}
+function _xlsxThemePal(themeXml){
+  var pal = new Array(12).fill(null);
+  try{
+    var scheme = /<a:clrScheme[\s\S]*?<\/a:clrScheme>/.exec(themeXml);
+    if(!scheme) return pal;
+    var byName = {}, re = /<(?:a:)?(dk1|lt1|dk2|lt2|accent[1-6]|hlink|folHlink)>([\s\S]*?)<\/(?:a:)?\1>/g, m;
+    while((m = re.exec(scheme[0]))){
+      var c = /srgbClr val="([0-9A-Fa-f]{6})"/.exec(m[2]);
+      if(!c) c = /sysClr[^>]*lastClr="([0-9A-Fa-f]{6})"/.exec(m[2]);
+      if(c) byName[m[1]] = c[1].toUpperCase();
+    }
+    // índice de color de Excel: 0=lt1 1=dk1 2=lt2 3=dk2 4..9=accent1..6 10/11=hlink/folHlink
+    var order = ['lt1','dk1','lt2','dk2','accent1','accent2','accent3','accent4','accent5','accent6','hlink','folHlink'];
+    for(var i = 0; i < 12; i++) pal[i] = byName[order[i]] || null;
+  }catch(e){}
+  return pal;
+}
+function _xlsxTagAll(xml, tag){
+  // v2.9.5b — atributos OPCIONALES: <font>/<border>/<fill> no llevan ninguno
+  var out = [], re = new RegExp('<' + tag + '((?: [^>]*?)?)/>|<' + tag + '( [^>]*)?>([\\s\\S]*?)</' + tag + '>', 'g'), m;
+  while((m = re.exec(xml))){
+    if(m[2] === undefined && m[3] === undefined) out.push({attrs: (m[1] === undefined ? '' : m[1]), inner: ''});
+    else out.push({attrs: m[2] || '', inner: m[3] || ''});
+  }
+  return out;
+}
+function _xlsxNormPath(base, tgt){
+  tgt = String(tgt || '').replace(/^\//, '');
+  if(/^xl\//.test(tgt)) return tgt;
+  var parts = base.split('/').slice(0, -1).concat(tgt.split('/')), o = [];
+  for(var i = 0; i < parts.length; i++){
+    if(parts[i] === '.' || parts[i] === '') continue;
+    if(parts[i] === '..' && o.length) o.pop();
+    else o.push(parts[i]);
+  }
+  return o.join('/');
+}
+async function _xlsxRealStyles(ab){
+  var out = {ok: false, byName: {}, sheets: {}};
+  try{
+    if(!window.JSZip || !ab) return out;
+    var z = await JSZip.loadAsync(ab);
+    if(!z.file('xl/styles.xml') || !z.file('xl/workbook.xml')) return out;
+    var stXml = await z.file('xl/styles.xml').async('string');
+    _XLSX_THEME_PAL = null;
+    try{
+      if(z.file('xl/theme/theme1.xml'))
+        _XLSX_THEME_PAL = _xlsxThemePal(await z.file('xl/theme/theme1.xml').async('string'));
+    }catch(e){}
+    // ── fonts / fills / borders / cellXfs de styles.xml ──
+    var fonts = [];
+    _xlsxTagAll(stXml, 'font').forEach(function(f){
+      var o = {name: 'Arial', sz: 10, b: false, i: false, u: false, color: '000000'};
+      var nm = /<name val="([^"]*)"/.exec(f.inner); if(nm) o.name = nm[1];
+      var sm = /<sz val="([\d.]+)"/.exec(f.inner); if(sm) o.sz = parseFloat(sm[1]);
+      if(/<(?:b|b val="(?:1|true)")\s*\/?>/.test(f.inner.replace('<b ', '<b ').replace('<border', '<x'))) o.b = true;
+      if(/<i(?:\s+val="(?:1|true)")?\s*\/?>/.test(f.inner)) o.i = true;
+      if(/<u[\s\/>]/.test(f.inner)) o.u = true;
+      var cm = /<color ([^>]*?\/?>)/.exec(f.inner); if(cm) o.color = _xColorTag(cm[1]);
+      fonts.push(o);
+    });
+    var fills = [];
+    _xlsxTagAll(stXml, 'fill').forEach(function(f){
+      var pm = /<patternFill([^>]*)>([\s\S]*?)<\/patternFill>|<patternFill([^>]*)\/>/.exec(f.inner);
+      if(!pm || !/patternType="solid"/.test(pm[1] || pm[3] || '')){ fills.push(null); return; }
+      var fg = /<fgColor ([^>]*?\/?>)/.exec(pm[2] || '');
+      var c = fg ? _xColorTag(fg[1]) : null;
+      fills.push(c && !/^F{6}$/i.test(c) ? c : null);
+    });
+    var borders = [];
+    _xlsxTagAll(stXml, 'border').forEach(function(bd){
+      var o = {};
+      ['left','right','top','bottom'].forEach(function(sd){
+        var m2 = new RegExp('<' + sd + '([^>]*?)(?:/>|>([\\s\\S]*?)</' + sd + '>)').exec(bd.inner);
+        if(!m2 || !/style="/.test(m2[1])){ o[sd] = null; return; }
+        var stl = /style="([^"]+)"/.exec(m2[1])[1];
+        var wmap = {thin:1, medium:2, thick:5, hair:7, dashed:3, dotted:4, double:6, dashDot:3, dashDotDot:3,
+          mediumDashed:2, mediumDashDot:2, mediumDashDotDot:2, slantDashDot:2};
+        var col = 'auto';
+        var cm = /<color ([^>]*?\/?>)/.exec(m2[2] || '');
+        if(cm) col = _xColorTag(cm[1]);
+        o[sd] = {s: wmap[stl] || 1, c: col};
+      });
+      borders.push(o);
+    });
+    var xfs = [];
+    var cxm = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(stXml);
+    if(cxm){
+      _xlsxTagAll(cxm[1], 'xf').forEach(function(x){
+        function numAt(nm){ var r = new RegExp(nm + '="(\\d+)"').exec(x.attrs); return r ? +r[1] : null; }
+        var o = {fontId: numAt('fontId') || 0, fillId: numAt('fillId') || 0, borderId: numAt('borderId') || 0, align: null};
+        var am = /<alignment([^>]*?\/?)>/.exec(x.inner);
+        if(am){
+          var aa = am[1];
+          var h = /horizontal="([^"]+)"/.exec(aa), v = /vertical="([^"]+)"/.exec(aa);
+          o.align = {h: h ? h[1] : null, v: v ? v[1] : null, wrap: /wrapText="(?:1|true)"/.test(aa)};
+        }
+        xfs.push(o);
+      });
+    }
+    // ── hoja → ruta (workbook + rels) ──
+    var wbStr = await z.file('xl/workbook.xml').async('string');
+    var relsStr = await z.file('xl/_rels/workbook.xml.rels').async('string');
+    var relMap = {};
+    _xlsxTagAll(relsStr, 'Relationship').forEach(function(r){
+      var id = /Id="([^"]+)"/.exec(r.attrs), tg = /Target="([^"]+)"/.exec(r.attrs);
+      if(id && tg) relMap[id[1]] = tg[1];
+    });
+    var sheetPaths = [];
+    _xlsxTagAll(wbStr, 'sheet').forEach(function(s){
+      var nm = /name="([^"]*)"/.exec(s.attrs);
+      var rid = /r:id="([^"]+)"/.exec(s.attrs) || /id="([^"]+)"/.exec(s.attrs);
+      if(!nm || !rid) return;
+      var tgt = (relMap[rid[1]] || '').replace(/^\//, '');
+      if(!/^xl\//.test(tgt)) tgt = 'xl/' + tgt;
+      sheetPaths.push({name: nm[1], path: tgt});
+    });
+    if(!sheetPaths.length) return out;
+    // ── por hoja: s= por celda, setup de impresión, imágenes ──
+    for(var si = 0; si < sheetPaths.length; si++){
+      var sp = sheetPaths[si];
+      if(!sp.path || !z.file(sp.path)) continue;
+      var xml = await z.file(sp.path).async('string');
+      var styles = {}, nStyled = 0;
+      var hmap = {left: 1, center: 2, right: 3, justify: 5, centerContinuous: 6, distributed: 5};
+      var vmap = {top: 0, center: 1, bottom: 2};
+      var cre = /<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>)/g, cm2;
+      while((cm2 = cre.exec(xml))){
+        var sM = /\bs="(\d+)"/.exec(cm2[3]);
+        if(!sM) continue;
+        var xf = xfs[+sM[1]];
+        if(!xf) continue;
+        var c1 = 0, cl = cm2[1];
+        for(var q = 0; q < cl.length; q++) c1 = c1 * 26 + (cl.charCodeAt(q) - 64);
+        var st = {};
+        var fnt = fonts[xf.fontId];
+        if(fnt){
+          st.font = {name: fnt.name, sz: fnt.sz, b: fnt.b, i: fnt.i, u: fnt.u,
+            color: (fnt.color === 'auto' ? '000000' : (fnt.color || '000000'))};
+          st.fontReal = true;
+        }
+        var fl = fills[xf.fillId];
+        if(fl) st.fill = fl;
+        var bd = borders[xf.borderId];
+        if(bd){
+          if(bd.left) st.bl = bd.left;
+          if(bd.right) st.br = bd.right;
+          if(bd.top) st.bt = bd.top;
+          if(bd.bottom) st.bb = bd.bottom;
+        }
+        if(xf.align){
+          if(xf.align.h) st.ha = hmap[xf.align.h] !== undefined ? hmap[xf.align.h] : 0;
+          if(xf.align.v) st.va = vmap[xf.align.v] !== undefined ? vmap[xf.align.v] : 1;
+          if(xf.align.wrap) st.wrap = true;
+        }
+        st.__xf = +sM[1];
+        styles[(+cm2[2]) + '_' + c1] = st;
+        nStyled++;
+      }
+      // setup de impresión real (escala/orientación/papel + márgenes)
+      var setup = null, marg = null;
+      var psM = /<pageSetup([^>]*?)\/?>/.exec(xml);
+      if(psM){
+        var sc = /scale="(\d+)"/.exec(psM[1]), ori = /orientation="(\w+)"/.exec(psM[1]);
+        var pp = /paperSize="(\d+)"/.exec(psM[1]), fw = /fitToWidth="(\d+)"/.exec(psM[1]), fh = /fitToHeight="(\d+)"/.exec(psM[1]);
+        setup = {scale: sc ? +sc[1] : null, landscape: !!(ori && /landscape/i.test(ori[1])), paper: pp ? +pp[1] : null};
+        if(fw && fh){ setup.fitW = +fw[1]; setup.fitH = +fh[1]; }
+      }
+      // v2.9.6 — printOptions: centrado horizontal/vertical de la impresión
+      // (Excel/LibreOffice centran el área impresa en la página; sin esto el
+      // formulario queda pegado al margen izquierdo y los títulos descentrados)
+      var poM = /<printOptions([^>]*?)\/?>/.exec(xml);
+      if(poM && /Centered="(?:1|true)"/.test(poM[1])){
+        if(!setup) setup = {};
+        setup.hc = /horizontalCentered="(?:1|true)"/.test(poM[1]);
+        setup.vc = /verticalCentered="(?:1|true)"/.test(poM[1]);
+      }
+      var mgM = /<pageMargins([^>]*?)\/?>/.exec(xml);
+      if(mgM){
+        function mval(nm, dflt){ var r = new RegExp(nm + '="([\\d.]+)"').exec(mgM[1]); return r ? parseFloat(r[1]) : dflt; }
+        marg = {l: mval('left', 0.7), r: mval('right', 0.7), t: mval('top', 0.75), b: mval('bottom', 0.75),
+          h: mval('header', 0.3), f: mval('footer', 0.3)};
+      }
+      // imágenes ancladas (logo del formulario, etc.)
+      var images = [];
+      try{
+        var relsP = 'xl/worksheets/_rels/' + sp.path.split('/').pop() + '.rels';
+        if(z.file(relsP)){
+          var rxml = await z.file(relsP).async('string');
+          var drawPath = null;
+          _xlsxTagAll(rxml, 'Relationship').forEach(function(r){
+            if(/Type="[^"]*\/drawing"/.test(r.attrs)){
+              var tg = /Target="([^"]+)"/.exec(r.attrs);
+              // OPC: el target es relativo a la PARTE fuente (la hoja), no al _rels
+              if(tg) drawPath = _xlsxNormPath(sp.path, tg[1]);
+            }
+          });
+          if(drawPath && z.file(drawPath)){
+            var dxml = await z.file(drawPath).async('string');
+            var dRelsP = drawPath.replace(/([^/]+)$/, '_rels/$1.rels');
+            var dRelMap = {};
+            if(z.file(dRelsP)){
+              var drx = await z.file(dRelsP).async('string');
+              _xlsxTagAll(drx, 'Relationship').forEach(function(r){
+                var id = /Id="([^"]+)"/.exec(r.attrs), tg = /Target="([^"]+)"/.exec(r.attrs);
+                if(id && tg) dRelMap[id[1]] = _xlsxNormPath(drawPath, tg[1]);
+              });
+            }
+            var are = /<xdr:(oneCellAnchor|twoCellAnchor|absoluteAnchor)[^>]*>([\s\S]*?)<\/xdr:\1>/g, am2;
+            while((am2 = are.exec(dxml))){
+              var body = am2[2];
+              if(!/<xdr:pic[>\s]/.test(body)) continue;
+              var fromM = /<xdr:from>([\s\S]*?)<\/xdr:from>/.exec(body);
+              if(!fromM) continue;
+              function nTag(tag, s){ var r = new RegExp('<xdr:' + tag + '>(\\d+)<\\/xdr:' + tag + '>').exec(s); return r ? +r[1] : 0; }
+              var col = nTag('col', fromM[1]), colOff = nTag('colOff', fromM[1]);
+              var row = nTag('row', fromM[1]), rowOff = nTag('rowOff', fromM[1]);
+              var cx = null, cy = null;
+              var ex = /<a:ext cx="(\d+)" cy="(\d+)"/.exec(body) || /<xdr:ext cx="(\d+)" cy="(\d+)"/.exec(body);
+              if(ex){ cx = +ex[1]; cy = +ex[2]; }
+              var toM = /<xdr:to>([\s\S]*?)<\/xdr:to>/.exec(body);
+              var to = null;
+              if(toM) to = {col: nTag('col', toM[1]), colOff: nTag('colOff', toM[1]),
+                row: nTag('row', toM[1]), rowOff: nTag('rowOff', toM[1])};
+              var bl = /<a:blip[^>]*r:embed="([^"]+)"/.exec(body) || /<a:blip[^>]*r:link="([^"]+)"/.exec(body);
+              var media = bl ? dRelMap[bl[1]] : null;
+              if(!media || !z.file(media)) continue;
+              var b64 = await z.file(media).async('base64');
+              var mime = /\.png$/i.test(media) ? 'image/png' : (/\.gif$/i.test(media) ? 'image/gif' : 'image/jpeg');
+              images.push({col: col, row: row, colOff: colOff, rowOff: rowOff, cx: cx, cy: cy, to: to,
+                dataUrl: 'data:' + mime + ';base64,' + b64, media: media});
+            }
+          }
+        }
+      }catch(e){}
+      out.sheets[sp.path] = {styles: styles, images: images, setup: setup, marg: marg, n: nStyled};
+      out.byName[sp.name] = sp.path;
+    }
+    out.ok = true;
+  }catch(e){ try{ console.warn('xlsxRealStyles:', e); }catch(e2){} }
+  _XLSX_THEME_PAL = null;
+  return out;
+}
 
 // ═══ v2.9.0 — MODELO EXCEL COMPARTIDO (lectura única para edición/PDF/guardado) ═══
 async function _xlBuildModel(ab, name, isCsv){
@@ -6805,16 +7156,26 @@ async function _xlBuildModel(ab, name, isCsv){
     }catch(e){}
   }
   var sheets = [];
+  // v2.9.5 — estilos REALES del .xlsx leídos del propio zip (SheetJS CE no
+  // expone cell.s): bordes, alineación (títulos centrados), fuentes, logo
+  // y setup de impresión. Ante fallo se cae a _xlsxStyleCells (como antes).
+  var xreal = null;
+  if(!biff && !isCsv){
+    try{ xreal = await _xlsxRealStyles(ab); }catch(e){ xreal = null; }
+    if(xreal && (!xreal.ok || !Object.keys(xreal.sheets).length)) xreal = null;
+  }
   wb.SheetNames.forEach(function(sn){
     var ws = wb.Sheets[sn]; if(!ws) return;
     var sIdx = wb.SheetNames.indexOf(sn) + 1;
-    var styles = biff ? _biffStyleCells(biff, sIdx) : (isCsv ? {} : _xlsxStyleCells(ws));
+    var xr = (xreal && xreal.byName[sn]) ? xreal.sheets[xreal.byName[sn]] : null;
+    var styles = biff ? _biffStyleCells(biff, sIdx) : (isCsv ? {} : (xr ? xr.styles : _xlsxStyleCells(ws)));
     var rich = false;
     for(var sk in styles){ if(styles[sk].fontReal || styles[sk].bl || styles[sk].bt){ rich = true; break; } }
-    var setup = biff ? (biff.setups && biff.setups[sIdx]) : null;
-    if(setup) setup.landscape = false; // orientación por aspecto (como imprime LibreOffice)
-    var marg = biff ? (biff.marginsBy && biff.marginsBy[sIdx]) : null;
-    sheets.push({name: sn, ws: ws, sIdx: sIdx, styles: styles, rich: rich, setup: setup, marg: marg});
+    var setup = biff ? (biff.setups && biff.setups[sIdx]) : (xr ? xr.setup : null);
+    if(setup && biff) setup.landscape = false; // orientación por aspecto (como imprime LibreOffice)
+    var marg = biff ? (biff.marginsBy && biff.marginsBy[sIdx]) : (xr ? xr.marg : null);
+    sheets.push({name: sn, ws: ws, sIdx: sIdx, styles: styles, rich: rich, setup: setup, marg: marg,
+      images: (xr && xr.images) ? xr.images : []});
   });
   return {
     ab: (ab && ab.slice) ? ab.slice(0) : ab, name: name, isCsv: !!isCsv, wb: wb,
@@ -6851,6 +7212,20 @@ async function excelToPdfBytes(ab, name, isCsv, model, nvSellos){
   }
   var base = pdfSafeText(name || '');
   var measure = function(t, hdr){ return _pdfMeasure(hdr ? fHB : fH, pdfSafeText(t), fs); };
+  // v2.9.5 — imágenes del libro por hoja (logo) pre-embebidas: el dibujo
+  // del WYSIWYG es síncrono, así que se embeben aquí (como los sellos)
+  var shImgsEmb = {};
+  if(!isCsvM && !biff){
+    for(var sIxE = 0; sIxE < model.sheets.length; sIxE++){
+      var imsE = model.sheets[sIxE].images || [];
+      if(!imsE.length) continue;
+      var embArr = [];
+      for(var iIE = 0; iIE < imsE.length; iIE++){
+        try{ var embI = await _embedDataUrlImg(doc, imsE[iIE].dataUrl); if(embI) embArr.push({a: imsE[iIE], img: embI}); }catch(e){}
+      }
+      if(embArr.length) shImgsEmb[sIxE] = embArr;
+    }
+  }
   // v2.8.0 — familias usadas según los estilos reales → fuentes embebidas
   var embedMap = {};
   try{
@@ -6882,6 +7257,7 @@ async function excelToPdfBytes(ab, name, isCsv, model, nvSellos){
         var ectx = {lib: PDFLib, fH: fH, fHB: fHB, stdFonts: [fH, fHB], sheetNo: sh.sIdx, drawings: biffDraws,
           nvSellos: (nvSellos || []).filter(function(sv){ return sv.sec === model.sheets.indexOf(sh); }) || [],
           nvSelloFonts: nvSelloFontsG, nvSelloAssets: nvSelloAssetsG,
+          images: shImgsEmb[model.sheets.indexOf(sh)] || [],
           ttfFor: function(nm, b3, i3){
             var fam = _wzResolveFam(nm || 'Arial');
             return embedMap[fam + '|' + (b3 ? 1 : 0) + '|' + (i3 ? 1 : 0)] || null;
@@ -9303,6 +9679,12 @@ async function doPrint(){
 
 // ── EXPORT PDF ──
 async function exportPDF(){
+  // v2.9.5 — pestaña nativa (Word/Excel) activa: PDF REAL generado con
+  // pdf-lib (formato + ediciones + sellos). Nada de HTML intermedio.
+  try{
+    var tNat = docTabGet(activeTabId);
+    if(tNat && tNat.kind){ await nativeExportPdf(); return; }
+  }catch(e){}
   if(!pageOrder.length){toast('Carga un PDF primero','err');return;}
   if(!rawPdfBytes||!rawPdfBytes.length){toast('No hay PDF cargado','err');return;}
   toast('Exportando PDF real…');setProg(10);
@@ -10252,6 +10634,8 @@ function nvMaybePlaceExcel(tab,e){
   tab.nvStamps.push(s);
   nvRenderStamps(tab);
   nvDisarm();
+  // v2.9.5 — el sello cuenta como cambio: «Guardar .xlsx» lo incrusta
+  try{ nvMarkDirty(tab); }catch(e){}
   toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
 }
 
@@ -10308,7 +10692,11 @@ function nvSelloDom(tab,idx){
   del.addEventListener('click',function(ev){
     ev.stopPropagation();
     var i2=+el.dataset.nvi;
-    if(!isNaN(i2)&&tab.nvStamps&&tab.nvStamps[i2]===s){tab.nvStamps.splice(i2,1);nvRenderStamps(tab);}
+    if(!isNaN(i2)&&tab.nvStamps&&tab.nvStamps[i2]===s){
+      tab.nvStamps.splice(i2,1);nvRenderStamps(tab);
+      // v2.9.5 — quitar el sello también es un cambio pendiente de guardar
+      try{ if(tab.kind==='excel') nvMarkDirty(tab); }catch(e){}
+    }
   });
   el.appendChild(del);
   // doble clic → editar hora (solo recepción)
@@ -10343,6 +10731,8 @@ function nvMakeDraggable(el,tab,s){
     function mu(){
       document.removeEventListener('mousemove',mm,true);
       document.removeEventListener('mouseup',mu,true);
+      // v2.9.5 — mover el sello cuenta como cambio (se guarda en el .xlsx)
+      try{ if(st&&st.mv&&tab.kind==='excel') nvMarkDirty(tab); }catch(e){}
       st=null;
     }
     document.addEventListener('mousemove',mm,true);
@@ -10596,6 +10986,63 @@ function buildXlView(model, tab){
   valInp.addEventListener('focus',function(){ valInp.select(); });
   return el;
 }
+// v2.9.5 — medición de texto para el overflow tipo Excel en la vista
+var _xgMeasCtx = null;
+function _xgMeasure(fontName, szPx, bold, txt){
+  try{
+    if(!_xgMeasCtx) _xgMeasCtx = document.createElement('canvas').getContext('2d');
+    var fam = (typeof _wzResolveFam === 'function') ? _wzResolveFam(fontName || 'Arial') : (fontName || 'Arial');
+    _xgMeasCtx.font = (bold ? 'bold ' : '') + szPx + 'px "' + fam + '", Arial, sans-serif';
+    return _xgMeasCtx.measureText(String(txt)).width;
+  }catch(e){ return String(txt == null ? '' : txt).length * szPx * 0.6; }
+}
+// v2.9.5 — recorte tipo Excel del texto de una celda: se extiende sólo sobre
+// celdas vacías; si choca con contenido/merge/relleno se RECORTA (antes el
+// texto quedaba superpuesto sobre los dígitos vecinos). Lo usan el render
+// completo y la edición incremental (xlCommit).
+function _xgClipSpan(tab, r, c, sp){
+  try{
+    if(!sp || !tab || !tab._xlView) return;
+    var v = tab._xlView, model = tab._xl, sh = model.sheets[v.sheet], geo = v.geo;
+    if(!sh || !geo) return;
+    var txt = sp.textContent || '';
+    sp.style.maxWidth = ''; sp.style.overflow = '';
+    if(!txt) return;
+    var st = sh.styles[r + '_' + c];
+    var stv = st || {font: {name: 'Arial', sz: 10, b: false, i: false, u: false, color: '000000'}, ha: 0, va: 1, wrap: false};
+    if(stv.wrap || stv.ha === 6) return;
+    var measW = _xgMeasure((stv.font && stv.font.name) || 'Arial',
+      (((stv.font && stv.font.sz) || 10) * 4 / 3), !!(stv.font && stv.font.b), txt);
+    var mv = geo.cover[r + '_' + c];
+    var cellW = 0;
+    if(mv){ for(var cwA = mv.c0; cwA <= mv.c1; cwA++) cellW += geo.Wpx(cwA); }
+    else cellW = geo.Wpx(c);
+    cellW -= 6;   // padding 3+3
+    if(measW <= cellW + 1) return;
+    var ha = stv.ha || 0;
+    var dir = (ha === 3) ? -1 : ((ha === 2 || ha === 5) ? 0 : 1);
+    var avail = cellW, ce2, ns;
+    function blocked(rr3, cc3){
+      var kk = rr3 + '_' + cc3;
+      if(xlCellText(model, sh, v.sheet, rr3, cc3)) return true;
+      if(geo.cover[kk]) return true;
+      var ns2 = sh.styles[kk];
+      return !!(ns2 && ns2.fill);
+    }
+    if(dir >= 0){
+      ce2 = c + (mv ? (mv.c1 - mv.c0 + 1) : 1);
+      while(ce2 <= geo.C1 && !blocked(r, ce2)){ avail += geo.Wpx(ce2); ce2++; }
+    }
+    if(dir <= 0){
+      ns = c - (mv ? 0 : 1);
+      while(ns >= geo.C0 && !blocked(r, ns)){ avail += geo.Wpx(ns); ns--; }
+    }
+    if(measW > avail + 1){
+      sp.style.maxWidth = Math.max(4, avail) + 'px';
+      sp.style.overflow = 'hidden';
+    }
+  }catch(e){}
+}
 function xlRenderSheet(tab, sheetIdx){
   var model=tab._xl, v=tab._xlView;
   var sh=model.sheets[sheetIdx]; if(!sh) return;
@@ -10683,6 +11130,8 @@ function xlRenderSheet(tab, sheetIdx){
           sp.style.textAlign='center';
         }
         sp.textContent=txt;
+        // v2.9.5 — overflow tipo Excel (recorte al chocar con contenido)
+        if(!stv.wrap&&ha!==6){ try{ _xgClipSpan(tab,r,c,sp); }catch(e){} }
         td.appendChild(sp);
       }
       tr.appendChild(td);
@@ -10691,6 +11140,35 @@ function xlRenderSheet(tab, sheetIdx){
   }
   tbl.appendChild(tbody);
   host.appendChild(tbl);
+  // v2.9.5 — imágenes del libro (logo del formulario, etc.) en su anclaje
+  // real: px de pantalla desde A1 (misma geometría que la retícula)
+  var shImgs=sh.images||[];
+  for(var imI=0;imI<shImgs.length;imI++){
+    try{
+      var im=shImgs[imI];
+      var cA=im.col+1, rA=im.row+1;
+      var xP=44, yP=0, ccI;
+      for(ccI=geo.C0;ccI<cA;ccI++)xP+=geo.Wpx(ccI);
+      xP+=(im.colOff||0)/9525;
+      for(ccI=geo.R0;ccI<rA;ccI++)yP+=geo.Hpx(ccI);
+      yP+=(im.rowOff||0)/9525;
+      var wP=(im.cx!=null)?im.cx/9525:0, hP=(im.cy!=null)?im.cy/9525:0;
+      if((!wP||!hP)&&im.to){
+        var xT=44,yT=0;
+        for(ccI=geo.C0;ccI<(im.to.col+1);ccI++)xT+=geo.Wpx(ccI);
+        xT+=(im.to.colOff||0)/9525;
+        for(ccI=geo.R0;ccI<(im.to.row+1);ccI++)yT+=geo.Hpx(ccI);
+        yT+=(im.to.rowOff||0)/9525;
+        if(!wP)wP=Math.max(1,xT-xP);
+        if(!hP)hP=Math.max(1,yT-yP);
+      }
+      var imEl=document.createElement('img');
+      imEl.src=im.dataUrl;
+      imEl.className='xg-wimg';
+      imEl.style.cssText='position:absolute;left:'+xP+'px;top:'+yP+'px;width:'+Math.max(1,wP)+'px;height:'+Math.max(1,hP)+'px;';
+      host.appendChild(imEl);
+    }catch(e){}
+  }
   xlSelect(tab, geo.R0, geo.C0);
   nvRenderStamps(tab);   // v2.9.2 — overlay de sellos de esta hoja
 }
@@ -10843,6 +11321,8 @@ function xlCommit(tab,r,c,raw){
     else{
       if(!sp){ sp=document.createElement('span'); sp.className='xg-tx'; td.appendChild(sp); }
       sp.textContent=raw;
+      // v2.9.5 — mismo recorte tipo Excel que el render completo
+      try{ _xgClipSpan(tab,r,c,sp); }catch(e){}
     }
   }
   xlSyncBar(tab);
@@ -10908,6 +11388,199 @@ async function excelTabOpen(ab, base){
     toast('No se pudo abrir el Excel: '+(e&&e.message?e.message:e),'err');
     throw e;
   }
+}
+
+// ════ v2.9.5 — SELLO → PNG (para incrustarlo en el .xlsx guardado) ════
+// Réplica del sello de la vista (caja roja + logo + textos + firma) sobre
+// canvas a 2× : «Guardar .xlsx» lo escribe como imagen anclada a la celda.
+async function _nvSelloRasterPng(s){
+  var W = Math.round(s.w || 220), hasTx = !!(s.txTime || s.txInitials);
+  var rh = hasTx ? 103 : 90, sigH = 120, gap = 6, H = rh + gap + sigH;
+  var SC = 2, cv = document.createElement('canvas');
+  cv.width = W * SC; cv.height = H * SC;
+  var ctx = cv.getContext('2d');
+  ctx.scale(SC, SC);
+  var op = (s.opacity == null ? 1 : s.opacity) || 1;
+  ctx.globalAlpha = op;
+  function loadImg(url){
+    return new Promise(function(res, rej){ var i = new Image(); i.onload = function(){ res(i); }; i.onerror = rej; i.src = url; });
+  }
+  if(s.type === 'stamp'){
+    var col = s.color || '#c0392b', fsz = s.size || 14;
+    ctx.font = 'bold ' + fsz + 'px Arial, sans-serif';
+    var tw = ctx.measureText(s.text || '').width;
+    var pad = 10, exW = s.emoji ? 26 : 0;
+    ctx.fillStyle = col + '21';
+    ctx.fillRect(0, 0, tw + pad * 2 + exW, 42);
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, tw + pad * 2 + exW - 2, 40);
+    ctx.fillStyle = col; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(s.text || '', pad, 28);
+    if(s.emoji) ctx.fillText(s.emoji, 2, 28);
+  }else{
+    var RED = '#c00000', BLUE = '#1a4fa0';
+    function rr2(x, y, w, h, r){
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+    }
+    rr2(1.25, 1.25, W - 2.5, rh - 2.5, 5);
+    ctx.strokeStyle = RED; ctx.lineWidth = 2.5; ctx.stroke();
+    var logoH = 30;
+    try{
+      if(typeof CORPAC_LOGO !== 'undefined'){
+        var lg = await loadImg(CORPAC_LOGO);
+        var lw = logoH * (lg.width / lg.height);
+        if(lw > W - 12){ lw = W - 12; logoH = lw / (lg.width / lg.height); }
+        ctx.drawImage(lg, (W - lw) / 2, 5, lw, logoH);
+      }
+    }catch(e){}
+    ctx.strokeStyle = 'rgba(192,0,0,.35)'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(8, 5 + logoH + 4); ctx.lineTo(W - 8, 5 + logoH + 4); ctx.stroke();
+    function ctr(txt, font, baseY, color){
+      ctx.font = font; ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(txt, W / 2, baseY);
+    }
+    var t1 = 5 + logoH + 18;
+    ctr('RECIBIDO / RECEIVED', 'bold 11px Arial, sans-serif', t1, RED);
+    var t2 = t1 + 13;
+    ctr(s.timestamp || '', 'bold 10.5px "Courier New", monospace', t2, RED);
+    var t3 = t2 + 12;
+    if(hasTx){
+      ctr(selloTxLine(s.txTime || '', (s.txInitials || '').toUpperCase()), 'bold 9.5px "Courier New", monospace', t3, RED);
+      t3 += 11;
+    }
+    ctr('AIS/ARO – CORPAC S.A.', 'bold 9px Arial, sans-serif', t3 + 11, BLUE);
+    var sedeCode = currentUser ? (currentUser.sede || 'SPHI') : 'SPHI';
+    var sedeTxt = sedeCode;
+    try{ var db2 = getDB(); var so = db2 && db2.sedes && db2.sedes.find(function(z){ return z.code === sedeCode; }); if(so) sedeTxt = so.code + ' – ' + so.city; }catch(e){}
+    ctr(sedeTxt, '8px Arial, sans-serif', t3 + 22, BLUE);
+    var py = rh + gap;
+    if(s.sigImg){
+      try{
+        var simg = await loadImg(s.sigImg);
+        var pRat = simg.width / simg.height, pdw = W, pdh = Math.round(W / pRat);
+        if(pdh > sigH){ pdh = sigH; pdw = Math.round(sigH * pRat); }
+        ctx.drawImage(simg, (W - pdw) / 2, py + (sigH - pdh) / 2, pdw, pdh);
+      }catch(e){}
+    }else{
+      ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.strokeRect(W / 2 - 45, py + 8, 90, sigH - 16);
+      ctx.setLineDash([]);
+      ctr('Sello Personal', '8px Arial, sans-serif', py + sigH / 2 + 3, '#bbb');
+    }
+  }
+  return {dataUrl: cv.toDataURL('image/png'), w: W, h: H};
+}
+
+// ════ v2.9.5 — INCUSTAR imágenes PNG en un .xlsx (sellos guardados) ════
+// Escribe media + drawing + rels + content-types dentro del zip ya abierto:
+// el sello queda anclado a su celda (oneCellAnchor) y se ve al abrir el
+// archivo en Excel/LibreOffice. Devuelve el nº de imágenes añadidas.
+async function _xlsxInjectPngImages(z, sheetPath, items){
+  if(!items || !items.length || !z.file(sheetPath)) return 0;
+  var RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  function np(base, t){
+    t = String(t || '').replace(/^\//, '');
+    if(/^xl\//.test(t)) return t;
+    var parts = base.split('/').slice(0, -1).concat(t.split('/')), o = [];
+    for(var i = 0; i < parts.length; i++){
+      if(parts[i] === '.' || parts[i] === '') continue;
+      if(parts[i] === '..' && o.length) o.pop();
+      else o.push(parts[i]);
+    }
+    return o.join('/');
+  }
+  function freeRid(xml){
+    var mx = 0, re = /Id="rId(\d+)"/g, m;
+    while((m = re.exec(xml))) mx = Math.max(mx, +m[1]);
+    return 'rId' + (mx + 1);
+  }
+  // siguiente índice de media libre
+  var mediaMax = 0;
+  z.forEach(function(rel){ var m = /^xl\/media\/image(\d+)\./.exec(rel); if(m) mediaMax = Math.max(mediaMax, +m[1]); });
+  // ¿la hoja ya tiene drawing? (p.ej. el logo del formulario)
+  var relsP = 'xl/worksheets/_rels/' + sheetPath.split('/').pop() + '.rels';
+  var relsXml = z.file(relsP) ? await z.file(relsP).async('string') :
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  var drawPath = null;
+  var rre = /<Relationship ([^>]*?)\/>/g, rm2;
+  while((rm2 = rre.exec(relsXml))){
+    if(/Type="[^"]*\/drawing"/.test(rm2[1])){
+      var tg = /Target="([^"]+)"/.exec(rm2[1]);
+      // OPC: relativo a la parte fuente (la hoja), no al directorio _rels
+      if(tg) drawPath = np(sheetPath, tg[1]);
+    }
+  }
+  var newDrawing = false;
+  if(!drawPath || !z.file(drawPath)){
+    var dMax = 0;
+    z.forEach(function(rel){ var m2 = /^xl\/drawings\/drawing(\d+)\.xml$/.exec(rel); if(m2) dMax = Math.max(dMax, +m2[1]); });
+    drawPath = 'xl/drawings/drawing' + (dMax + 1) + '.xml';
+    newDrawing = true;
+  }
+  var drXml = newDrawing ?
+    ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"></xdr:wsDr>') :
+    await z.file(drawPath).async('string');
+  var drRelsP = drawPath.replace(/([^/]+)$/, '_rels/$1.rels');
+  var drRels = z.file(drRelsP) ? await z.file(drRelsP).async('string') :
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  var anchors = '', n = 0;
+  for(var i = 0; i < items.length; i++){
+    var it = items[i];
+    var b64 = String(it.dataUrl).replace(/^data:image\/\w+;base64,/, '');
+    var mediaN = ++mediaMax;
+    z.file('xl/media/image' + mediaN + '.png', b64, {base64: true});
+    var rid = freeRid(drRels);
+    drRels = drRels.replace(/<\/Relationships>/, '<Relationship Id="' + rid + '" Type="' + RNS + '/image" Target="../media/image' + mediaN + '.png"/></Relationships>');
+    anchors += '<xdr:oneCellAnchor><xdr:from><xdr:col>' + it.col + '</xdr:col><xdr:colOff>' + Math.round(it.colOff) + '</xdr:colOff><xdr:row>' + it.row + '</xdr:row><xdr:rowOff>' + Math.round(it.rowOff) + '</xdr:rowOff></xdr:from>' +
+      '<xdr:ext cx="' + Math.round(it.cx) + '" cy="' + Math.round(it.cy) + '"/>' +
+      '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (100 + n) + '" name="Sello ' + (n + 1) + '"/><xdr:cNvPicPr/></xdr:nvPicPr>' +
+      '<xdr:blipFill><a:blip xmlns:r="' + RNS + '" r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+      '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + Math.round(it.cx) + '" cy="' + Math.round(it.cy) + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>' +
+      '<xdr:clientData/></xdr:oneCellAnchor>';
+    n++;
+  }
+  var ix2 = drXml.lastIndexOf('</xdr:wsDr>');
+  if(ix2 < 0) return 0;
+  drXml = drXml.slice(0, ix2) + anchors + drXml.slice(ix2);
+  var shXml = await z.file(sheetPath).async('string');
+  if(newDrawing){
+    var srid = freeRid(relsXml);
+    var relTgt = '../' + drawPath.split('/').slice(1).join('/');
+    relsXml = relsXml.replace(/<\/Relationships>/, '<Relationship Id="' + srid + '" Type="' + RNS + '/drawing" Target="' + relTgt + '"/></Relationships>');
+    var dref = '<drawing r:id="' + srid + '"/>';
+    var ins = Math.max(shXml.lastIndexOf('<tableParts'), shXml.lastIndexOf('<extLst'));
+    if(ins < 0) ins = shXml.lastIndexOf('</worksheet>');
+    if(ins < 0) return 0;
+    shXml = shXml.slice(0, ins) + dref + shXml.slice(ins);
+  }
+  z.file(sheetPath, shXml);
+  z.file(relsP, relsXml);
+  z.file(drawPath, drXml);
+  z.file(drRelsP, drRels);
+  var ct = await z.file('[Content_Types].xml').async('string');
+  if(!/Extension="png"/.test(ct)) ct = ct.replace(/<\/Types>/, '<Default Extension="png" ContentType="image/png"/></Types>');
+  if(newDrawing && !('PartName="/' + drawPath + '"').match(new RegExp('[Pp]artName="/' + drawPath.replace(/\//g, '\\/') + '"')))
+    ct = ct.replace(/<\/Types>/, '<Override PartName="/' + drawPath + '" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>');
+  z.file('[Content_Types].xml', ct);
+  return n;
+}
+
+// sello del overlay → item de inyección (col/row 0-based + EMU) usando la
+// geometría de la hoja (px de pantalla desde A1, como el overlay)
+async function _nvSelloToXlsxItem(model, sh, s){
+  var ras = await _nvSelloRasterPng(s);
+  var geo = xlGeo(sh);
+  var cA = geo.C0, xx = s.x || 0;
+  while(cA < geo.C1 && xx > geo.Wpx(cA)){ xx -= geo.Wpx(cA); cA++; }
+  var rA = geo.R0, yy = s.y || 0;
+  while(rA < geo.R1 && yy > geo.Hpx(rA)){ yy -= geo.Hpx(rA); rA++; }
+  return {col: Math.max(0, cA - 1), row: Math.max(0, rA - 1),
+    colOff: Math.round(Math.max(0, xx) * 9525), rowOff: Math.round(Math.max(0, yy) * 9525),
+    cx: Math.round(ras.w * 9525), cy: Math.round(ras.h * 9525), dataUrl: ras.dataUrl};
 }
 
 // ════ v2.9.0 — EXCEL: GUARDADO .xlsx por PARCHE IN-PLACE ════
@@ -11017,10 +11690,33 @@ async function xlsxPatchSave(tab){
       }catch(e){}
       z.file(path,xml);
     }
-    if(nEdits===0){
+    // v2.9.5 — los sellos colocados también son cambios: se incrustan como
+    // imágenes ancladas (antes «no se encontraron cambios» y se perdían)
+    var nvSellosXl = (tab.nvStamps || []);
+    if(nEdits===0 && !nvSellosXl.length){
       hideProg();
       toast('No hay cambios que guardar','ok');
       return;
+    }
+    var nSello = 0;
+    if(nvSellosXl.length){
+      setProg(45);
+      var perSheetSello = {};
+      for(var siS = 0; siS < nvSellosXl.length; siS++){
+        try{
+          var sv = nvSellosXl[siS];
+          var shS = model.sheets[sv.sec != null ? +sv.sec : 0];
+          if(!shS) continue;
+          var itS = await _nvSelloToXlsxItem(model, shS, sv);
+          var shK = sv.sec != null ? +sv.sec : 0;
+          (perSheetSello[shK] = perSheetSello[shK] || []).push(itS);
+        }catch(e){}
+      }
+      for(var shK2 in perSheetSello){
+        if(!Object.prototype.hasOwnProperty.call(perSheetSello, shK2)) continue;
+        var shP2 = sheetPath(model.sheets[+shK2].name);
+        if(shP2) nSello += await _xlsxInjectPngImages(z, shP2, perSheetSello[shK2]);
+      }
     }
     // si se pisó una fórmula: sin calcChain + recálculo completo al abrir
     if(removedFormula&&z.file('xl/calcChain.xml')){
@@ -11044,7 +11740,7 @@ async function xlsxPatchSave(tab){
     tab._dirty=false; renderDocTabs();
     var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
     setProg(100);setTimeout(hideProg,500);
-    toast('✅ '+tab.fileName+'.xlsx guardado — '+nEdits+' celda(s) actualizada(s); el resto del libro queda idéntico al original','ok');
+    toast('✅ '+tab.fileName+'.xlsx guardado'+(nEdits?(' — '+nEdits+' celda(s) actualizada(s)'):'')+(nSello?(' · '+nSello+' sello(s) incrustado(s)'):'')+'; el resto del libro queda idéntico al original','ok');
   }catch(e){
     hideProg();
     toast('No se pudo guardar el .xlsx: '+(e&&e.message?e.message:e),'err');
@@ -11213,6 +11909,24 @@ async function xlsToXlsxSave(tab){
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
       '<Relationship Id="rIdWb" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
       '</Relationships>');
+    // v2.9.5 — sellos colocados: también en la conversión .xls → .xlsx
+    try{
+      var nSelloX = 0;
+      var perSello2 = {};
+      for(var sS2 = 0; sS2 < (tab.nvStamps || []).length; sS2++){
+        var sv2 = tab.nvStamps[sS2];
+        var shS2 = model.sheets[sv2.sec != null ? +sv2.sec : 0];
+        if(!shS2) continue;
+        var itS2 = await _nvSelloToXlsxItem(model, shS2, sv2);
+        var kS2 = sv2.sec != null ? +sv2.sec : 0;
+        (perSello2[kS2] = perSello2[kS2] || []).push(itS2);
+      }
+      for(var kS3 in perSello2){
+        if(!Object.prototype.hasOwnProperty.call(perSello2, kS3)) continue;
+        nSelloX += await _xlsxInjectPngImages(z, 'xl/worksheets/sheet' + (+kS3 + 1) + '.xml', perSello2[kS3]);
+      }
+      if(nSelloX) toast(nSelloX + ' sello(s) incrustado(s) en el .xlsx','ok');
+    }catch(e){}
     setProg(70);
     var out=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     dlBlob(out, tab.fileName+'.xlsx');

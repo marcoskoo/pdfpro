@@ -750,7 +750,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.5 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.6 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4482,7 +4482,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.5',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.6',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -6558,15 +6558,42 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
     var page = null, pgN = 0, flowBase = 0;
     var usableH = PH - mT - mB;
     var pagesLog = [];   // v2.9.2 — {page, flowBase} para mapear sellos
+    // v2.9.6 — printOptions del libro: horizontalCentered/verticalCentered.
+    // Excel/LibreOffice centran el área impresa en la hoja; sin estos
+    // desplazamientos el formulario queda pegado al margen izquierdo y los
+    // títulos («PLAN DE VUELO»/«Flight Plan») salen descentrados respecto de
+    // la impresión real. oX es constante; oY se calcula por página.
+    var oX = (setup && setup.hc && contentW * scale < PW - mL - mR - 0.5) ?
+      (PW - mL - mR - contentW * scale) / 2 : 0;
+    // pre-cálculo de saltos de página (idéntico al bucle de dibujo) para
+    // conocer la altura de contenido de CADA página y centrarla verticalmente
+    var brkR = [], stR = R0, rrB;
+    for(rrB = R0; rrB <= R1; rrB++){
+      if(H(rrB) <= 0) continue;
+      if(rrB > stR && (ys[rrB - R0] + H(rrB) - ys[stR - R0]) * scale > usableH + 0.5){ brkR.push(stR); stR = rrB; }
+    }
+    brkR.push(stR);
+    var pgOffY = {};   // fila inicial de página → desfase vertical de centrado
+    if(setup && setup.vc){
+      for(var bi = 0; bi < brkR.length; bi++){
+        var rEndB = (bi + 1 < brkR.length) ? brkR[bi + 1] : R1 + 1;
+        var rLastB = rEndB - 1;
+        while(rLastB > brkR[bi] && H(rLastB) <= 0) rLastB--;
+        var hPgB = (rLastB >= brkR[bi]) ? (ys[rLastB - R0 + 1] - ys[brkR[bi] - R0]) * scale : 0;
+        pgOffY[brkR[bi]] = (hPgB < usableH - 0.5) ? (usableH - hPgB) / 2 : 0;
+      }
+    }
     function newPage(rStart){
       page = doc.addPage([PW, PH]); pgN++;
       flowBase = ys[rStart - R0];
-      pagesLog.push({page: page, flowBase: flowBase});
+      flowOff = pgOffY[rStart] || 0;
+      pagesLog.push({page: page, flowBase: flowBase, off: flowOff});
     }
-    function xOf(c){ return mL + xs[c - C0] * scale; }
+    var flowOff = 0;   // desfase vertical de la página actual (verticalCentered)
+    function xOf(c){ return mL + oX + xs[c - C0] * scale; }
     function wOf(c0, c1){ return (xs[c1 - C0 + 1] - xs[c0 - C0]) * scale; }
     function hOf(r0, r1){ return (ys[r1 - R0 + 1] - ys[r0 - R0]) * scale; }
-    function yOf(r){ return PH - mT - (ys[r - R0] - flowBase) * scale; }
+    function yOf(r){ return PH - mT - flowOff - (ys[r - R0] - flowBase) * scale; }
     // ── fuentes: lookup de las pre-embebidas por el llamador (woff→ttf) ──
     function fontFor(st){
       var f = ctx.ttfFor ? ctx.ttfFor(st.font.name || 'Arial', st.font.b, st.font.i) : null;
@@ -6578,7 +6605,7 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
       var ci = c - C0;
       var base = ci >= 0 && ci < xs.length ? xs[ci] : 0;
       var cw = ci >= 0 && ci < xs.length ? (xs[ci + 1] - xs[ci]) : (xs[xs.length - 1] || 40);
-      return mL + (base + dx / 1024 * cw) * scale;
+      return mL + oX + (base + dx / 1024 * cw) * scale;
     };
     for(rr = R0; rr <= R1; rr++){
       if(H(rr) <= 0) continue;
@@ -6625,6 +6652,17 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
         if(W(cc) <= 0) continue;
         var k2 = rr + '_' + cc;
         var text = _formCellText(ws, rr, cc);
+        // v2.9.6 — cadena CRUDA (espacios reales) cuando la celda trae
+        // relleno: el FPL original centra «     Flight Plan     » con sus
+        // espacios, y Excel imprime el texto ligeramente a la izquierda del
+        // centro del rango; colapsar los espacios movía el título ~7 pt.
+        if(text){
+          var celR2 = ws[XLSX.utils.encode_cell({r: rr - 1, c: cc - 1})];
+          if(celR2 && celR2.t === 's' && typeof celR2.v === 'string' &&
+             celR2.v.indexOf('\n') < 0 && /(^ | $|  )/.test(celR2.v)){
+            text = String(celR2.w != null && celR2.w !== '' ? celR2.w : celR2.v);
+          }
+        }
         // v2.8.1 — fechas con el formato real del libro (no el en-US de SheetJS)
         if(ctx.dateText){
           var celD = ws[XLSX.utils.encode_cell({r: rr - 1, c: cc - 1})];
@@ -6716,11 +6754,11 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
           var a = im.a;
           var colI = a.col + 1, rowI = a.row + 1;
           if(colI < C0 || colI > C1 + 1) return;
-          var xImg = mL + ((colI >= C0 ? xs[colI - C0] : 0) + (a.colOff || 0) / 12700) * scale;
+          var xImg = mL + oX + ((colI >= C0 ? xs[colI - C0] : 0) + (a.colOff || 0) / 12700) * scale;
           var wImg = (a.cx != null) ? (a.cx / 12700) * scale : 0;
           var hImg = (a.cy != null) ? (a.cy / 12700) * scale : 0;
           if((!wImg || !hImg) && a.to){
-            var xT2 = mL + ((a.to.col + 1 >= C0 ? xs[Math.min(a.to.col + 1 - C0, xs.length - 1)] : 0) + (a.to.colOff || 0) / 12700) * scale;
+            var xT2 = mL + oX + ((a.to.col + 1 >= C0 ? xs[Math.min(a.to.col + 1 - C0, xs.length - 1)] : 0) + (a.to.colOff || 0) / 12700) * scale;
             if(!wImg) wImg = Math.max(1, xT2 - xImg);
           }
           var rowIdx = Math.max(0, Math.min(ys.length - 1, rowI - R0));
@@ -6728,7 +6766,7 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
           var pk3 = 0;
           for(var q3 = 0; q3 < pagesLog.length; q3++){ if(yCont >= pagesLog[q3].flowBase - 0.01) pk3 = q3; }
           var pgl3 = pagesLog[pk3];
-          var yTopPg = PH - mT - (yCont - pgl3.flowBase) * scale;
+          var yTopPg = PH - mT - (pgl3.off || 0) - (yCont - pgl3.flowBase) * scale;
           pgl3.page.drawImage(im.img, {x: xImg, y: yTopPg - hImg, width: wImg, height: hImg});
         }catch(e){}
       });
@@ -6745,8 +6783,8 @@ function _excelWysiwygSheet(doc, ws, styles, ctx, setup, marg){
           }
           var pgl = pagesLog[pk];
           var aSl = Object.assign({}, sv, {
-            x: (mL + sv.x * 0.75 * scale) / uSl,
-            y: (mT + (cyPt - pgl.flowBase) * scale) / uSl
+            x: (mL + oX + sv.x * 0.75 * scale) / uSl,
+            y: (mT + (pgl.off || 0) + (cyPt - pgl.flowBase) * scale) / uSl
           });
           if(sv.type === 'stamp'){
             _paintStampPdfNative(lib, pgl.page, PH, uSl, aSl, ctx.nvSelloFonts.hb);
@@ -6975,6 +7013,15 @@ async function _xlsxRealStyles(ab){
         var pp = /paperSize="(\d+)"/.exec(psM[1]), fw = /fitToWidth="(\d+)"/.exec(psM[1]), fh = /fitToHeight="(\d+)"/.exec(psM[1]);
         setup = {scale: sc ? +sc[1] : null, landscape: !!(ori && /landscape/i.test(ori[1])), paper: pp ? +pp[1] : null};
         if(fw && fh){ setup.fitW = +fw[1]; setup.fitH = +fh[1]; }
+      }
+      // v2.9.6 — printOptions: centrado horizontal/vertical de la impresión
+      // (Excel/LibreOffice centran el área impresa en la página; sin esto el
+      // formulario queda pegado al margen izquierdo y los títulos descentrados)
+      var poM = /<printOptions([^>]*?)\/?>/.exec(xml);
+      if(poM && /Centered="(?:1|true)"/.test(poM[1])){
+        if(!setup) setup = {};
+        setup.hc = /horizontalCentered="(?:1|true)"/.test(poM[1]);
+        setup.vc = /verticalCentered="(?:1|true)"/.test(poM[1]);
       }
       var mgM = /<pageMargins([^>]*?)\/?>/.exec(xml);
       if(mgM){
