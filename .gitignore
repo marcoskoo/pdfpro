@@ -52,3 +52,5 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Instaladores grandes: se publican como GitHub Release, no como commits (límite 100MB)
+download/*.exe
