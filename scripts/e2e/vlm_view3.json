@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. **Yes** — \"PLAN DE VUELO\" appears centered across the form's top row.\n2. **Yes** — visible borders/boxes around fields and small digit cells (e.g., the box around \"FF\", section boxes for PRIORIDAD, DESTINATARIO, etc.).\n3. **Yes** — a Copa Airlines logo image sits at top-right of the form area (around columns AI–AK, row 1).\n4. **Both centered** — \"PLAN DE VUELO\" is centered, and \"Flight Plan\" beneath it also appears centered.\n5. **No** — no overlapping text visible; all labels (\"Priority\", \"Addresses (f)\", \"Filing Time\", \"Originator\", etc.) sit cleanly in their cells.\n6. **Yes** — faint cell grid lines are visible throughout the form's white area.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794442730,
+  "id": "20261112081846edaa7fb6ddcd455c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261112081846edaa7fb6ddcd455c",
+  "usage": {
+    "completion_tokens": 180,
+    "completion_tokens_details": {
+      "reasoning_tokens": 179
+    },
+    "prompt_tokens": 1119,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1299
+  }
+}

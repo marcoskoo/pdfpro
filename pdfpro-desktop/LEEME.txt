@@ -1,15 +1,43 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.4 — Versión de escritorio para Windows
+  PDFPro 2.9.5 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 2.9.5 (formato Excel fiel)
+──────────────────────────────────────────────────
+  Corregido con el formulario ATC de plan de vuelo (FPL OACI):
+  · LÍNEAS DEL FORMATO: ahora se leen los bordes REALES del .xlsx
+    (styles.xml del propio archivo; SheetJS no los expone). Las cajitas
+    de identificación de aeronave, velocidad, nivel, etc. se ven en la
+    app y en el PDF exportado (antes las líneas no se veían).
+  · TÍTULOS CENTRADOS: "PLAN DE VUELO" / "Flight Plan" se muestran
+    centrados sobre su rango combinado, igual que en Excel (antes
+    salían pegados a la izquierda).
+  · SELLO GUARDADO EN .xlsx: al colocar el sello de recepción y pulsar
+    "Guardar", el sello queda INCUSTADO dentro del archivo Excel como
+    imagen anclada a su celda (media + drawing del XLSX). Ya no dice
+    "No hay cambios que guardar": colocar/mover/quitar un sello cuenta
+    como cambio. El resto del libro sigue quedando idéntico al original.
+  · DÍGITOS SOBREPUESTOS: el texto de una celda sólo se extiende sobre
+    celdas vacías (como Excel); si choca con contenido se recorta.
+  · LOGO DEL FORMULARIO: las imágenes incrustadas en el Excel (p.ej. el
+    logo de la aerolínea) se muestran en la app y se dibujan en el PDF.
+  · PDF PURO: "Exportar → PDF" con un Word/Excel abierto genera un PDF
+    real (pdf-lib) con las fuentes, tamaños y escala de impresión del
+    libro original (Arial→Arimo embebida, escala 77%, márgenes reales).
+  · FECHAS: se muestran con el formato es-PE (23/8/2024) en vez del
+    formato en-US (8/23/24) que impone SheetJS.
+  Nota: los campos de velocidad/nivel del FPL usan UNA CASILLA POR
+  DÍGITO por diseño del propio formulario (como se imprime); con las
+  líneas visibles ahora se ven como las casillas del formato impreso.
+
 CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
-  PDFPro-Setup-2.9.4.exe      Instalador (NSIS, un clic, por usuario)
-  PDFPro-Portable-2.9.4.exe   Versión portable (un solo archivo, sin instalación)
-  pdfpro-fuentes-v2.9.4.zip   Proyecto completo para recompilar o modificar
+  PDFPro-Setup-2.9.5.exe      Instalador (NSIS, un clic, por usuario)
+  PDFPro-Portable-2.9.5.exe   Versión portable (un solo archivo, sin instalación)
+  pdfpro-fuentes-v2.9.5.zip   Proyecto completo para recompilar o modificar
 
-INSTALACIÓN (PDFPro-Setup-2.9.4.exe)
+INSTALACIÓN (PDFPro-Setup-2.9.5.exe)
 ────────────────────────────────────
   1. Doble clic al archivo. No pide permisos de administrador
      (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
@@ -19,8 +47,10 @@ INSTALACIÓN (PDFPro-Setup-2.9.4.exe)
      visor de PDF predeterminado).
   3. Incluye desinstalador estándar en Configuración → Aplicaciones.
   4. La app se abre sola al terminar (se puede desinstalar normalmente).
+  5. Si tenías la 2.9.4 instalada, desinstálala primero (Configuración →
+     Aplicaciones → PDFPro → Desinstalar); tus datos de sesión no se tocan.
 
-VERSIÓN PORTABLE (PDFPro-Portable-2.9.4.exe)
+VERSIÓN PORTABLE (PDFPro-Portable-2.9.5.exe)
 ────────────────────────────────────────────
   Un solo archivo ejecutable: no instala nada, no toca el registro.
   Doble clic y listo. Ideal para memorias USB o equipos restringidos.
@@ -39,7 +69,8 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
   ✓ 100% SIN INTERNET (todo va dentro del programa):
     · Editor PDF completo (texto, párrafos, anotaciones, sellos, firmas,
       marcas de agua, comparador de PDFs, sello de recepción)
-    · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas
+    · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas,
+      con estilos reales (bordes, alineación, fuentes, imágenes)
     · OCR en español e inglés (Tesseract + diccionarios incluidos)
     · Exportar a PDF / Word / Excel / imágenes, impresión
     · Decodificador aeronáutico (METAR/TAF/FPL...), gestor AIRAC,
@@ -62,7 +93,7 @@ NOVEDADES RESPECTO DE LA VERSIÓN WEB
   · Se eliminó el alert() de depuración que aparecía al conectar Drive
   · Instancia única: reabrir un archivo enfoca la ventana existente
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.4.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.5.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -73,7 +104,8 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.4.zip)
     src/main.js             Proceso principal Electron (menú, protocolo app://,
                             OAuth, apertura de archivos, descargas)
     src/preload.js          Puente seguro renderer↔Electron
-    src/app/index.html      La aplicación original v2.9.4 con rutas locales
+    src/app/index.html      La aplicación con rutas locales (estilos reales
+                            de .xlsx, sellos incrustados al guardar, PDF puro)
     src/app/desktop-bridge.js  Integraciones de escritorio (OCR offline,
                             Drive nativo, prompt propio, fuentes locales)
     src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib, xlsx,
@@ -88,16 +120,24 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.4.zip)
   Cambiar icono: reemplazar build/icon.ico (y pdfdoc.ico si se desea).
 
   Nota para compilar en Linux/macOS: el instalador usa un script NSIS
-  propio (build/installer.nsi) que no necesita Wine; solo el portable
-  se genera igual con electron-builder.
+    propio (build/installer.nsi) que no necesita Wine; solo el portable
+    se genera igual con electron-builder.
 
-VERIFICACIÓN REALIZADA
+VERIFICACIÓN REALIZADA (2.9.5)
 ──────────────────────
-  · Prueba automática (headless) de la app empaquetada: las 7 librerías
-    cargan, login visible, almacenamiento local operativo.
-  · Worker de PDF.js: responde "ready" desde dentro del paquete.
-  · OCR offline completo: reconoce texto en español sin internet.
-  · Instalador y portable: estructura NSIS verificada (payload, plugins,
-    iconos, desinstalador y asociación de archivos presentes).
+  · Prueba automática (headless) con el FPL real «ATC CM468 11NOV.xlsx»:
+    se cargan 4268 estilos de celda, 147 rangos combinados, el logo y el
+    setup de impresión (escala 77%, márgenes reales).
+  · Vista en la app: títulos centrados, todas las casillas con borde,
+    logo visible, sin textos superpuestos.
+  · Guardar .xlsx con sello colocado (sin editar celdas): el archivo
+    resultante abre en Excel/LibreOffice con el sello como imagen
+    anclada; sólo cambian las celdas editadas, el resto queda idéntico.
+  · Guardar .xlsx con 2 celdas editadas + sello: verificado celda a
+    celda contra el original (exactamente las 2 ediciones + imagen).
+  · Exportar PDF: 1596 líneas de borde reales, fuentes Arimo embebidas
+    (métrica Arial), tamaños 6/10/11 pt a escala 77%, fecha es-PE,
+    logo y sello dibujados; 1 página A4 como la impresión original.
+  · Modo Word (.docx) sin regresiones.
 
-PDFPro 2.9.4 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.5 · © 2026 CORPAC AIS/ARO SPHI
