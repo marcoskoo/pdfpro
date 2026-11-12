@@ -1,66 +1,76 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.7 — Versión de escritorio para Windows
+  PDFPro 2.9.8 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.7 (sellos visibles al exportar)
+NOVEDADES DE LA VERSIÓN 2.9.8 (sellos también al guardar Word)
 ────────────────────────────────────────────────────────────────────
-  Corrige «en la exportación no se visualiza el sello de recepción
-  ni el sello personal». Dos defectos reales, ya verificados:
-  · CAJA ROJA DEL SELLO DE RECEPCIÓN: pdf-lib dibuja los paths SVG
-    con el eje Y invertido (convención SVG); la caja roja del sello
-    caía FUERA de la página (unos 250 pt por debajo del borde) y el
-    sello salía como texto suelto — parecía que no existía. Ahora el
-    marco se dibuja exactamente donde lo colocas, con sus esquinas
-    redondeadas. Aplica a las tres rutas: pestaña Excel «Exportar
-    PDF», «Guardar .xlsx» (imagen anclada) y pestaña PDF.
-  · SELLO PERSONAL EN PDF: los sellos con emoji (✅APROBADO,
-    📌URGENTE…) mataban el dibujo entero — pdf-lib no puede codificar
-    emoji en fuentes estándar («WinAnsi cannot encode»), el error era
-    silencioso y el sello desaparecía por completo. Ahora el texto se
-    exporta saneado y con su caja roja translúcida, como en pantalla.
-    (El emoji se conserva en la app y en el .xlsx; en el PDF va el
-    texto con su marco.)
-  VERIFICADO PUNTO A PUNTO (v2.9.7), con el FPL real «ATC CM468
-  11NOV.xlsx» y un sello personal de prueba:
-  · PDF de la pestaña Excel: caja roja en top 575–627 pt (antes
-    caía a 1056, fuera de página); logo CORPAC, «RECIBIDO /
-    RECEIVED», hora UTC, «AIS/ARO – CORPAC S.A.», sede y el sello
-    personal (imagen) dentro de la zona de firma.
-  · .xlsx guardado: los dos sellos quedan como imágenes ancladas a
-    su celda (xl/media image2+image3) y se ven al abrir el archivo
-    en Excel/LibreOffice, con el emoji incluido.
-  · Pestaña PDF («Abrir como PDF»): sello de recepción y sellos
-    personales se dibujan con su marco; el sello con emoji ya no
-    desaparece.
-  · Se mantiene todo lo de 2.9.5/2.9.6: líneas reales del formato,
-    títulos centrados, PDF puro (pdf-lib), centrado de impresión,
-    dígito por casilla del FPL, sellos incrustados al guardar.
+  Corrige «abro un archivo excel/word, coloco sello, exporto, abro
+  el archivo exportado y no hay sello». Causa real encontrada:
 
-IMPORTANTE: DE DÓNDE VENÍAN LOS ARCHIVOS SIN SELLO
-──────────────────────────────────────────────────
-  El «ATC CM468 11NOV (1).pdf» que nos compartiste fue exportado por
-  una versión antigua (productor «PDF Editor Pro · importador Excel»):
-  esa ruta no dibujaba ningún sello. Si te pasa de nuevo:
-  1) Asegúrate de que el pie de la app diga «v2.9.7».
-  2) Coloca los sellos, usa «Exportar → PDF» y «Guardar .xlsx».
-  3) Los PDF de muestra de esta versión vienen en el paquete.
+  · WORD (.docx): al guardar, los sellos vivían solo en la capa
+    visual de la app y NUNCA se escribían dentro del archivo. Ahora
+    cada sello (de recepción y personal) se incrusta como imagen PNG
+    flotante anclada al párrafo más cercano a donde lo colocaste:
+    abre el .docx guardado en Word/LibreOffice y verás ambos sellos
+    en su sitio. La posición viaja con el párrafo: si editas el
+    texto, el sello acompaña al documento.
+  · EXCEL (.xlsx): ya funcionaba desde la 2.9.7 (imágenes ancladas
+    a su celda). Se re-verificó punto a punto en esta versión, sin
+    regresiones.
+  · Detalle técnico corregido: las imágenes ancladas dentro de
+    tablas no se dibujaban (layoutInCell). Ahora los sellos flotan
+    sobre el documento aunque el ancla caiga en una celda de tabla.
+  · Al colocar un sello en Word, la pestaña ahora se marca como
+    modificada (igual que en Excel).
+
+  IMPORTANTE — DE DÓNDE VIENE TU ARCHIVO SIN SELLO:
+  El «ATC CM468 11NOV (1) (1).xlsx» que nos compartiste fue generado
+  el 11-nov a las 23:50 por una versión ANTERIOR a la 2.9.7 (que se
+  entregó después, a la 01:49). Con 2.9.8:
+     1) Desinstala la versión vieja (Configuración → Aplicaciones →
+        PDFPro → Desinstalar) e instala PDFPro-Setup-2.9.8.exe.
+     2) Comprueba que el pie de la app diga «v2.9.8».
+     3) Abre el archivo ORIGINAL (no re-guardes el que exportó la
+        versión vieja), coloca los sellos y usa «Guardar .xlsx» /
+        «Guardar .docx».
+
+VERIFICADO PUNTO A PUNTO (2.9.8), con la app real (Electron, flujo
+completo automatizado):
+  · WORD: abrir .docx con tabla → sello de recepción (con sello
+    personal del usuario dentro) + sello personal «APROBADO» →
+    «Guardar .docx»: el archivo resultante contiene word/media con
+    las dos imágenes PNG y sus anclajes; abierto en LibreOffice se
+    ven AMBOS sellos exactamente donde se colocaron (x 77 pt y
+    x 367 pt). El resto del documento queda byte-idéntico.
+  · WORD: «Exportar PDF» de la misma pestaña: PDF puro (pdf-lib)
+    con los dos sellos dibujados.
+  · EXCEL: abrir el FPL real «ATC CM468 11NOV.xlsx» → sello de
+    recepción (fila 60, col 26) + «APROBADO» (fila 20, col 40) →
+    «Guardar .xlsx»: image2.png + image3.png ancladas; en
+    LibreOffice se ven el logo y los dos sellos.
+  · El documento guardado se re-abre correctamente (python-docx /
+    LibreOffice / Excel): 8 párrafos, 1 tabla — la estructura
+    original no se toca.
 
 CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
-  PDFPro-Setup-2.9.7.exe        Instalador (NSIS, un clic, por usuario)
-  PDFPro-Portable-2.9.7.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.7.zip     Proyecto completo para recompilar
-  ATC CM468 11NOV - REPARADO.xlsx  Tu archivo de la 2.9.4 con los
-                                títulos restaurados (D2/D3/E4/K6)
-  PRUEBA - FPL con sello de recepción + sello personal (v2.9.7).pdf
-                                Muestra real: ambos sellos visibles,
-                                exportada desde la pestaña Excel
-  PRUEBA - FPL con sellos guardado como XLSX (v2.9.7).xlsx
-                                Muestra real: sellos incrustados,
-                                ábrelo en Excel y verás ambos sellos
+  PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
+  PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
+  pdfpro-fuentes-v2.9.8.zip     Proyecto completo para recompilar
+  PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
+                                Muestra real: ábrela en Word y verás
+                                el sello de recepción (con firma) y el
+                                sello APROBADO incrustados
+  PRUEBA - Word con sellos exportado a PDF (v2.9.8).pdf
+                                Muestra real: PDF puro con ambos sellos
+  PRUEBA - Excel con sellos guardado como XLSX (v2.9.8).xlsx
+                                Muestra real: sellos incrustados sobre
+                                el FPL ATC CM468 (ábrela en Excel)
+  ATC CM468 11NOV - REPARADO.xlsx  (de la entrega anterior) tu archivo
+                                de la 2.9.4 con los títulos restaurados
 
-INSTALACIÓN (PDFPro-Setup-2.9.7.exe)
+INSTALACIÓN (PDFPro-Setup-2.9.8.exe)
 ────────────────────────────────────
   1. Doble clic al archivo. No pide permisos de administrador
      (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
@@ -68,11 +78,10 @@ INSTALACIÓN (PDFPro-Setup-2.9.7.exe)
      acceso en el menú Inicio y entrada en «Abrir con» para PDF.
   3. Incluye desinstalador estándar en Configuración → Aplicaciones.
   4. La app se abre sola al terminar.
-  5. Si tenías la 2.9.4/2.9.5/2.9.6 instalada, desinstálala primero
-     (Configuración → Aplicaciones → PDFPro → Desinstalar); tus
-     datos de sesión no se tocan.
+  5. Si tenías la 2.9.4/2.9.5/2.9.6/2.9.7 instalada, desinstálala
+     primero; tus datos de sesión no se tocan.
 
-VERSIÓN PORTABLE (PDFPro-Portable-2.9.7.exe)
+VERSIÓN PORTABLE (PDFPro-Portable-2.9.8.exe)
 ────────────────────────────────────────────
   Un solo archivo ejecutable: no instala nada, no toca el registro.
   Doble clic y listo. Ideal para memorias USB o equipos restringidos.
@@ -91,6 +100,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
       firmas, marcas de agua, comparador de PDFs, sello de recepción)
     · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas,
       con estilos reales (bordes, alineación, fuentes, imágenes)
+    · Sellos incrustados al guardar .xlsx Y .docx
     · OCR en español e inglés (Tesseract + diccionarios incluidos)
     · Exportar a PDF / Word / Excel / imágenes, impresión
     · Decodificador aeronáutico (METAR/TAF/FPL...), gestor AIRAC,
@@ -102,7 +112,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.7.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.8.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -112,8 +122,8 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.7.zip)
     src/main.js             Proceso principal Electron
     src/preload.js          Puente seguro renderer↔Electron
     src/app/index.html      La aplicación (estilos reales de .xlsx,
-                             sellos visibles al exportar, PDF puro,
-                             centrado de impresión real)
+                             sellos incrustados al guardar .xlsx y
+                             .docx, PDF puro, centrado de impresión)
     src/app/desktop-bridge.js  Integraciones de escritorio
     src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib,
                              xlsx, mammoth, jszip, docx-preview,
@@ -121,22 +131,4 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.7.zip)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-VERIFICACIÓN REALIZADA (2.9.7)
-──────────────────────────────
-  Con el FPL real «ATC CM468 11NOV.xlsx», sello de recepción (con
-  sello personal del usuario) y sello personal «APROBADO»:
-  · Exportar PDF (pestaña Excel): marco rojo del sello en top
-    575.3–627.2 pt, dentro de la página (la 2.9.6 lo dibujaba a
-    1056 pt, fuera de la hoja); logo CORPAC, textos y sello personal
-    en su sitio; 1596 líneas de borde, 1 página A4 escala 77%.
-  · Guardar .xlsx: image2.png (sello de recepción, con sello
-    personal dentro) + image3.png (APROBADO) ancladas en
-    col 18/fila 55 y col 40/fila 21 (índices 0-based del drawing) — exactamente donde se
-    colocaron; visibles en Excel y LibreOffice.
-  · Pestaña PDF: sello de recepción con marco; sello «URGENTE» con
-    emoji: antes el emoji lanzaba «WinAnsi cannot encode» y el sello
-    completo no se dibujaba; ahora texto + caja sí se dibujan.
-  · Sin regresiones: líneas del formato, títulos centrados
-    («PLAN DE VUELO» centro 302.6 pt), dígito por casilla, PDF puro.
-
-PDFPro 2.9.7 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.8 · © 2026 CORPAC AIS/ARO SPHI

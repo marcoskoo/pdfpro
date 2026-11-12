@@ -750,7 +750,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.7 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.8 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4482,7 +4482,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.7',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.8',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10513,7 +10513,101 @@ async function wordSaveDocx(tab){
     if(!body.getElementsByTagName('w:p').length){
       body.insertBefore(xdoc.createElement('w:p'), body.firstChild);
     }
-    if(changes||deleted||inserted){
+    // v2.9.8 — sellos colocados sobre Word: se incrustan como imágenes
+    // flotantes (wp:anchor) en el párrafo renderizado más cercano a su
+    // posición. Antes el sello solo existía en el overlay y se perdía al
+    // guardar el .docx. Coordenadas de vista (px, sin zoom) → EMU (96 dpi).
+    var nSelloW=0;
+    var nvSelW=tab.nvStamps||[];
+    if(nvSelW.length){
+      setProg(45);
+      var wRelsP='word/_rels/document.xml.rels';
+      var wRelsXml=z.file(wRelsP)?await z.file(wRelsP).async('string'):
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+      var wMediaMax=0;
+      z.forEach(function(rel){ var mw=/^word\/media\/(?:image)?(\d+)\./.exec(rel); if(mw) wMediaMax=Math.max(wMediaMax,+mw[1]); });
+      var wCt=await z.file('[Content_Types].xml').async('string');
+      if(!/Extension="png"/.test(wCt)){
+        wCt=wCt.replace(/<\/Types>/,'<Default Extension="png" ContentType="image/png"/></Types>');
+        z.file('[Content_Types].xml',wCt);
+      }
+      var wSecs=d.wrap.querySelectorAll('section.docx');
+      var wZoom=d.zoom||1;
+      var wSecRectsCache={};
+      function wSecRects(six){
+        if(wSecRectsCache[six]) return wSecRectsCache[six];
+        var out=[],secEl=wSecs[six];
+        if(secEl){
+          var sr=secEl.getBoundingClientRect();
+          for(var qi=0;qi<dblocks.length;qi++){
+            if(matchD[qi]<0) continue;
+            var db=dblocks[qi];
+            if(!db.el||!db.el.closest||db.el.closest('section.docx')!==secEl) continue;
+            var br=db.el.getBoundingClientRect();
+            if(br.width<1&&br.height<1) continue;
+            out.push({top:(br.top-sr.top)/wZoom,xi:matchD[qi]});
+          }
+          out.sort(function(a,b){return a.top-b.top;});
+        }
+        wSecRectsCache[six]=out;
+        return out;
+      }
+      for(var ws=0;ws<nvSelW.length;ws++){
+        try{
+          var svw=nvSelW[ws];
+          var rasW=await _nvSelloRasterPng(svw);
+          var rectsW=wSecRects(svw.sec!=null?+svw.sec:0);
+          var ancXi=-1,ancTop=0;
+          for(var ri2=0;ri2<rectsW.length;ri2++){
+            if(rectsW[ri2].top<=(svw.y||0)+2){ ancXi=rectsW[ri2].xi; ancTop=rectsW[ri2].top; }
+            else break;
+          }
+          if(ancXi<0&&rectsW.length){ ancXi=rectsW[0].xi; ancTop=rectsW[0].top; }
+          var ancP=(ancXi>=0&&xblocks[ancXi])?xblocks[ancXi].p:null;
+          if(!ancP||!ancP.parentNode){   // párrafo borrado por la edición: primer párrafo vivo
+            ancP=null;
+            for(var fb=0;fb<xblocks.length;fb++){ if(xblocks[fb].p&&xblocks[fb].p.parentNode){ ancP=xblocks[fb].p; break; } }
+            ancTop=0;
+          }
+          if(!ancP||!ancP.parentNode) continue;
+          var wMediaN=++wMediaMax;
+          var b64W=String(rasW.dataUrl).replace(/^data:image\/\w+;base64,/,'');
+          z.file('word/media/image'+wMediaN+'.png',b64W,{base64:true});
+          var wMaxRid=0,reW=/Id="rId(\d+)"/g,mW;
+          while((mW=reW.exec(wRelsXml))) wMaxRid=Math.max(wMaxRid,+mW[1]);
+          var ridW='rId'+(wMaxRid+1);
+          wRelsXml=wRelsXml.replace(/<\/Relationships>/,'<Relationship Id="'+ridW+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image'+wMediaN+'.png"/></Relationships>');
+          var EMUW=9525;
+          var xEmuW=Math.round(Math.max(0,svw.x||0)*EMUW);
+          var yEmuW=Math.round(((svw.y||0)-ancTop)*EMUW);
+          var cxEW=Math.round(rasW.w*EMUW),cyEW=Math.round(rasW.h*EMUW);
+          var docIdW=5000+nSelloW;
+          var fragW='<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:drawing>'+
+            '<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="'+(251658240+nSelloW)+'" behindDoc="0" locked="0" layoutInCell="0" allowOverlap="1" hidden="0">'+
+            '<wp:simplePos x="0" y="0"/>'+
+            '<wp:positionH relativeFrom="page"><wp:posOffset>'+xEmuW+'</wp:posOffset></wp:positionH>'+
+            '<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+yEmuW+'</wp:posOffset></wp:positionV>'+
+            '<wp:extent cx="'+cxEW+'" cy="'+cyEW+'"/>'+
+            '<wp:effectExtent l="0" t="0" r="0" b="0"/>'+
+            '<wp:wrapNone/>'+
+            '<wp:docPr id="'+docIdW+'" name="Sello '+(nSelloW+1)+'"/>'+
+            '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'+
+            '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+            '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+            '<pic:nvPicPr><pic:cNvPr id="'+docIdW+'" name="Sello '+(nSelloW+1)+'"/><pic:cNvPicPr/></pic:nvPicPr>'+
+            '<pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="'+ridW+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
+            '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cxEW+'" cy="'+cyEW+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'+
+            '</pic:pic></a:graphicData></a:graphic>'+
+            '</wp:anchor></w:drawing></w:r>';
+          var fdW=new DOMParser().parseFromString(fragW,'application/xml');
+          if(fdW.getElementsByTagName('parsererror').length) continue;
+          ancP.appendChild(xdoc.importNode(fdW.documentElement,true));
+          nSelloW++;
+        }catch(e){}
+      }
+      if(nSelloW) z.file(wRelsP,wRelsXml);
+    }
+    if(changes||deleted||inserted||nSelloW){
       var ser=new XMLSerializer().serializeToString(xdoc);
       ser=String(ser).replace(/^<\?xml[^>]*\?>\s*/,'');   // el serializador puede emitir la suya: una sola declaración canónica
       ser='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+ser;
@@ -10525,7 +10619,7 @@ async function wordSaveDocx(tab){
     tab._dirty=false; renderDocTabs();
     var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
     setProg(100);setTimeout(hideProg,500);
-    toast('✅ '+tab.fileName+'.docx guardado — '+(changes+deleted+inserted)+' cambio(s); el resto del archivo queda idéntico al original','ok');
+    toast('✅ '+tab.fileName+'.docx guardado — '+(changes+deleted+inserted)+' cambio(s)'+(nSelloW?(' · '+nSelloW+' sello(s) incrustado(s)'):'')+'; el resto del archivo queda idéntico al original','ok');
   }catch(e){
     hideProg();
     toast('No se pudo guardar el .docx: '+(e&&e.message?e.message:e),'err');
@@ -10609,6 +10703,8 @@ function nvMaybePlaceWord(tab,e){
   tab.nvStamps.push(s);
   nvRenderStamps(tab);
   nvDisarm();
+  // v2.9.8 — el sello cuenta como cambio en Word también (como en Excel)
+  try{ nvMarkDirty(tab); }catch(e){}
   toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
 }
 
