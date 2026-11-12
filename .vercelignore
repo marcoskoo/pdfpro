@@ -1,0 +1,24 @@
+# Solo se despliega la app Next.js (src/ + public/ + configs).
+# Todo lo demás son artefactos locales del proyecto PDFPro.
+
+.git
+.env
+.env.*
+db
+download
+upload
+pdfpro-desktop
+app-src
+scripts
+skills
+tool-results
+tests
+examples
+mini-services
+.zscripts
+Caddyfile
+dev.log
+dev.out.log
+server.log
+*.log
+agent-ctx
