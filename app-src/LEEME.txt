@@ -1,76 +1,66 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.6 — Versión de escritorio para Windows
+  PDFPro 2.9.7 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.6 (centrado de impresión exacto)
+NOVEDADES DE LA VERSIÓN 2.9.7 (sellos visibles al exportar)
 ────────────────────────────────────────────────────────────────────
-  Sobre la 2.9.5, con el formulario ATC de plan de vuelo (FPL OACI):
-  · CENTRADO DE IMPRESIÓN REAL: el libro declara «centrado horizontal
-    y vertical» (printOptions del .xlsx); ahora el PDF exportado
-    centra el formulario en la página EXACTAMENTE como lo imprime
-    Excel/LibreOffice. Verificado punto a punto: «PLAN DE VUELO» cae
-    en x=272.0–333.2 (centro 302.6 pt) y «Flight Plan» en 278.0–314.3
-    (centro 296.2 pt), idéntico a la impresión de referencia (302.6 /
-    296.0). Antes el formulario salía pegado al margen izquierdo.
-  · TÍTULOS CON SUS ESPACIOS REALES: la celda «Flight Plan» del
-    original trae espacios de relleno; se respetan al centrar (como
-    imprime Excel) en vez de recortarlos.
-  · El sello colocado también viaja con el centrado nuevo (no queda
-    desplazado respecto del formulario).
+  Corrige «en la exportación no se visualiza el sello de recepción
+  ni el sello personal». Dos defectos reales, ya verificados:
+  · CAJA ROJA DEL SELLO DE RECEPCIÓN: pdf-lib dibuja los paths SVG
+    con el eje Y invertido (convención SVG); la caja roja del sello
+    caía FUERA de la página (unos 250 pt por debajo del borde) y el
+    sello salía como texto suelto — parecía que no existía. Ahora el
+    marco se dibuja exactamente donde lo colocas, con sus esquinas
+    redondeadas. Aplica a las tres rutas: pestaña Excel «Exportar
+    PDF», «Guardar .xlsx» (imagen anclada) y pestaña PDF.
+  · SELLO PERSONAL EN PDF: los sellos con emoji (✅APROBADO,
+    📌URGENTE…) mataban el dibujo entero — pdf-lib no puede codificar
+    emoji en fuentes estándar («WinAnsi cannot encode»), el error era
+    silencioso y el sello desaparecía por completo. Ahora el texto se
+    exporta saneado y con su caja roja translúcida, como en pantalla.
+    (El emoji se conserva en la app y en el .xlsx; en el PDF va el
+    texto con su marco.)
+  VERIFICADO PUNTO A PUNTO (v2.9.7), con el FPL real «ATC CM468
+  11NOV.xlsx» y un sello personal de prueba:
+  · PDF de la pestaña Excel: caja roja en top 575–627 pt (antes
+    caía a 1056, fuera de página); logo CORPAC, «RECIBIDO /
+    RECEIVED», hora UTC, «AIS/ARO – CORPAC S.A.», sede y el sello
+    personal (imagen) dentro de la zona de firma.
+  · .xlsx guardado: los dos sellos quedan como imágenes ancladas a
+    su celda (xl/media image2+image3) y se ven al abrir el archivo
+    en Excel/LibreOffice, con el emoji incluido.
+  · Pestaña PDF («Abrir como PDF»): sello de recepción y sellos
+    personales se dibujan con su marco; el sello con emoji ya no
+    desaparece.
+  · Se mantiene todo lo de 2.9.5/2.9.6: líneas reales del formato,
+    títulos centrados, PDF puro (pdf-lib), centrado de impresión,
+    dígito por casilla del FPL, sellos incrustados al guardar.
 
-NOVEDADES DE LA VERSIÓN 2.9.5 (formato Excel fiel)
+IMPORTANTE: DE DÓNDE VENÍAN LOS ARCHIVOS SIN SELLO
 ──────────────────────────────────────────────────
-  · LÍNEAS DEL FORMATO: se leen los bordes REALES del .xlsx
-    (styles.xml del propio archivo; SheetJS no los expone). Las
-    cajitas de identificación de aeronave, velocidad, nivel, etc. se
-    ven en la app y en el PDF exportado (antes no se veían).
-  · TÍTULOS CENTRADOS EN LA APP: «PLAN DE VUELO» / «Flight Plan» se
-    muestran centrados sobre su rango combinado D2:BA2 / D3:BA3,
-    igual que en Excel (en la 2.9.4 salían pegados a la izquierda).
-  · SELLO GUARDADO EN .xlsx: al colocar el sello de recepción y
-    pulsar «Guardar», el sello queda INCUSTADO dentro del archivo
-    Excel como imagen anclada a su celda (media + drawing del XLSX).
-    Ya no dice «No hay cambios que guardar»: colocar/mover/quitar un
-    sello cuenta como cambio. El resto del libro queda idéntico.
-  · DÍGITOS SOBREPUESTOS: el texto de una celda sólo se extiende
-    sobre celdas vacías (como Excel); si choca con contenido se
-    recorta. Los títulos largos ya no tapan los rótulos vecinos.
-  · DATOS ALFANUMÉRICOS COMPLETOS: velocidad (N044…), nivel (F380…),
-    matrícula y demás casillas del FPL llegan íntegras al PDF (la
-    2.9.4 perdía caracteres de la fila de velocidad/nivel).
-  · LOGO DEL FORMULARIO: las imágenes incrustadas en el Excel (p.ej.
-    el logo de la aerolínea) se ven en la app y se dibujan en el PDF.
-  · PDF PURO: «Exportar → PDF» con un Word/Excel abierto genera un
-    PDF real (pdf-lib) con fuentes, tamaños y escala de impresión del
-    libro original (Arial→Arimo embebida, escala 77%, márgenes
-    reales). Ya no se exporta HTML.
-  · FECHAS: formato es-PE (23/8/2024) en vez del en-US de SheetJS.
-  Nota: los campos de velocidad/nivel del FPL usan UNA CASILLA POR
-  DÍGITO por diseño del propio formulario (como el formato impreso).
-
-IMPORTANTE SI VIENES DE LA 2.9.4
-────────────────────────────────
-  Los archivos que guardaste con la 2.9.4 pueden traer los títulos
-  dañados (texto con decenas de espacios delante, «Flight Plan»
-  repetido en celdas E4/K6): ocurrió porque en la 2.9.4 los títulos
-  se veían a la izquierda y hubo que centrarlos a mano. CON LA 2.9.6
-  NO es necesario: abre el Excel ORIGINAL y los títulos ya salen
-  centrados solos. Si un archivo tuyo quedó dañado, usa la copia
-  «ATC CM468 11NOV - REPARADO.xlsx» (incluida en este paquete) o
-  vuelve a partir del original.
+  El «ATC CM468 11NOV (1).pdf» que nos compartiste fue exportado por
+  una versión antigua (productor «PDF Editor Pro · importador Excel»):
+  esa ruta no dibujaba ningún sello. Si te pasa de nuevo:
+  1) Asegúrate de que el pie de la app diga «v2.9.7».
+  2) Coloca los sellos, usa «Exportar → PDF» y «Guardar .xlsx».
+  3) Los PDF de muestra de esta versión vienen en el paquete.
 
 CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
-  PDFPro-Setup-2.9.6.exe        Instalador (NSIS, un clic, por usuario)
-  PDFPro-Portable-2.9.6.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.6.zip     Proyecto completo para recompilar
+  PDFPro-Setup-2.9.7.exe        Instalador (NSIS, un clic, por usuario)
+  PDFPro-Portable-2.9.7.exe     Versión portable (un solo archivo)
+  pdfpro-fuentes-v2.9.7.zip     Proyecto completo para recompilar
   ATC CM468 11NOV - REPARADO.xlsx  Tu archivo de la 2.9.4 con los
                                 títulos restaurados (D2/D3/E4/K6)
-  PRUEBA - FPL con sello exportado a PDF (v2.9.6).pdf   Muestra real
-  PRUEBA - FPL con sello guardado desde la app (v2.9.6).xlsx  Muestra
+  PRUEBA - FPL con sello de recepción + sello personal (v2.9.7).pdf
+                                Muestra real: ambos sellos visibles,
+                                exportada desde la pestaña Excel
+  PRUEBA - FPL con sellos guardado como XLSX (v2.9.7).xlsx
+                                Muestra real: sellos incrustados,
+                                ábrelo en Excel y verás ambos sellos
 
-INSTALACIÓN (PDFPro-Setup-2.9.6.exe)
+INSTALACIÓN (PDFPro-Setup-2.9.7.exe)
 ────────────────────────────────────
   1. Doble clic al archivo. No pide permisos de administrador
      (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
@@ -78,11 +68,11 @@ INSTALACIÓN (PDFPro-Setup-2.9.6.exe)
      acceso en el menú Inicio y entrada en «Abrir con» para PDF.
   3. Incluye desinstalador estándar en Configuración → Aplicaciones.
   4. La app se abre sola al terminar.
-  5. Si tenías la 2.9.4/2.9.5 instalada, desinstálala primero
+  5. Si tenías la 2.9.4/2.9.5/2.9.6 instalada, desinstálala primero
      (Configuración → Aplicaciones → PDFPro → Desinstalar); tus
      datos de sesión no se tocan.
 
-VERSIÓN PORTABLE (PDFPro-Portable-2.9.6.exe)
+VERSIÓN PORTABLE (PDFPro-Portable-2.9.7.exe)
 ────────────────────────────────────────────
   Un solo archivo ejecutable: no instala nada, no toca el registro.
   Doble clic y listo. Ideal para memorias USB o equipos restringidos.
@@ -112,7 +102,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.6.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.7.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -122,28 +112,31 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.6.zip)
     src/main.js             Proceso principal Electron
     src/preload.js          Puente seguro renderer↔Electron
     src/app/index.html      La aplicación (estilos reales de .xlsx,
-                            sellos incrustados al guardar, PDF puro,
-                            centrado de impresión real)
+                             sellos visibles al exportar, PDF puro,
+                             centrado de impresión real)
     src/app/desktop-bridge.js  Integraciones de escritorio
     src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib,
-                            xlsx, mammoth, jszip, docx-preview,
-                            fontkit, leaflet, tesseract + idiomas)
+                             xlsx, mammoth, jszip, docx-preview,
+                             fontkit, leaflet, tesseract + idiomas)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-VERIFICACIÓN REALIZADA (2.9.6)
-──────────────────────
-  Con el FPL real «ATC CM468 11NOV.xlsx», comparado contra la
-  impresión de referencia (LibreOffice) del mismo archivo:
-  · Título «PLAN DE VUELO»: centro a 302.6 pt = referencia exacta.
-  · Título «Flight Plan»: centro a 296.2 pt (referencia 296.0).
-  · Vertical: el formulario arranca a 0.1 pt de la referencia.
-  · 1596 líneas de borde reales, logo y sello dibujados, 1 página
-    A4 a escala 77% con los márgenes del libro.
-  · Guardar .xlsx con sello + 1 celda editada: el archivo resultante
-    difiere del original EXACTAMENTE en esa celda y añade el sello
-    como imagen anclada; títulos D2/D3, E4 (PRIORIDAD) y K6 intactos.
-  · El archivo dañado de la 2.9.4 se abre limpio en la 2.9.6 y su
-    copia reparada quedó idéntica al original (0 diferencias).
+VERIFICACIÓN REALIZADA (2.9.7)
+──────────────────────────────
+  Con el FPL real «ATC CM468 11NOV.xlsx», sello de recepción (con
+  sello personal del usuario) y sello personal «APROBADO»:
+  · Exportar PDF (pestaña Excel): marco rojo del sello en top
+    575.3–627.2 pt, dentro de la página (la 2.9.6 lo dibujaba a
+    1056 pt, fuera de la hoja); logo CORPAC, textos y sello personal
+    en su sitio; 1596 líneas de borde, 1 página A4 escala 77%.
+  · Guardar .xlsx: image2.png (sello de recepción, con sello
+    personal dentro) + image3.png (APROBADO) ancladas en
+    col 18/fila 55 y col 40/fila 21 (índices 0-based del drawing) — exactamente donde se
+    colocaron; visibles en Excel y LibreOffice.
+  · Pestaña PDF: sello de recepción con marco; sello «URGENTE» con
+    emoji: antes el emoji lanzaba «WinAnsi cannot encode» y el sello
+    completo no se dibujaba; ahora texto + caja sí se dibujan.
+  · Sin regresiones: líneas del formato, títulos centrados
+    («PLAN DE VUELO» centro 302.6 pt), dígito por casilla, PDF puro.
 
-PDFPro 2.9.6 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.7 · © 2026 CORPAC AIS/ARO SPHI

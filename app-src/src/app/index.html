@@ -750,7 +750,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.6 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.7 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4482,7 +4482,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.6',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.7',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -9492,11 +9492,15 @@ function _paintSelloPdf(PDFLib,pdfPage,pw,ph,sX,sY,a,f,assets){
     }
     var bx=cx(a.x),bw=sw*sX,bh=rh*sY,by=ph-(a.y+rh)*sY;
     var rr=5*sX,lw2=Math.max(.5,2.5*sX);
-    var d='M '+(bx+rr)+' '+by+
-      ' H '+(bx+bw-rr)+' Q '+(bx+bw)+' '+by+' '+(bx+bw)+' '+(by+rr)+
-      ' V '+(by+bh-rr)+' Q '+(bx+bw)+' '+(by+bh)+' '+(bx+bw-rr)+' '+(by+bh)+
-      ' H '+(bx+rr)+' Q '+bx+' '+(by+bh)+' '+bx+' '+(by+bh-rr)+
-      ' V '+(by+rr)+' Q '+bx+' '+by+' '+(bx+rr)+' '+by+' Z';
+    // v2.9.7 — drawSvgPath usa ejes SVG (y crece hacia ABAJO desde el
+    // origen): hay que entregar la Y en negativo. Antes se pasaban las
+    // coordenadas PDF tal cual y la caja roja caía espejada FUERA de la
+    // página (el sello salía sin su marco y parecía no existir).
+    var d='M '+(bx+rr)+' '+(-by)+
+      ' H '+(bx+bw-rr)+' Q '+(bx+bw)+' '+(-by)+' '+(bx+bw)+' '+(-(by+rr))+
+      ' V '+(-(by+bh-rr))+' Q '+(bx+bw)+' '+(-(by+bh))+' '+(bx+bw-rr)+' '+(-(by+bh))+
+      ' H '+(bx+rr)+' Q '+bx+' '+(-(by+bh))+' '+bx+' '+(-(by+bh-rr))+
+      ' V '+(-(by+rr))+' Q '+bx+' '+(-by)+' '+(bx+rr)+' '+(-by)+' Z';
     try{pdfPage.drawSvgPath(d,{borderColor:RED,borderWidth:lw2,borderOpacity:op});}
     catch(e1){try{pdfPage.drawRectangle({x:bx,y:by,width:bw,height:bh,borderColor:RED,borderWidth:lw2,borderOpacity:op});}catch(e2){}}
     var logoH=30;
@@ -9827,7 +9831,20 @@ async function exportPDF(){
           var sfnt=pickFont('',true);var sfz=Math.max(4,(a.size||12)*scaleY*0.85);
           var scol=hexToRgb01(a.color||'#000000');
           var say=ph-a.y*scaleY;
-          try{pdfPage.drawText((a.emoji||'')+' '+(a.text||''),{x:a.x*scaleX,y:say,size:sfz,font:sfnt,color:PDFLib.rgb(scol[0],scol[1],scol[2])});}catch(e){}
+          // v2.9.7 — antes drawText llevaba el emoji dentro: pdf-lib lanza
+          // «WinAnsi cannot encode "✅"», el catch se lo tragaba y el sello
+          // personal NO aparecía en el PDF exportado. Ahora: texto saneado
+          // (sin emoji, no existen en fuentes estándar) + caja roja con fondo
+          // translúcido, igual que en pantalla.
+          var slbl=String(a.text||'').replace(/[^\x20-\xFF]/g,'').trim();
+          var stw=0; try{ stw=sfnt.widthOfTextAtSize(slbl,sfz); }catch(e){}
+          try{
+            pdfPage.drawRectangle({x:(a.x-10)*scaleX,y:ph-(a.y+12)*scaleY,
+              width:stw+20*scaleX+(a.emoji?26*scaleX:0),height:42*scaleY,
+              color:PDFLib.rgb(scol[0],scol[1],scol[2]),opacity:.13,
+              borderColor:PDFLib.rgb(scol[0],scol[1],scol[2]),borderWidth:Math.max(.5,2*scaleX)});
+          }catch(e2){}
+          try{ if(slbl) pdfPage.drawText(slbl,{x:a.x*scaleX,y:say,size:sfz,font:sfnt,color:PDFLib.rgb(scol[0],scol[1],scol[2])}); }catch(e3){}
         } else if(a.type==='watermark'&&a.text){
           // v2.3.0 — marca de agua vectorial (pdf-lib) con rotación y opacidad
           var wmcol=hexToRgb01(a.color||'#c0392b');
@@ -10793,7 +10810,9 @@ function _paintStampPdfNative(PDFLib, page, ph, U, a, fHB){
   try{
     var col=hexToRgb01(a.color||'#c0392b');
     var fs=Math.max(4,(a.size||14)*U);
-    var lbl=a.text||'';
+    // v2.9.7 — sanear el texto: los emoji no existen en las fuentes
+    // estándar de PDF (WinAnsi) y mataban el drawText entero
+    var lbl=String(a.text||'').replace(/[^\x20-\xFF]/g,'').trim();
     var tw=0; try{ tw=fHB.widthOfTextAtSize(lbl,fs); }catch(e){}
     var pad=10*U, exW=(a.emoji?26*U:0);
     var w=tw+pad*2+exW, h=42*U;
