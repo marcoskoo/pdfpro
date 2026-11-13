@@ -287,10 +287,12 @@ body.nativemode .evtb{display:none}
 .nv-sheet .docx-wrapper{background:transparent;padding:30px 0}
 .nv-sheet .docx-wrapper>section.docx{box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .nv-word article[contenteditable]:focus{outline:none}
-/* v2.9.9 — MODO IMAGEN: la foto se presenta sobre una página A4 blanca */
+/* v2.9.10 — MODO IMAGEN: la foto ES la hoja A4 (llena todo el papel, por defecto) */
 .nv-imgwrap{justify-content:center;padding:14px 0}
 .nv-imgpage{position:relative;background:#fff;box-shadow:0 10px 42px rgba(0,0,0,.55);border-radius:2px;margin:0 auto}
-.nv-imgfit{position:absolute;left:24px;top:24px;width:calc(100% - 48px);height:calc(100% - 48px);object-fit:contain;pointer-events:none;user-select:none}
+.nv-imgfit{position:absolute;pointer-events:none;user-select:none}
+.nv-imgfit.nv-cover{left:0;top:0;width:100%;height:100%;object-fit:cover}
+.nv-imgfit.nv-contain{left:24px;top:24px;width:calc(100% - 48px);height:calc(100% - 48px);object-fit:contain}
 .xg-fbar{display:flex;gap:6px;padding:6px 8px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin:2px auto 6px;width:min(760px,97%);align-items:center;flex:none}
 .xg-ref{font-family:JetBrains Mono,monospace;font-size:11px;color:var(--acc);min-width:54px;text-align:center;background:rgba(59,130,246,.08);border:1px solid var(--bdr);border-radius:5px;padding:5px 6px}
 .xg-val{flex:1;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--t1);font-size:12px;padding:5px 8px;outline:none;min-width:0}
@@ -755,7 +757,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.9 · Word y Excel editables en su formato original · fotos e imágenes en página A4 (sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.10 · Word y Excel editables en su formato original · fotos e imágenes al tamaño A4 (la foto llena la hoja, sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1129,6 +1131,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <button class="rb" onclick="nativeExportPdf()" title="Descarga un PDF fiel al original, con tus ediciones"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/></svg><span class="rb-lbl">Exportar PDF</span></button>
       <button class="rb" onclick="nativeOpenAsPdf()" title="Abre el documento (con tus ediciones) como pestaña PDF para aplicar sellos y herramientas"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="rb-lbl">Abrir como PDF</span></button>
       <button class="rb" onclick="nativeUndo()" title="Deshacer (Ctrl+Z)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7v6h6M3.51 13a9 9 0 102.13-9.36L3 7"/></svg><span class="rb-lbl">Deshacer</span></button>
+      <button class="rb" id="nrbFitBtn" onclick="imgToggleFit()" style="display:none" title="Cómo se presenta la foto en la hoja A4: llena todo el papel (recortando lo que sobra) o se ve completa con un pequeño margen"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 3h18v18H3zM3 15l4.5-4.5 5 5M14 13l2.5 2.5M14.5 9.5a1 1 0 100-2 1 1 0 000 2z"/></svg><span class="rb-lbl" id="nrbFitLbl">Ajuste</span></button>
     </div>
     <div class="rv"></div>
     <div class="erg">
@@ -4487,7 +4490,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.9',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.10',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10135,6 +10138,8 @@ function nativeRefreshRibbon(tab){
   var saveLbl=document.getElementById('nrbSaveLbl');
   var zoomGrp=document.getElementById('nrbZoomGrp');
   var hint=document.getElementById('nativeHint');
+  var fitBtn=document.getElementById('nrbFitBtn');
+  if(fitBtn)fitBtn.style.display='none';   // solo se muestra en pestañas de imagen
   if(tab&&tab.kind==='word'){
     if(saveLbl)saveLbl.textContent='Guardar .docx';
     if(zoomGrp)zoomGrp.style.display='';
@@ -10147,7 +10152,14 @@ function nativeRefreshRibbon(tab){
   }else if(tab&&tab.kind==='image'){
     if(saveLbl)saveLbl.textContent='Guardar imagen';
     if(zoomGrp)zoomGrp.style.display='none';
-    if(hint)hint.textContent='Imagen presentada en página A4 · Sello Rec. coloca el sello sobre la foto (arrastrar lo mueve, doble clic edita su hora) · Guardar conserva el formato original · Exportar PDF también disponible';
+    if(fitBtn){
+      fitBtn.style.display='';
+      var fl=document.getElementById('nrbFitLbl');
+      if(fl)fl.textContent=((tab._img||{}).fit==='contain')?'Llenar hoja':'Ver completa';
+    }
+    if(hint)hint.textContent=((tab._img||{}).fit==='contain')
+      ?'Foto completa con margen · Sello Rec. coloca el sello sobre la foto (arrastrar lo mueve, doble clic edita su hora) · Guardar conserva el formato original · «Llenar hoja» hace que la foto ocupe todo el A4'
+      :'La foto llena toda la hoja A4 · Sello Rec. coloca el sello sobre la foto (arrastrar lo mueve, doble clic edita su hora) · Guardar conserva el formato original · «Ver completa» muestra la foto entera con margen';
   }
 }
 
@@ -11024,18 +11036,33 @@ async function imgTabOpen(file){
     var el=document.createElement('div'); el.className='nv-word nv-imgwrap';
     var page=document.createElement('div'); page.className='nv-imgpage';
     page.style.width=W+'px'; page.style.height=H+'px';
-    var im2=document.createElement('img'); im2.className='nv-imgfit';
+    var im2=document.createElement('img'); im2.className='nv-imgfit nv-cover';
     im2.src=dataUrl; im2.draggable=false; im2.alt=base;
     page.appendChild(im2); el.appendChild(page);
     el.addEventListener('mousedown',function(e){ nvMaybePlaceImage(tab,e); },true);
     return el;
   });
-  tab._img={dataUrl:dataUrl,w:img.naturalWidth,h:img.naturalHeight,mime:mime,ext:ext,W:W,H:H};
+  tab._img={dataUrl:dataUrl,w:img.naturalWidth,h:img.naturalHeight,mime:mime,ext:ext,W:W,H:H,fit:'cover'};
   tab.nvStamps=[];
   nvRenderStamps(tab);
   setProg(100);setTimeout(hideProg,500);
-  toast(base+' — en página A4 '+(land?'apaisada':'vertical')+' ('+img.naturalWidth+'×'+img.naturalHeight+' px) · lista para sellar','ok');
+  toast(base+' — al tamaño A4 '+(land?'apaisada':'vertical')+', la foto llena la hoja ('+img.naturalWidth+'×'+img.naturalHeight+' px) · lista para sellar','ok');
   return true;
+}
+// v2.9.10 — alterna la presentación: la foto LLENA la hoja (cover, por
+// defecto) o se ve COMPLETA con un pequeño margen (contain). El guardado
+// siempre respeta el modo activo: lo que ves es lo que se descarga.
+function imgToggleFit(tab){
+  tab=tab||docTabGet(activeTabId);
+  if(!tab||tab.kind!=='image'||!tab._img||!tab.nvEl)return;
+  tab._img.fit=(tab._img.fit==='contain')?'cover':'contain';
+  var im=tab.nvEl.querySelector('.nv-imgfit');
+  if(im)im.className='nv-imgfit '+((tab._img.fit==='contain')?'nv-contain':'nv-cover');
+  nativeRefreshRibbon(tab);
+  nvMarkDirty(tab);
+  toast(tab._img.fit==='contain'
+    ?'Foto completa: se verá entera sobre la hoja A4 (con margen)'
+    :'La foto llena toda la hoja A4 — lo que sobra del encuadre se recorta','ok');
 }
 // Compone la hoja A4 final (300 dpi) con la foto y los sellos — fiel a la vista
 async function imgComposeCanvas(tab){
@@ -11045,14 +11072,21 @@ async function imgComposeCanvas(tab){
   var W=Math.round((im.W||794)*U), H=Math.round((im.H||1123)*U);
   var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   var ctx=cv.getContext('2d');
-  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);   // hoja A4 blanca
-  var m=24*U;                                    // mismo margen de 24 px que la vista
-  var aw=W-2*m, ah=H-2*m;
-  var k=Math.min(aw/im.w,ah/im.h);
-  var dw=im.w*k, dh=im.h*k;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
   var img=await _ldImg(im.dataUrl);
   try{ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';}catch(e){}
-  ctx.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh);   // foto centrada, ajuste completo
+  if(im.fit==='contain'){
+    // «Ver completa»: foto entera, centrada, con el margen de 24 px de la vista
+    var m=24*U, aw=W-2*m, ah=H-2*m;
+    var k=Math.min(aw/im.w,ah/im.h);
+    var dw=im.w*k, dh=im.h*k;
+    ctx.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh);
+  }else{
+    // v2.9.10 — por defecto la foto ES la hoja: llena todo el A4 (cover)
+    var kc=Math.max(W/im.w,H/im.h);
+    var dwc=im.w*kc, dhc=im.h*kc;
+    ctx.drawImage(img,(W-dwc)/2,(H-dhc)/2,dwc,dhc);
+  }
   await nvPaintStampsCanvas(ctx,tab.nvStamps||[],U);
   return cv;
 }

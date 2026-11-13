@@ -1,9 +1,42 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.9 — Versión de escritorio para Windows
+  PDFPro 2.9.10 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.9 (fotos e imágenes en página A4)
+NOVEDADES DE LA VERSIÓN 2.9.10 (la foto ES la hoja A4)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «la foto se visualiza sobre un fondo
+  blanco; lo que se quiere es que la foto se muestre del tamaño A4».
+
+  · Ahora la foto LLENA TODA LA HOJA A4 por defecto: es la propia
+    página, sin fondo blanco ni márgenes. Lo que sobra del encuadre
+    se recorta (como al imprimir a página completa).
+  · Nuevo botón «Ver completa» en la cinta de la pestaña de imagen:
+    un clic muestra la foto ENTERA con un pequeño margen (el
+    comportamiento anterior), por si alguna foto no debe recortarse.
+    El botón alterna entre ambos modos («Ver completa» ⇄ «Llenar
+    hoja») y el guardado SIEMPRE respeta el modo que estás viendo:
+    lo que ves es lo que se descarga.
+  · El tamaño de salida no cambia: hoja A4 a 300 dpi (2481×3509 o
+    3509×2481 si es apaisada), en el formato original de la foto
+    (JPG→JPG, PNG→PNG, WebP→WebP; otros → PNG con aviso).
+
+VERIFICADO PUNTO A PUNTO (2.9.10), flujo completo automatizado:
+  · Foto vertical con esquinas rojas → hoja A4 vertical 794×1123,
+    modo «cover» activo por defecto, foto llenando el papel.
+  · Guardar → JPEG real (cabecera JPEG) 2481×3509 con las CUATRO
+    esquinas del archivo tomadas de la foto (0 esquinas blancas:
+    sin fondo blanco) y el sello de recepción grabado encima.
+  · Botón «Ver completa» → la foto pasa a verse entera con margen;
+    guardar en ese modo produce el archivo con las 4 esquinas
+    blancas (margen de hoja) — el modo activo se respeta en la
+    descarga.
+  · Toggle de vuelta a «Llenar hoja» → la foto vuelve a llenar el
+    A4, el sello colocado sigue en su sitio.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.9 (fotos e imágenes en página A4)
 ────────────────────────────────────────────────────────────────────
   Ahora puedes cargar FOTOS o cualquier imagen (JPG, PNG, GIF, BMP,
   WebP, AVIF, ICO, SVG) y la app la presenta sobre una página A4 en
