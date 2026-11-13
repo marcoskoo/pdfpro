@@ -1,7 +1,59 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.10 — Versión de escritorio para Windows
+  PDFPro 2.9.11 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.11 (la hoja ES la foto COMPLETA)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «se ve la imagen al tamaño del formato
+  A4, pero no permite ver el resto de la hoja, solo se visualiza
+  más o menos un 60% de la foto».
+
+  · La hoja ahora SE ADAPTA A LA FOTO: se ve la foto COMPLETA al
+    tamaño máximo que permite el A4 (la hoja adopta las proporciones
+    exactas de la foto). Nada recortado, nada de fondo blanco.
+    Ejemplo: una foto alta de celular (972×2160) se muestra entera
+    en una hoja de 505×1123 px; antes, al «llenar A4», solo se veía
+    el 63% de la foto.
+  · El botón de la cinta ahora ALTERNA TRES presentaciones:
+      1. «Hoja = foto» (por defecto) — foto completa, sin recortes
+         ni fondo blanco, al tamaño máximo A4.
+      2. «A4 exacto» — hoja A4 literal 794×1123 (o apaisada), la
+         foto la llena por completo recortando lo que sobra.
+      3. «Con margen» — foto completa centrada sobre hoja A4
+         blanca con un pequeño margen.
+    El guardado SIEMPRE respeta la presentación activa: lo que ves
+    es lo que se descarga (a 300 dpi, formato original de la foto).
+  · Los sellos colocados se REUBICAN solos al cambiar de
+    presentación (si la hoja se hace más pequeña, los sellos entran
+    dentro de ella; ninguno queda fuera).
+  · Además corrige un detalle de precisión presente desde la
+    2.9.9: la hoja se estaba encogiendo un poco a la altura de la
+    pantalla (p. ej. 1123 px se veían como 810), por lo que los
+    sellos podían caer un poco más arriba de donde hiciste clic.
+    Ahora la hoja se muestra a su tamaño real y el sello cae
+    EXACTAMENTE donde haces clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.11), flujo completo automatizado:
+  · Foto alta 972×2160 (el caso del 60%) → hoja 505×1123 con la
+    foto OCUPÁNDOLA por completo (rectángulo de la foto = rectángulo
+    de la hoja, sin recorte) y modo «Hoja = foto» activo por defecto.
+  · Guardar → JPEG real 1578×3509 (505×1123 a 300 dpi) con las 4
+    esquinas tomadas de la foto (0 blancas: sin fondo blanco) y el
+    sello de recepción grabado encima (20 909 píxeles de su marco).
+  · Alternar a «A4 exacto» → hoja 794×1123, la foto la llena
+    (cover). Alternar a «Con margen» → foto completa centrada con
+    margen (746 px de ancho dentro de la hoja). Volver a «Hoja =
+    foto» → 505×1123 de nuevo.
+  · Dos sellos colocados en hoja A4 exacta (uno abajo-derecha);
+    al volver a «Hoja = foto» (hoja más angosta) el sello se
+    reubicó automáticamente dentro de la hoja (de x=574 a x=283).
+  · Segunda foto 1200×1600 → hoja 794×1059, foto completa visible.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.10 (la foto llena la hoja A4, recortando)
+────────────────────────────────────────────────────────────────────
 
 NOVEDADES DE LA VERSIÓN 2.9.10 (la foto ES la hoja A4)
 ────────────────────────────────────────────────────────────────────
