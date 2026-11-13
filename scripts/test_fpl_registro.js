@@ -1,9 +1,11 @@
 /* Pruebas unitarias del módulo fpl-registro (Node puro, sin Electron)
+ * v2.9.14 — la fecha de la carpeta es UTC (hora zulú de aviación),
+ * igual que el sello de recepción de la ficha.
  * Ejecutar: node /home/z/my-project/scripts/test_fpl_registro.js */
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { fechaLima, carpetaDia, rutaUnica, saneaNombre } = require('/home/z/my-project/pdfpro-desktop/src/fpl-registro.js');
+const { fechaUTC, carpetaDia, rutaUnica, saneaNombre } = require('/home/z/my-project/pdfpro-desktop/src/fpl-registro.js');
 
 let fallos = 0;
 function t(nombre, obtenido, esperado) {
@@ -12,36 +14,42 @@ function t(nombre, obtenido, esperado) {
   console.log((ok ? '  ✓ ' : '  ✗ ') + nombre + ' → ' + JSON.stringify(obtenido) + (ok ? '' : ' (esperado ' + JSON.stringify(esperado) + ')'));
 }
 
-console.log('══ 1. Fecha Lima (UTC-5) ══');
-// 13 nov 2026, 15:00 Lima (= 20:00 UTC del mismo día)
-const f1 = fechaLima(new Date('2026-11-13T20:00:00Z'));
-t('13 nov 2026 20:00Z → Lima 13', f1.dia, '13');
+console.log('══ 1. Fecha UTC (hora zulú) ══');
+// 13 nov 2026, 20:00Z
+const f1 = fechaUTC(new Date('2026-11-13T20:00:00Z'));
+t('13 nov 20:00Z → día 13', f1.dia, '13');
 t('mes 11', f1.mes, '11');
 t('mesNombre Noviembre', f1.mesNombre, 'Noviembre');
 t('año 2026', f1.anio, '2026');
 
-// 14 nov 01:00 UTC = 13 nov 20:00 Lima → sigue siendo día 13 (clave del requisito UTC-5)
-const f2 = fechaLima(new Date('2026-11-14T01:00:00Z'));
-t('14 nov 01:00Z → Lima aún 13', f2.dia, '13');
+// 14 nov 01:00Z → día 14 (aviación = UTC: la fecha de la carpeta sigue a la hora zulú)
+const f2 = fechaUTC(new Date('2026-11-14T01:00:00Z'));
+t('14 nov 01:00Z → día 14 (UTC, no Lima)', f2.dia, '14');
 
-// fin de año UTC vs Lima: 1 ene 2027 02:00Z = 31 dic 2026 21:00 Lima
-const f3 = fechaLima(new Date('2027-01-01T02:00:00Z'));
-t('1 ene 2027 02:00Z → Lima 31/12/2026 (día)', f3.dia, '31');
-t('…mes Diciembre', f3.mesNombre, 'Diciembre');
-t('…año 2026', f3.anio, '2026');
+// 14 nov 01:00Z = 13 nov 20:00 en Lima → confirma que ya NO se usa Lima
+const f2b = fechaUTC(new Date('2026-11-13T23:30:00Z'));
+t('13 nov 23:30Z (18:30 Lima) → día 13', f2b.dia, '13');
 
-// cambio de mes: 1 dic 2026 03:30Z = 30 nov 22:30 Lima
-const f4 = fechaLima(new Date('2026-12-01T03:30:00Z'));
-t('1 dic 03:30Z → Lima 30/11 (día)', f4.dia, '30');
-t('…mes 11 Noviembre', f4.mes, '11');
+// fin de año: 1 ene 2027 02:00Z → 2027/01 Enero/01
+const f3 = fechaUTC(new Date('2027-01-01T02:00:00Z'));
+t('1 ene 2027 02:00Z → día 1', f3.dia, '01');
+t('…mes Enero', f3.mesNombre, 'Enero');
+t('…año 2027', f3.anio, '2027');
+
+// cambio de mes: 1 dic 2026 03:30Z → 01/12 Diciembre
+const f4 = fechaUTC(new Date('2026-12-01T03:30:00Z'));
+t('1 dic 03:30Z → día 01', f4.dia, '01');
+t('…mes 12 Diciembre', f4.mes, '12');
 
 console.log('══ 2. Carpeta del día ══');
 const base = path.join('C:', 'Users', 'aissphi', 'Desktop', 'REGISTROS FPL NOTAM', 'FPL');
-const c1 = carpetaDia(base, new Date('2026-11-13T20:00:00Z'));
+const c1 = carpetaDia(base, new Date('2026-11-13T02:55:00Z'));
 const esperada = path.join(base, '2026', '11 Noviembre', '13');
-t('ruta del ejemplo del usuario (13 nov 2026)', c1, esperada);
-const c2 = carpetaDia(base, new Date('2027-01-01T02:00:00Z'));
-t('fin de año Lima → 2026\\12 Diciembre\\31', c2, path.join(base, '2026', '12 Diciembre', '31'));
+t('ruta del ejemplo del usuario (13 nov, 02:55Z)', c1, esperada);
+const c2 = carpetaDia(base, new Date('2026-12-31T23:30:00Z'));
+t('31 dic 23:30Z → 2026\\12 Diciembre\\31', c2, path.join(base, '2026', '12 Diciembre', '31'));
+const c3 = carpetaDia(base, new Date('2027-01-01T00:05:00Z'));
+t('1 ene 00:05Z → 2027\\01 Enero\\01', c3, path.join(base, '2027', '01 Enero', '01'));
 
 console.log('══ 3. Colisiones de nombre ══');
 const tmp = fs.mkdtempSync('/tmp/fpl-test-');

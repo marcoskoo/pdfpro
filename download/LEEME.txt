@@ -1,7 +1,51 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.13 — Versión de escritorio para Windows
+  PDFPro 2.9.14 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.14 (carpeta por fecha UTC + auto-actualización)
+────────────────────────────────────────────────────────────────────
+  1) REGISTRO FPL POR FECHA UTC (corrección): «ese archivo debió
+     guardarse en la carpeta del día 13, ya que en aviación trabajamos
+     con hora UTC». La carpeta del registro usa ahora la fecha UTC
+     (hora zulú), la misma del sello de recepción:
+       ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
+     Un FPL recibido a las 23:30Z del día 13 va a la carpeta 13;
+     a las 01:30Z del día 14 va a la carpeta 14.
+
+  2) LA APP INSTALADA SE ACTUALIZA SOLA:
+     · Al arrancar (y cada 4 horas) PDFPro comprueba en GitHub si hay
+       versión nueva. Si la hay, avisa, la DESCARGA en segundo plano
+       (el progreso se ve en el título de la ventana) y al terminar
+       ofrece «Reiniciar e instalar»: un clic y queda actualizada.
+       Si prefieres no molestar, «Instalar al salir» la aplica sola
+       al cerrar la app.
+     · Tus ajustes, sesión y la carpeta de registro FPL se conservan.
+     · Menú «Ayuda → Buscar actualizaciones…» para comprobarlo cuando
+       quieras (te dice «está al día» si no hay nada nuevo).
+     · La versión PORTABLE no puede reemplazarse a sí misma (limitación
+       técnica de los ejecutables de un solo archivo): avisa de la
+       novedad y abre la página de descargas con un clic.
+     · NOTA: la 2.9.12/2.9.13 que ya tienes instalada NO se actualiza
+       sola — instala esta 2.9.14 una última vez manualmente y a
+       partir de ella ya se actualizará automáticamente.
+
+VERIFICADO PUNTO A PUNTO (2.9.14):
+  · 23 pruebas del módulo de registro con fecha UTC: 14-nov 01:00Z →
+    carpeta 14 (ya NO se usa la hora de Lima); 13-nov 23:30Z → 13;
+    1-ene 00:05Z → 01 Enero del año nuevo; 31-dic 23:30Z → 31.
+  · Smoke de Electron con archivado REAL a las 03:47Z del 13-nov:
+    el archivo se escribió en ...\FPL\2026\11 Noviembre\13\ — la
+    carpeta exacta del ejemplo (con 2.9.13 habría ido a la 12).
+  · Comparador de versiones (para el aviso de la portable): 6 casos
+    OK (v-prefijo, 2.10.0 > 2.9.99, 3.0.0 > 2.9.14, igual versión…).
+  · Empaquetado con auto-actualización: app-update.yml dentro del
+    instalador y latest.yml + blockmap publicados en el release de
+    GitHub (lo que el actualizador descarga).
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.13 (Registro FPL automático)
+────────────────────────────────────────────────────────────────────
 
 NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
 ────────────────────────────────────────────────────────────────────
@@ -9,9 +53,9 @@ NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
   ya con el sello de recepción, que le asigne un nuevo nombre con la
   matrícula de la aeronave/espacio y las iniciales del operador
   (ejemplo: OB2147 MK, de Marcos Koo) y que se guarde en la carpeta
-  FPL (C:\Users\...\Desktop\REGISTROS FPL NOTAM\FPL) por fecha de
-  Lima (UTC-5): ...\FPL\2026\11 Noviembre\13, creando la carpeta
-  nueva al iniciar cada día/mes/año».
+  FPL (C:\Users\...\Desktop\REGISTROS FPL NOTAM\FPL) por fecha:
+  ...\FPL\2026\11 Noviembre\13, creando la carpeta nueva al iniciar
+  cada día/mes/año». (Fecha: Lima en 2.9.13; corregida a UTC en 2.9.14.)
 
   · NUEVO CAMPO «Matrícula (Aeronave / Espacio)» en la ficha del
     sello (pestaña SELLO, junto a las iniciales del operador; también
@@ -25,8 +69,8 @@ NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
   · En la versión de ESCRITORIO el archivo se archiva SOLO en:
       <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<día>
     Ej. de hoy: ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
-    La fecha es la de LIMA (UTC-5): un archivo guardado a las 20:30
-    Lima del día 13 va a la carpeta 13 aunque la hora UTC ya sea 14.
+    La fecha era la de LIMA (UTC-5) → CORREGIDO EN 2.9.14: ahora es
+    UTC (hora zulú), la misma del sello de recepción.
     Las carpetas del día/mes/año se crean automáticamente (también al
     arrancar la app), y al cerrar aparece un aviso con la ruta exacta.
   · Si ya existe «OB2147 MK.pdf» ese día, no se sobreescribe: se

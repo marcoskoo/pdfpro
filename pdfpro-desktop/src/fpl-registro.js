@@ -1,9 +1,10 @@
-/* PDFPro — fpl-registro.js (v2.9.13)
+/* PDFPro — fpl-registro.js (v2.9.13 · corregido a UTC en v2.9.14)
  * Módulo puro del proceso principal: carpeta de registro FPL por fecha.
  *   Registro: <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD>
- *   La fecha es la de Lima (Perú, UTC-5): «trabajamos con hora UTC+5» —
- *   un archivo guardado a las 20:30 Lima del 13 sigue yendo a la carpeta 13
- *   aunque la hora UTC ya sea 14.
+ *   La fecha es UTC (hora zulú): en aviación se trabaja con hora UTC,
+ *   igual que el sello de recepción de la ficha. Un FPL recibido a las
+ *   23:30Z del 13 va a la carpeta 13 aunque en Lima ya sea tarde;
+ *   a las 01:30Z del 14 va a la carpeta 14.
  * No requiere Electron: se puede probar con Node directamente. */
 'use strict';
 
@@ -13,30 +14,21 @@ const fs = require('fs');
 const MESES_FPL = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-/** Partes de fecha {anio, mes, dia, mesNombre} en hora de Lima (UTC-5). */
-function fechaLima(cuando) {
+/** Partes de fecha {anio, mes, dia, mesNombre} en hora UTC (zulú). */
+function fechaUTC(cuando) {
   const d = cuando instanceof Date ? cuando : new Date();
-  try {
-    const partes = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit'
-    }).formatToParts(d);
-    const g = (t) => { const p = partes.find((q) => q.type === t); return p ? p.value : ''; };
-    const mes = g('month');
-    return { anio: g('year'), mes: mes, dia: g('day'), mesNombre: MESES_FPL[parseInt(mes, 10) - 1] || mes };
-  } catch (e) {
-    // sin Intl completo: hora local como respaldo
-    return {
-      anio: String(d.getFullYear()),
-      mes: String(d.getMonth() + 1).padStart(2, '0'),
-      dia: String(d.getDate()).padStart(2, '0'),
-      mesNombre: MESES_FPL[d.getMonth()]
-    };
-  }
+  const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return {
+    anio: String(d.getUTCFullYear()),
+    mes: mes,
+    dia: String(d.getUTCDate()).padStart(2, '0'),
+    mesNombre: MESES_FPL[d.getUTCMonth()]
+  };
 }
 
 /** Ruta de la carpeta del día dentro del registro FPL. */
 function carpetaDia(base, cuando) {
-  const f = fechaLima(cuando);
+  const f = fechaUTC(cuando);
   return path.join(base, f.anio, f.mes + ' ' + f.mesNombre, f.dia);
 }
 
@@ -58,4 +50,4 @@ function saneaNombre(nombre) {
   return String(nombre || 'documento').replace(/[\\/:*?"<>|]/g, '_').trim() || 'documento';
 }
 
-module.exports = { MESES_FPL, fechaLima, carpetaDia, rutaUnica, saneaNombre };
+module.exports = { MESES_FPL, fechaUTC, carpetaDia, rutaUnica, saneaNombre };

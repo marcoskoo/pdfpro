@@ -1,7 +1,7 @@
 {
   "name": "pdfpro",
   "productName": "PDFPro",
-  "version": "2.9.13",
+  "version": "2.9.14",
   "description": "PDFPro — PDF Editor Pro (CORPAC AIS/ARO SPHI), versión de escritorio para Windows",
   "author": "CORPAC AIS/ARO SPHI",
   "license": "Propietario",
@@ -22,6 +22,11 @@
     "directories": {
       "output": "dist",
       "buildResources": "build"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "marcoskoo",
+      "repo": "pdfpro"
     },
     "files": [
       "src/**/*"
@@ -74,26 +79,48 @@
         "icon": "build/pdfdoc.ico"
       },
       {
-        "ext": ["docx", "doc"],
+        "ext": [
+          "docx",
+          "doc"
+        ],
         "name": "PDFPro.Document.Word",
         "description": "Documento de Word",
         "role": "Editor",
         "icon": "build/icon.ico"
       },
       {
-        "ext": ["xlsx", "xlsm", "xls", "csv"],
+        "ext": [
+          "xlsx",
+          "xlsm",
+          "xls",
+          "csv"
+        ],
         "name": "PDFPro.Document.Excel",
         "description": "Hoja de cálculo de Excel",
         "role": "Editor",
         "icon": "build/icon.ico"
       },
       {
-        "ext": ["jpg", "jpeg", "jfif", "png", "gif", "bmp", "webp", "avif", "ico", "svg"],
+        "ext": [
+          "jpg",
+          "jpeg",
+          "jfif",
+          "png",
+          "gif",
+          "bmp",
+          "webp",
+          "avif",
+          "ico",
+          "svg"
+        ],
         "name": "PDFPro.Image",
         "description": "Imagen",
         "role": "Editor",
         "icon": "build/icon.ico"
       }
     ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

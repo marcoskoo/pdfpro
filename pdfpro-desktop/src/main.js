@@ -222,6 +222,11 @@ function buildMenu() {
       label: 'Ayuda',
       submenu: [
         {
+          label: 'Buscar actualizaciones…',
+          click: () => buscarActualizaciones(true)
+        },
+        { type: 'separator' },
+        {
           label: 'Hacer de PDFPro la aplicación predeterminada…',
           click: () => {
             dialog.showMessageBox(win, {
@@ -347,13 +352,14 @@ function maybeOfferDefaultApps() {
   }).catch(() => {});
 }
 
-/* ── Registro FPL (v2.9.13) ──
+/* ── Registro FPL (v2.9.13 · fecha UTC desde v2.9.14) ──
    Las exportaciones se archivan con nombre «MATRÍCULA INICIALES» (lo compone
    el renderer con la matrícula y las iniciales del operador) en
-   <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> con la fecha de
-   Lima (UTC-5). Las carpetas se crean solas: al archivar y también al
-   arrancar la app (carpeta del día), de modo que el nuevo día/mes/año
-   existe desde el primer momento. Se desactiva con la casilla del menú. */
+   <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> con la fecha
+   UTC (hora zulú de aviación, la misma del sello de recepción). Las
+   carpetas se crean solas: al archivar y también al arrancar la app
+   (carpeta del día), de modo que el nuevo día/mes/año existe desde el
+   primer momento. Se desactiva con la casilla del menú. */
 function carpetaRegistroFPL() {
   return fpl.carpetaDia(path.join(app.getPath('desktop'), 'REGISTROS FPL NOTAM', 'FPL'));
 }
@@ -369,6 +375,128 @@ ipcMain.handle('fpl:guardar', (_e, nombre, buffer) => {
     return { ok: false, error: e.message };
   }
 });
+
+/* ── Auto-actualización (v2.9.14) ──
+   La versión INSTALADA se actualiza sola: al arrancar (y cada 4 horas)
+   consulta el último release de GitHub; si hay versión nueva, avisa, la
+   descarga e instala al confirmar. Ajustes, sesión y carpeta de registro
+   FPL se conservan. La PORTABLE no puede reemplazarse a sí misma
+   (limitación técnica): avisa y abre la página de descargas. No actúa en
+   desarrollo ni en el smoke. */
+let autoUpdater = null;
+try { autoUpdater = require('electron-updater').autoUpdater; } catch (e) { /* no disponible */ }
+const esPortable = !!process.env.PORTABLE_EXECUTABLE_DIR;
+let updateOmitida = false;        // el usuario ya la rechazó en esta sesión
+let updateChequeoManual = false;  // venimos del menú «Buscar actualizaciones…»
+
+function versionMayor(a, b) {
+  const pa = String(a).replace(/^v/, '').split('.').map(Number);
+  const pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return true;
+    if ((pa[i] || 0) < (pb[i] || 0)) return false;
+  }
+  return false;
+}
+
+async function avisoActualizacionWeb() { // portable / desarrollo: avisar y abrir
+  try {
+    const r = await fetch('https://api.github.com/repos/marcoskoo/pdfpro/releases/latest', {
+      headers: { 'User-Agent': 'PDFPro' }
+    });
+    if (!r.ok) throw new Error('GitHub ' + r.status);
+    const rel = await r.json();
+    const remota = String(rel.tag_name || '').replace(/^v/, '');
+    if (versionMayor(remota, app.getVersion())) {
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'info',
+        title: 'Actualización disponible',
+        message: 'Hay una nueva versión de PDFPro: ' + remota,
+        detail: 'La versión actual es ' + app.getVersion() + '.\n\n' +
+          'La versión portable no puede actualizarse sola: se abrirá la página\n' +
+          'de descargas para que bajes el nuevo ejecutable (tus ajustes no cambian).',
+        buttons: ['Descargar', 'Ahora no'],
+        defaultId: 0, cancelId: 1, noLink: true
+      });
+      if (response === 0) shell.openExternal(rel.html_url).catch(() => {});
+    } else {
+      dialog.showMessageBox(win, {
+        type: 'info', title: 'Sin actualizaciones',
+        message: 'PDFPro ' + app.getVersion() + ' está al día.',
+        buttons: ['Aceptar']
+      }).catch(() => {});
+    }
+  } catch (e) {
+    dialog.showErrorBox('PDFPro', 'No se pudo comprobar actualizaciones:\n' + e.message);
+  }
+}
+
+function buscarActualizaciones(manual) {
+  if (!win || win.isDestroyed()) return;
+  if (!app.isPackaged || esPortable || !autoUpdater) { avisoActualizacionWeb(); return; }
+  updateChequeoManual = !!manual;
+  autoUpdater.checkForUpdates().catch((e) => {
+    if (manual) dialog.showErrorBox('PDFPro', 'No se pudo comprobar actualizaciones:\n' + e.message);
+  });
+}
+
+function iniciarAutoActualizacion() {
+  if (IS_SMOKE || !autoUpdater || esPortable || !app.isPackaged) return;
+  try {
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on('update-available', (info) => {
+      if (!win || win.isDestroyed()) return;
+      if (updateOmitida && !updateChequeoManual) return; // no insistir
+      dialog.showMessageBox(win, {
+        type: 'info',
+        title: 'Actualización disponible',
+        message: 'Hay una nueva versión de PDFPro: ' + (info.version || ''),
+        detail: 'La versión actual es ' + app.getVersion() + '.\n\n' +
+          'Se descargará en segundo plano y te avisaremos cuando esté lista.\n' +
+          'Tus ajustes, sesión y carpeta de registro FPL se conservan.',
+        buttons: ['Descargar e instalar', 'Ahora no'],
+        defaultId: 0, cancelId: 1, noLink: true
+      }).then(({ response }) => {
+        updateChequeoManual = false;
+        if (response === 0) autoUpdater.downloadUpdate().catch(() => {});
+        else updateOmitida = true;
+      }).catch(() => {});
+    });
+    autoUpdater.on('update-not-available', () => {
+      if (!updateChequeoManual) return;
+      updateChequeoManual = false;
+      dialog.showMessageBox(win, {
+        type: 'info', title: 'Sin actualizaciones',
+        message: 'PDFPro ' + app.getVersion() + ' está al día.',
+        buttons: ['Aceptar']
+      }).catch(() => {});
+    });
+    autoUpdater.on('download-progress', (p) => {
+      try {
+        if (win && !win.isDestroyed()) win.setTitle('PDFPro — Descargando actualización… ' + Math.round(p.percent) + ' %');
+      } catch (e) { /* noop */ }
+    });
+    autoUpdater.on('update-downloaded', () => {
+      try {
+        if (win && !win.isDestroyed()) win.setTitle('PDFPro');
+      } catch (e) { /* noop */ }
+      dialog.showMessageBox(win, {
+        type: 'info',
+        title: 'Actualización lista',
+        message: 'La nueva versión se ha descargado.',
+        detail: 'PDFPro se cerrará y se actualizará ahora mismo.\nTarda menos de un minuto.',
+        buttons: ['Reiniciar e instalar', 'Instalar al salir'],
+        defaultId: 0, cancelId: 1, noLink: true
+      }).then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall(false, true);
+      }).catch(() => {});
+    });
+    autoUpdater.on('error', () => { /* silencioso: no molestar */ });
+    autoUpdater.checkForUpdates().catch(() => {});
+    setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+  } catch (e) { /* sin app-update.yml u offline: sin auto-actualización */ }
+}
 
 /* ── Descargas: aviso al terminar ── */
 function setupDownloads() {
@@ -465,6 +593,9 @@ if (!gotLock) {
 
     // v2.9.13 — crear ya la carpeta del registro FPL de hoy (nuevo día/mes/año)
     try { fs.mkdirSync(carpetaRegistroFPL(), { recursive: true }); } catch (e) { /* sin permisos */ }
+
+    // v2.9.14 — auto-actualización (versión instalada)
+    iniciarAutoActualizacion();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
