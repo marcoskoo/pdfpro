@@ -758,7 +758,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.12 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.13 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1281,6 +1281,12 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <input class="f-input" id="selloTxInitials" maxlength="6" placeholder="EJ: MK" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z.\s]/g,'');updateSelloPreview()">
             </div>
           </div>
+          <!-- v2.9.13 — matrícula: nombra el archivo al guardar/exportar (ej. OB2147 MK) -->
+          <div style="margin-bottom:10px">
+            <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Matrícula (Aeronave / Espacio)</label>
+            <input class="f-input" id="selloMatricula" maxlength="12" placeholder="EJ: OB2147" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; en la web se descarga con ese nombre.</div>
+          </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
             <div style="height:1px;background:rgba(180,0,0,.3);margin:3px 0 5px"></div>
@@ -1592,6 +1598,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <div>
         <label class="f-label" style="font-size:10px;margin-bottom:2px">Operador</label>
         <input class="f-input" id="mobSelloTxInitials" maxlength="6" placeholder="EJ: MK" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z.\s]/g,'');mobSelloSync(true)">
+      </div>
+      <div>
+        <label class="f-label" style="font-size:10px;margin-bottom:2px">Matrícula</label>
+        <input class="f-input" id="mobSelloMatricula" maxlength="12" placeholder="EJ: OB2147" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');mobSelloSync(true)">
       </div>
     </div>
     <div id="mobSelloPreview" style="text-align:center;border:1.5px solid rgba(192,0,0,.45);border-radius:8px;padding:9px 8px;margin:9px 0;background:rgba(255,255,255,.04)"></div>
@@ -4491,7 +4501,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.12',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.13',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -9677,7 +9687,7 @@ async function saveToDrive(){
     var pdfBytes2=await pdfLibDoc.save();
     var pdfBlob=new Blob([pdfBytes2],{type:'application/pdf'});
     setProg(90);
-    var fname=(fileName+'_editado.pdf');
+    var fname=fplNombreRegistro(fileName+'_editado.pdf');
     await gdriveUploadPDF(pdfBlob,fname);
     setProg(100);setTimeout(function(){setProg(0);},1200);
   }catch(err){
@@ -9959,7 +9969,54 @@ async function exportWord(){if(!pageOrder.length){toast('Carga un PDF primero','
 async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero','err');return;}toast('Generando Excel…');var wb=XLSX.utils.book_new();var ta=Object.values(annotations).reduce(function(s,v){return s+v.length;},0);var wsR=XLSX.utils.aoa_to_sheet([['PDF Editor Pro'],[''],['CAMPO','VALOR'],['Archivo',fileName+'.pdf'],['Páginas',pageOrder.length],['Anotaciones',ta],['Exportado',new Date().toLocaleDateString('es-PE')]]);wsR['!cols']=[{wch:24},{wch:44}];XLSX.utils.book_append_sheet(wb,wsR,'Resumen');var aRows=[['Pág.','Tipo','Texto','Color','X','Y']];for(var s=0;s<pageOrder.length;s++)(annotations[s]||[]).forEach(function(a){aRows.push([s+1,a.type,a.text||'',a.color,Math.round(a.x||0),Math.round(a.y||0)]);});var wsA=XLSX.utils.aoa_to_sheet(aRows);XLSX.utils.book_append_sheet(wb,wsA,'Anotaciones');var buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});dlBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),fileName+'_datos.xlsx');toast('Excel exportado','ok');}
 
 // ── HELPERS ──
-function dlBlob(blob,name){var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(url);},4000);}
+/* ══ v2.9.13 — REGISTRO FPL: nombre del archivo y archivado ══
+   Al guardar/exportar, el archivo se nombra «MATRÍCULA INICIALES» (ej. OB2147 MK,
+   iniciales del operador) y en la versión de escritorio se archiva solo en
+   REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> (fecha de Lima, UTC-5);
+   la carpeta del día/mes/año se crea automáticamente. */
+function fplInicialesOperador(){
+  var v=String((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().replace(/[^A-Z]/g,'');
+  if(v)return v.slice(0,4);
+  var n=String((window.currentUser||{}).name||'').trim();
+  if(!n)return '';
+  return n.split(/\s+/).map(function(w){return w.charAt(0);}).join('').toUpperCase().slice(0,4);
+}
+function fplMatricula(){
+  var el=document.getElementById('selloMatricula');
+  return String((el&&el.value)||'').toUpperCase().replace(/[^A-Z0-9\- ]/g,'').replace(/\s+/g,' ').trim();
+}
+function fplMatriculaChanged(){
+  try{sessionStorage.setItem('fpl_matricula',fplMatricula());}catch(e){}
+}
+(function(){ // restaurar la matrícula de la sesión (sobrevive recargas)
+  try{
+    var el=document.getElementById('selloMatricula');
+    if(el&&!el.value)el.value=sessionStorage.getItem('fpl_matricula')||'';
+  }catch(e){}
+})();
+function fplNombreRegistro(name){
+  var m=fplMatricula();
+  if(!m)return name; // sin matrícula → se mantiene el nombre original
+  var ini=fplInicialesOperador();
+  var ext=(String(name).match(/\.([A-Za-z0-9]{1,6})$/)||[])[1]||'';
+  var base=(m+(ini?' '+ini:'')).replace(/\s+/g,' ').trim();
+  return base+(ext?'.'+ext:'');
+}
+async function dlBlob(blob,name){
+  var nombre=fplNombreRegistro(name);
+  /* Escritorio: archivar directamente en la carpeta de registro FPL */
+  if(window.pdfproDesktop&&window.pdfproDesktop.guardarRegistroFPL&&blob){
+    try{
+      var ab=await blob.arrayBuffer();
+      var r=await window.pdfproDesktop.guardarRegistroFPL(nombre,ab);
+      if(r&&r.ok){toast('✅ Archivado en Registro FPL: '+r.ruta,'ok');return;}
+      if(r&&r.error)toast('No se pudo guardar en la carpeta FPL ('+r.error+'). Se descargará el archivo.','err');
+      /* r.omitido → el usuario desactivó el archivado: descarga normal */
+    }catch(e){/* sin puente o error de conversión → descarga normal */}
+  }
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=nombre;a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},4000);
+}
 function setProg(p){document.getElementById('prog').style.display='block';document.getElementById('progFill').style.width=p+'%';}
 function hideProg(){document.getElementById('prog').style.display='none';document.getElementById('progFill').style.width='0';}
 var toastT;
@@ -9990,7 +10047,7 @@ function closeMobPanel(){document.getElementById('mobPanelOverlay').classList.re
 // v2.9.3 — sincroniza la ficha móvil con la ficha canónica (mismos valores
 // en escritorio y móvil; el sello colocado siempre es el de la ficha)
 function mobSelloSync(fromMob){
-  var P=[['mobSelloRxDate','selloRxDate'],['mobSelloRxTime','selloRxTime'],['mobSelloTxTime','selloTxTime'],['mobSelloTxInitials','selloTxInitials']];
+  var P=[['mobSelloRxDate','selloRxDate'],['mobSelloRxTime','selloRxTime'],['mobSelloTxTime','selloTxTime'],['mobSelloTxInitials','selloTxInitials'],['mobSelloMatricula','selloMatricula']];
   P.forEach(function(p){
     var m=document.getElementById(p[0]),c=document.getElementById(p[1]);
     if(!m||!c)return;

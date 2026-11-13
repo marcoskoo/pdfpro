@@ -11,6 +11,7 @@
 const { app, BrowserWindow, Menu, ipcMain, shell, dialog, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const fpl = require('./fpl-registro');
 
 const APP_DIR = path.join(__dirname, 'app');
 const IS_DEV = !app.isPackaged;
@@ -169,6 +170,20 @@ function buildMenu() {
             });
             if (r.canceled) return;
             r.filePaths.forEach(sendOpenFile);
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Guardar exportaciones en la carpeta FPL',
+          type: 'checkbox',
+          checked: readSetting('guardarEnFPL') !== false,
+          click: (item) => writeSetting('guardarEnFPL', item.checked)
+        },
+        {
+          label: 'Abrir carpeta de registro FPL…',
+          click: () => {
+            try { fs.mkdirSync(carpetaRegistroFPL(), { recursive: true }); } catch (e) { /* noop */ }
+            shell.openPath(carpetaRegistroFPL()).catch(() => {});
           }
         },
         { type: 'separator' },
@@ -332,6 +347,29 @@ function maybeOfferDefaultApps() {
   }).catch(() => {});
 }
 
+/* ── Registro FPL (v2.9.13) ──
+   Las exportaciones se archivan con nombre «MATRÍCULA INICIALES» (lo compone
+   el renderer con la matrícula y las iniciales del operador) en
+   <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> con la fecha de
+   Lima (UTC-5). Las carpetas se crean solas: al archivar y también al
+   arrancar la app (carpeta del día), de modo que el nuevo día/mes/año
+   existe desde el primer momento. Se desactiva con la casilla del menú. */
+function carpetaRegistroFPL() {
+  return fpl.carpetaDia(path.join(app.getPath('desktop'), 'REGISTROS FPL NOTAM', 'FPL'));
+}
+ipcMain.handle('fpl:guardar', (_e, nombre, buffer) => {
+  try {
+    if (readSetting('guardarEnFPL') === false) return { ok: false, omitido: true };
+    const dir = carpetaRegistroFPL();
+    fs.mkdirSync(dir, { recursive: true });
+    const ruta = fpl.rutaUnica(dir, fpl.saneaNombre(nombre));
+    fs.writeFileSync(ruta, Buffer.from(buffer || new Uint8Array()));
+    return { ok: true, ruta };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 /* ── Descargas: aviso al terminar ── */
 function setupDownloads() {
   const { session } = require('electron');
@@ -425,6 +463,9 @@ if (!gotLock) {
     const f = extractFileArg(process.argv);
     if (f) sendOpenFile(f);
 
+    // v2.9.13 — crear ya la carpeta del registro FPL de hoy (nuevo día/mes/año)
+    try { fs.mkdirSync(carpetaRegistroFPL(), { recursive: true }); } catch (e) { /* sin permisos */ }
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -474,8 +515,16 @@ function attachSmoke(w) {
           try { c.ocrLangFetch = (await fetch('vendor/tesseract/lang/spa.traineddata.gz')).ok; } catch (e) { c.ocrLangFetch = false; }
           try { c.fontFetch = (await fetch('vendor/fontsource/arimo-latin-400-normal.woff')).ok; } catch (e) { c.fontFetch = false; }
           try { c.cssFonts = (await fetch('vendor/fonts/fonts.css')).ok; } catch (e) { c.cssFonts = false; }
+          try {
+            const fr = await window.pdfproDesktop.guardarRegistroFPL('SMOKE OB2147 MK.pdf', new Uint8Array([37,80,68,70]));
+            c.fplSave = !!(fr && fr.ok);
+            c.fplRuta = fr ? String(fr.ruta || '') : '';
+          } catch (e) { c.fplSave = false; c.fplRuta = ''; }
           return c;
         })()`);
+        if (results.checks.fplRuta) {
+          try { results.checks.fplArchivoExiste = fs.existsSync(results.checks.fplRuta); } catch (e) { /* noop */ }
+        }
         results.url = w.webContents.getURL();
         try {
           const img = await w.webContents.capturePage();

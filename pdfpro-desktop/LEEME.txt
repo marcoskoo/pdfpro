@@ -1,7 +1,61 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.12 — Versión de escritorio para Windows
+  PDFPro 2.9.13 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «al guardar o exportar el archivo ya editado y/o
+  ya con el sello de recepción, que le asigne un nuevo nombre con la
+  matrícula de la aeronave/espacio y las iniciales del operador
+  (ejemplo: OB2147 MK, de Marcos Koo) y que se guarde en la carpeta
+  FPL (C:\Users\...\Desktop\REGISTROS FPL NOTAM\FPL) por fecha de
+  Lima (UTC-5): ...\FPL\2026\11 Noviembre\13, creando la carpeta
+  nueva al iniciar cada día/mes/año».
+
+  · NUEVO CAMPO «Matrícula (Aeronave / Espacio)» en la ficha del
+    sello (pestaña SELLO, junto a las iniciales del operador; también
+    en el panel móvil). Escribe ahí la matrícula (ej. OB2147).
+  · Al GUARDAR o EXPORTAR (PDF, Word, Excel, imagen en su formato
+    original, imagen→PDF, exportación a Drive), el archivo se nombra
+    automáticamente «MATRÍCULA INICIALES» → OB2147 MK.pdf
+    (las iniciales salen del campo del sello; si está vacío, se
+    calculan del usuario con sesión iniciada). Sin matrícula → se
+    mantiene el nombre habitual, sin sorpresas.
+  · En la versión de ESCRITORIO el archivo se archiva SOLO en:
+      <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<día>
+    Ej. de hoy: ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
+    La fecha es la de LIMA (UTC-5): un archivo guardado a las 20:30
+    Lima del día 13 va a la carpeta 13 aunque la hora UTC ya sea 14.
+    Las carpetas del día/mes/año se crean automáticamente (también al
+    arrancar la app), y al cerrar aparece un aviso con la ruta exacta.
+  · Si ya existe «OB2147 MK.pdf» ese día, no se sobreescribe: se
+    guarda como «OB2147 MK (2).pdf», «(3)», …
+  · Menú «Archivo»: casilla «Guardar exportaciones en la carpeta FPL»
+    (para desactivarlo y descargar con el nombre nuevo donde quieras)
+    y «Abrir carpeta de registro FPL…».
+  · En la WEB no se puede escribir carpetas del PC (seguridad de los
+    navegadores): la descarga llega con el nombre nuevo
+    (OB2147 MK.pdf) para que la archives con un clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.13):
+  · 20 pruebas del módulo de registro: fecha Lima correcta (14-nov
+    01:00Z → carpeta del 13; 1-ene 02:00Z → 31 Diciembre del año
+    anterior), ruta exacta del ejemplo, colisiones (2), (3), saneo
+    de caracteres prohibidos en Windows.
+  · E2E en navegador con el puente simulado: OB2147+MK → guarda
+    «OB2147 MK.pdf» SIN abrir descarga y con aviso de ruta;
+    archivado desactivado → descarga «OB2147 MK.pdf»; cadena
+    completa: foto FPL abierta → guardar en formato original →
+    «OB2147 MK.jpg» (102 KB reales); campo sincronizado en móvil.
+  · Smoke de Electron 2.9.13 con archivado REAL: la app escribió
+    «SMOKE OB2147 MK.pdf» dentro de REGISTROS FPL NOTAM\FPL\<año>\
+    <MM Mes>\<día> creada al vuelo; arranca, puente y librerías OK,
+    captura con contenido, sin errores nuevos.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.12 (Windows ofrece abrir archivos con PDFPro)
+────────────────────────────────────────────────────────────────────
 
 NOVEDADES DE LA VERSIÓN 2.9.12 (Windows ofrece abrir los archivos con PDFPro)
 ────────────────────────────────────────────────────────────────────

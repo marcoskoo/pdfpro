@@ -15,6 +15,11 @@ contextBridge.exposeInMainWorld('pdfproDesktop', {
   /** Archivo abierto desde Windows (doble clic / Abrir con / menú) */
   onOpenFile: (cb) => ipcRenderer.on('app:open-file', (_e, file) => cb(file)),
 
+  /** v2.9.13 — Archivar una exportación en la carpeta de registro FPL
+   *  (REGISTROS FPL NOTAM\FPL\año\MM Mes\DD, fecha de Lima). Devuelve
+   *  {ok, ruta} | {ok:false, error} | {ok:false, omitido:true} */
+  guardarRegistroFPL: (nombre, buffer) => ipcRenderer.invoke('fpl:guardar', nombre, buffer),
+
   /** Descarga terminada (exportaciones) */
   onDownloadDone: (cb) => ipcRenderer.on('download:done', (_e, info) => cb(info)),
 
