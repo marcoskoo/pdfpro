@@ -1,9 +1,50 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.8 — Versión de escritorio para Windows
+  PDFPro 2.9.9 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.8 (sellos también al guardar Word)
+NOVEDADES DE LA VERSIÓN 2.9.9 (fotos e imágenes en página A4)
+────────────────────────────────────────────────────────────────────
+  Ahora puedes cargar FOTOS o cualquier imagen (JPG, PNG, GIF, BMP,
+  WebP, AVIF, ICO, SVG) y la app la presenta sobre una página A4 en
+  blanco (apaisada si la foto es horizontal), lista para colocarle
+  el sello de recepción y el sello personal — igual que en Word y
+  Excel:
+
+  · «Abrir» o arrastra la foto: se abre en su propia pestaña «IMG».
+  · «Sello Rec.» → haz clic sobre la foto: el sello queda colocado
+    en la hoja A4 (se arrastra para moverlo, doble clic edita su
+    hora, ✕ lo borra, Ctrl+Z quita el último).
+  · «Guardar imagen» descarga la hoja A4 (300 dpi, calidad de
+    impresión) con la foto y los sellos, EN EL FORMATO ORIGINAL:
+    un .jpg se guarda como .jpg, un .png como .png, un .webp como
+    .webp. Si el formato de origen no se puede volver a grabar en
+    el navegador (GIF/BMP/ICO/AVIF/SVG), se guarda como PNG sin
+    pérdida y se te avisa.
+  · «Exportar PDF» también funciona: la misma hoja A4 con tus
+    sellos, como PDF puro.
+  · Se pueden abrir varias imágenes a la vez: cada una en su
+    pestaña (mezcladas con PDF/Excel/Word en la misma carga).
+
+VERIFICADO PUNTO A PUNTO (2.9.9), con la app real, flujo completo
+automatizado en el navegador:
+  · Dos imágenes a la vez (JPG vertical 1600×2000 + PNG horizontal
+    1920×1080): dos pestañas IMG, A4 vertical 794×1123 y A4
+    apaisada 1123×794, foto centrada con margen.
+  · Sello de recepción colocado con un clic dentro de la hoja
+    (RECIBIDO/RECEIVED + fecha y hora UTC + AIS/ARO – CORPAC +
+    sede SPHI – Chiclayo), pestaña marcada como modificada.
+  · Guardar PNG → archivo PNG real (cabecera PNG) de 3509×2481
+    px (= A4 apaisado a 300 dpi) con el sello grabado encima.
+  · Guardar JPG → archivo JPEG real (cabecera JPEG) de 2481×3509
+    px (= A4 vertical a 300 dpi), misma extensión que la original.
+  · Exportar PDF → PDF puro (cabecera %PDF-1.7).
+  · GIF de prueba → guardado como PNG con aviso (comportamiento
+    documentado arriba).
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.8 (sellos también al guardar Word)
 ────────────────────────────────────────────────────────────────────
   Corrige «abro un archivo excel/word, coloco sello, exporto, abro
   el archivo exportado y no hay sello». Causa real encontrada:

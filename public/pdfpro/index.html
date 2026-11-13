@@ -287,6 +287,10 @@ body.nativemode .evtb{display:none}
 .nv-sheet .docx-wrapper{background:transparent;padding:30px 0}
 .nv-sheet .docx-wrapper>section.docx{box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .nv-word article[contenteditable]:focus{outline:none}
+/* v2.9.9 — MODO IMAGEN: la foto se presenta sobre una página A4 blanca */
+.nv-imgwrap{justify-content:center;padding:14px 0}
+.nv-imgpage{position:relative;background:#fff;box-shadow:0 10px 42px rgba(0,0,0,.55);border-radius:2px;margin:0 auto}
+.nv-imgfit{position:absolute;left:24px;top:24px;width:calc(100% - 48px);height:calc(100% - 48px);object-fit:contain;pointer-events:none;user-select:none}
 .xg-fbar{display:flex;gap:6px;padding:6px 8px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin:2px auto 6px;width:min(760px,97%);align-items:center;flex:none}
 .xg-ref{font-family:JetBrains Mono,monospace;font-size:11px;color:var(--acc);min-width:54px;text-align:center;background:rgba(59,130,246,.08);border:1px solid var(--bdr);border-radius:5px;padding:5px 6px}
 .xg-val{flex:1;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--t1);font-size:12px;padding:5px 8px;outline:none;min-width:0}
@@ -309,6 +313,7 @@ body.nativemode .evtb{display:none}
 .dt-ico{font-size:9px;font-weight:800;border-radius:3px;padding:1px 3px;margin-right:3px;flex:none}
 .dt-ico.dt-word{background:#2b579a;color:#fff}
 .dt-ico.dt-xcel{background:#217346;color:#fff}
+.dt-ico.dt-img{background:#7c3aed;color:#fff}
 .dt-dirty{color:#f59e0b;font-weight:700;margin-left:2px}
 .evscroll::-webkit-scrollbar{width:5px}
 .evscroll::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
@@ -750,7 +755,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.8 · Word y Excel editables en su formato original · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.9 · Word y Excel editables en su formato original · fotos e imágenes en página A4 (sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1179,10 +1184,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       <div class="evscroll" id="evScroll">
         <div class="drop-zone" id="dropZone">
           <div class="drop-box" id="dropBox" onclick="document.getElementById('fInput').click()">
-            <div class="drop-di">📄📊📝</div>
-            <div class="drop-dt">Arrastra tus PDF, Excel o Word aquí</div>
-            <div class="drop-ds">o <em>haz clic para abrir</em> · uno o varios a la vez · PDF · XLSX · XLS · CSV · DOCX · DOC</div>
-            <div class="drop-tags"><span class="dtag">PDF</span><span class="dtag">Excel</span><span class="dtag">Word</span><span class="dtag">Firmas</span><span class="dtag">Sellos</span></div>
+            <div class="drop-di">📄📊📝🖼️</div>
+            <div class="drop-dt">Arrastra tus PDF, Excel, Word o Imágenes aquí</div>
+            <div class="drop-ds">o <em>haz clic para abrir</em> · uno o varios a la vez · PDF · XLSX · XLS · CSV · DOCX · DOC · JPG · PNG · GIF · BMP · WebP</div>
+            <div class="drop-tags"><span class="dtag">PDF</span><span class="dtag">Excel</span><span class="dtag">Word</span><span class="dtag">Imagen A4</span><span class="dtag">Firmas</span><span class="dtag">Sellos</span></div>
           </div>
         </div>
         <div id="pagesBox" class="hidden"></div>
@@ -1592,7 +1597,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
   </div>
   <div id="mpMenu" class="mp-section" style="display:none">
     <div class="mp-title">☰ Opciones</div>
-    <button class="mob-action-btn sec" onclick="document.getElementById('fInput').click();closeMobPanel()">📂 Abrir PDF/Excel/Word</button>
+    <button class="mob-action-btn sec" onclick="document.getElementById('fInput').click();closeMobPanel()">📂 Abrir PDF/Excel/Word/Imagen</button>
     <button class="mob-action-btn sec" onclick="saveToDrive();closeMobPanel()">☁️ Guardar en Drive</button>
     <button class="mob-action-btn sec" onclick="exportPDF();closeMobPanel()">💾 Guardar PDF</button>
     <button class="mob-action-btn sec" onclick="doPrint();closeMobPanel()">🖨 Imprimir</button>
@@ -1627,7 +1632,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 <input id="annInput" type="text" placeholder="Escribe y pulsa Enter…" autocomplete="off" spellcheck="false">
 <div id="inpHint">↵ confirma · Esc cancela</div>
-<input type="file" id="fInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.docx,.doc" multiple style="display:none" onchange="onFileChosen(this)">
+<input type="file" id="fInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.docx,.doc,.jpg,.jpeg,.jfif,.png,.gif,.bmp,.webp,.avif,.ico,.svg,image/*" multiple style="display:none" onchange="onFileChosen(this)">
 <input type="file" id="sigUploadInput" accept="image/*" multiple style="display:none" onchange="onSigUpload(this)">
 <div class="prog" id="prog"><div class="prog-fill" id="progFill"></div></div>
 <div class="toast" id="toast"></div>
@@ -2500,7 +2505,7 @@ function docTabSwitch(id){
   renderDocTabs();
   // v2.9.0 — pestañas nativas (Word/Excel): visor y ribbon propios
   var nvb=document.getElementById('nativeBox');
-  var isNat=!!(tab.kind==='word'||tab.kind==='excel');
+  var isNat=!!(tab.kind==='word'||tab.kind==='excel'||tab.kind==='image');
   document.body.classList.toggle('nativemode',isNat);
   if(isNat){
     document.getElementById('dropZone').classList.add('hidden');
@@ -2564,7 +2569,7 @@ function renderDocTabs(){
     var div=document.createElement('div');
     div.className='doc-tab'+(tab.id===activeTabId?' active':'');
     div.onclick=function(){docTabSaveCurrent();docTabSwitch(tab.id);};
-    var ico=tab.kind==='word'?'<span class="dt-ico dt-word" title="Word (edición nativa)">W</span>':(tab.kind==='excel'?'<span class="dt-ico dt-xcel" title="Excel (edición nativa)">X</span>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>');
+    var ico=tab.kind==='word'?'<span class="dt-ico dt-word" title="Word (edición nativa)">W</span>':(tab.kind==='excel'?'<span class="dt-ico dt-xcel" title="Excel (edición nativa)">X</span>':(tab.kind==='image'?'<span class="dt-ico dt-img" title="Imagen en página A4">IMG</span>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'));
     div.innerHTML=ico+
       '<span class="doc-tab-name" title="'+escH(tab.fileName)+'">'+escH(tab.fileName)+(tab._dirty?'<span class="dt-dirty" title="Cambios sin guardar">•</span>':'')+'</span>'+
       '<span class="doc-tab-close" onclick="docTabClose(\''+tab.id+'\',event)" title="Cerrar">✕</span>';
@@ -4482,7 +4487,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.8',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.9',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -5571,10 +5576,13 @@ function showTemplates(){
 // un PDF nativo. Excel/CSV → SheetJS + tabla paginada; Word → mammoth + maquetador.
 var OFFICE_EXT=/\.(xlsx|xlsm|xls|csv|docx|doc)$/i;
 function isOfficeFileName(n){return OFFICE_EXT.test(n||'');}
+// v2.9.9 — formatos de IMAGEN aceptados (se presentan en página A4)
+var IMG_EXT=/\.(jpe?g|jfif|png|gif|bmp|webp|avif|ico|svg)$/i;
+function isImageFileName(n){return IMG_EXT.test(n||'');}
 function _fileOpenable(f){
   if(!f)return false;
   var nm=String(f.name||'');
-  return /\.pdf$/i.test(nm)||f.type==='application/pdf'||isOfficeFileName(nm);
+  return /\.pdf$/i.test(nm)||f.type==='application/pdf'||isOfficeFileName(nm)||isImageFileName(nm)||((f.type||'').indexOf('image/')===0);
 }
 function _officeBaseName(n){return (n||'documento').replace(/\.(pdf|xlsx|xlsm|xls|csv|docx|doc)$/i,'');}
 
@@ -8478,9 +8486,17 @@ function docLegacyBlocks(txt){
 async function handleFileOpen(file){
   if(!file)return;
   var nm=String(file.name||'');
+  // v2.9.9 — IMÁGENES: se presentan sobre una página A4 para colocar sellos
+  // y se guardan en su formato original (JPG/PNG/WebP; otros formatos → PNG)
+  if(isImageFileName(nm)||(file.type&&file.type.indexOf('image/')===0)){
+    hideProg();
+    if(file.size>60*1024*1024){toast('Imagen demasiado grande (máx. 60 MB)','err');return false;}
+    try{return await imgTabOpen(file);}
+    catch(e){hideProg();toast('No se pudo abrir la imagen: '+(e&&e.message?e.message:e),'err');return false;}
+  }
   if(!isOfficeFileName(nm)){
     if(file.type&&file.type!=='application/pdf'&&!/\.pdf$/i.test(nm)){
-      toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');
+      toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv), Word (.docx/.doc) o una imagen (JPG/PNG/GIF/BMP/WebP)','err');
       return false;
     }
     // v2.7.0 — await: permite la carga secuencial multi-archivo y captura
@@ -8535,7 +8551,7 @@ dropBox.addEventListener('drop',function(e){
   var files=Array.prototype.slice.call(e.dataTransfer.files||[]);
   if(!files.length)return;
   var bad=files.filter(function(f){return !_fileOpenable(f);});
-  if(bad.length===files.length){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv) o Word (.docx/.doc)','err');return;}
+  if(bad.length===files.length){toast('Formato no soportado. Usa PDF, Excel (.xlsx/.xls/.csv), Word (.docx/.doc) o una imagen (JPG/PNG/GIF/BMP/WebP)','err');return;}
   openFilesList(files);
 });
 function onFileChosen(inp){
@@ -10045,7 +10061,7 @@ document.addEventListener('keydown',function(e){
   if(_natTab&&_natTab.kind){
     if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();nativeSaveOriginal();return;}
     if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){e.preventDefault();return;}
-    if((e.ctrlKey||e.metaKey)&&e.key==='z'){if(_natTab.kind==='excel'){e.preventDefault();nativeUndo();}return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){if(_natTab.kind==='excel'||_natTab.kind==='image'){e.preventDefault();nativeUndo();}return;}
     if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();nativeExportPdf();return;}
     if(e.key==='Escape'){if(_natTab.kind==='excel'){try{xlCloseEditor(_natTab,false);}catch(e2){}}return;}
     if(e.key==='+'||e.key==='='){if(_natTab.kind==='word')nvWordZoom(_natTab,0.1);return;}
@@ -10128,6 +10144,10 @@ function nativeRefreshRibbon(tab){
     if(saveLbl)saveLbl.textContent=(tab._xl&&tab._xl.isXlsSrc)?'Guardar .xlsx (desde .xls)':'Guardar .xlsx';
     if(zoomGrp)zoomGrp.style.display='none';
     if(hint)hint.textContent='Edita como en Excel · doble clic o F2 edita · Guardar respeta el formato · Sello Rec. coloca el sello directamente sobre la hoja';
+  }else if(tab&&tab.kind==='image'){
+    if(saveLbl)saveLbl.textContent='Guardar imagen';
+    if(zoomGrp)zoomGrp.style.display='none';
+    if(hint)hint.textContent='Imagen presentada en página A4 · Sello Rec. coloca el sello sobre la foto (arrastrar lo mueve, doble clic edita su hora) · Guardar conserva el formato original · Exportar PDF también disponible';
   }
 }
 
@@ -10752,6 +10772,38 @@ function nvMaybePlaceExcel(tab,e){
   toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
 }
 
+// ── IMAGEN: clic → coords dentro de la página A4 (sin zoom) ──
+function nvMaybePlaceImage(tab,e){
+  if(!nvPendingSello&&!nvPendingStamp)return;
+  if(e.button!==0)return;
+  var pg=tab&&tab.nvEl&&tab.nvEl.querySelector('.nv-imgpage');
+  if(!pg){ nvDisarm(); return; }
+  var r=pg.getBoundingClientRect();
+  // clic fuera de la hoja A4 → cancela (no hay dónde sellar)
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){ nvDisarm(); return; }
+  e.preventDefault(); e.stopPropagation();
+  var im=tab._img||{};
+  var x=e.clientX-r.left, y=e.clientY-r.top;
+  var s;
+  if(nvPendingSello){
+    s=nvBuildSelloAnn();
+    // clamp: el sello no debe salirse de la hoja A4
+    var sh=((s.txTime||s.txInitials)?103:90)+6+120;
+    s.x=Math.max(0,Math.min(x-((s.w||220)/2),Math.max(0,(im.W||794)-(s.w||220))));
+    s.y=Math.max(0,Math.min(y-90,Math.max(0,(im.H||1123)-sh)));
+  }else{
+    var p=nvPendingStamp;
+    s={type:'stamp',text:p.label||'',emoji:p.emoji||'',color:p.color||annColor,size:annSize||14,x:x+10,y:y+12};
+  }
+  if(!tab.nvStamps)tab.nvStamps=[];
+  tab.nvStamps.push(s);
+  nvRenderStamps(tab);
+  nvDisarm();
+  // v2.9.9 — el sello sobre la imagen cuenta como cambio pendiente de guardar
+  try{ nvMarkDirty(tab); }catch(e2){}
+  toast(s.type==='sello_recepcion'?('Sello colocado — '+s.timestamp):'Sello colocado','ok');
+}
+
 // ── Render del overlay ──
 function nvSelloDom(tab,idx){
   var s=tab.nvStamps[idx];
@@ -10808,7 +10860,7 @@ function nvSelloDom(tab,idx){
     if(!isNaN(i2)&&tab.nvStamps&&tab.nvStamps[i2]===s){
       tab.nvStamps.splice(i2,1);nvRenderStamps(tab);
       // v2.9.5 — quitar el sello también es un cambio pendiente de guardar
-      try{ if(tab.kind==='excel') nvMarkDirty(tab); }catch(e){}
+      try{ if(tab.kind==='excel'||tab.kind==='image') nvMarkDirty(tab); }catch(e){}
     }
   });
   el.appendChild(del);
@@ -10845,7 +10897,7 @@ function nvMakeDraggable(el,tab,s){
       document.removeEventListener('mousemove',mm,true);
       document.removeEventListener('mouseup',mu,true);
       // v2.9.5 — mover el sello cuenta como cambio (se guarda en el .xlsx)
-      try{ if(st&&st.mv&&tab.kind==='excel') nvMarkDirty(tab); }catch(e){}
+      try{ if(st&&st.mv&&(tab.kind==='excel'||tab.kind==='image')) nvMarkDirty(tab); }catch(e){}
       st=null;
     }
     document.addEventListener('mousemove',mm,true);
@@ -10882,6 +10934,16 @@ function nvRenderStamps(tab){
       el.style.left=(s.x+(ox-hr.left))+'px';
       el.style.top=(s.y+(oy-hr.top))+'px';
       v.host.appendChild(el);
+    });
+  }else if(tab.kind==='image'){
+    // v2.9.9 — IMAGEN: los sellos viven dentro de la página A4 (coords px de la hoja)
+    var pg=tab.nvEl.querySelector('.nv-imgpage');
+    if(!pg)return;
+    stamps.forEach(function(s,idx){
+      var el=nvSelloDom(tab,idx);
+      el.style.left=s.x+'px';
+      el.style.top=s.y+'px';
+      pg.appendChild(el);
     });
   }
 }
@@ -10924,6 +10986,178 @@ function _paintStampPdfNative(PDFLib, page, ph, U, a, fHB){
   }catch(e){}
 }
 
+// ════ v2.9.9 — MODO IMAGEN: fotos/imágenes en página A4, sellables, ════
+// guardadas en su FORMATO ORIGINAL. La foto se presenta sobre una hoja A4
+// blanca (794×1123 px ≈ 210×297 mm a 96 dpi; apaisada si la foto es
+// horizontal). «Sello Rec.»/sello personal se colocan con un clic (mismo
+// motor nvStamps de Word/Excel: arrastrar mueve, doble clic edita la hora,
+// ✕ borra). «Guardar imagen» compone hoja A4 a 300 dpi + foto + sellos y
+// graba en el formato de origen (JPG→JPG, PNG→PNG, WebP→WebP; los que el
+// navegador no sabe re-grabar —GIF/BMP/ICO/AVIF/SVG— salen como PNG).
+function _ldImg(src){
+  return new Promise(function(res,rej){
+    var i=new Image();
+    i.onload=function(){res(i);};
+    i.onerror=function(){rej(new Error('el navegador no puede decodificar esta imagen'));};
+    i.src=src;
+  });
+}
+async function imgTabOpen(file){
+  var nm=String(file.name||''), base=(nm.replace(/\.[^.]+$/,''))||'imagen';
+  var ext=(((nm.match(/\.([^.]+)$/)||[])[1])||'png').toLowerCase();
+  var mime=file.type||('image/'+((ext==='jpg'||ext==='jfif')?'jpeg':(ext==='svg'?'svg+xml':ext)));
+  if(file.size>60*1024*1024)throw new Error('demasiado grande (máx. 60 MB)');
+  setProg(15);
+  var dataUrl=await new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(){res(r.result);};
+    r.onerror=function(){rej(new Error('no se pudo leer el archivo'));};
+    r.readAsDataURL(file);
+  });
+  setProg(45);
+  var img=await _ldImg(dataUrl);   // valida que la imagen decodifique
+  setProg(70);
+  // A4 a 96 dpi: 794×1123 px. Si la foto es horizontal → hoja apaisada.
+  var land=img.naturalWidth>img.naturalHeight;
+  var W=land?1123:794, H=land?794:1123;
+  var tab=nativeTabOpen('image',base,(file.size/1024).toFixed(1)+' KB',function(){
+    var el=document.createElement('div'); el.className='nv-word nv-imgwrap';
+    var page=document.createElement('div'); page.className='nv-imgpage';
+    page.style.width=W+'px'; page.style.height=H+'px';
+    var im2=document.createElement('img'); im2.className='nv-imgfit';
+    im2.src=dataUrl; im2.draggable=false; im2.alt=base;
+    page.appendChild(im2); el.appendChild(page);
+    el.addEventListener('mousedown',function(e){ nvMaybePlaceImage(tab,e); },true);
+    return el;
+  });
+  tab._img={dataUrl:dataUrl,w:img.naturalWidth,h:img.naturalHeight,mime:mime,ext:ext,W:W,H:H};
+  tab.nvStamps=[];
+  nvRenderStamps(tab);
+  setProg(100);setTimeout(hideProg,500);
+  toast(base+' — en página A4 '+(land?'apaisada':'vertical')+' ('+img.naturalWidth+'×'+img.naturalHeight+' px) · lista para sellar','ok');
+  return true;
+}
+// Compone la hoja A4 final (300 dpi) con la foto y los sellos — fiel a la vista
+async function imgComposeCanvas(tab){
+  var im=tab._img;
+  if(!im)throw new Error('la imagen ya no está disponible en esta pestaña');
+  var U=300/96;                                  // vista 96 dpi → salida 300 dpi (impresión)
+  var W=Math.round((im.W||794)*U), H=Math.round((im.H||1123)*U);
+  var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var ctx=cv.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);   // hoja A4 blanca
+  var m=24*U;                                    // mismo margen de 24 px que la vista
+  var aw=W-2*m, ah=H-2*m;
+  var k=Math.min(aw/im.w,ah/im.h);
+  var dw=im.w*k, dh=im.h*k;
+  var img=await _ldImg(im.dataUrl);
+  try{ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';}catch(e){}
+  ctx.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh);   // foto centrada, ajuste completo
+  await nvPaintStampsCanvas(ctx,tab.nvStamps||[],U);
+  return cv;
+}
+// Pinta los sellos (recepción y personal) sobre el canvas — réplica exacta
+// del pintor de anotaciones del editor PDF, escalada por U (WYSIWYG).
+async function nvPaintStampsCanvas(ctx,stamps,U){
+  var logo=null;
+  try{ if(typeof CORPAC_LOGO!=='undefined'&&CORPAC_LOGO)logo=await _ldImg(CORPAC_LOGO); }catch(e){}
+  var sigs={};
+  for(var i=0;i<stamps.length;i++){
+    var g=stamps[i];
+    if(g&&g.type==='sello_recepcion'&&g.sigImg&&!sigs[g.sigImg]){
+      try{ sigs[g.sigImg]=await _ldImg(g.sigImg); }catch(e){ sigs[g.sigImg]=null; }
+    }
+  }
+  stamps.forEach(function(s){
+    ctx.save();
+    ctx.translate(s.x*U,s.y*U);
+    ctx.scale(U,U);
+    if(s.type==='stamp'){
+      var fs=s.size||14;
+      ctx.font='bold '+fs+'px Inter,sans-serif';
+      var tw=ctx.measureText(s.text||'').width;
+      var pad=10, col=s.color||'#c0392b';
+      var bw=tw+pad*2+(s.emoji?26:0);
+      ctx.fillStyle=col+'22'; ctx.strokeStyle=col; ctx.lineWidth=2;
+      ctx.strokeRect(-10,-20-pad,bw,32+pad); ctx.fillRect(-10,-20-pad,bw,32+pad);
+      ctx.fillStyle=col;
+      if(s.emoji){ctx.font='20px serif';ctx.fillText(s.emoji,-22,0);ctx.font='bold '+fs+'px Inter,sans-serif';}
+      ctx.fillText(s.text||'',0,0);
+    }else if(s.type==='sello_recepcion'){
+      ctx.globalAlpha=((s.opacity==null?1:s.opacity)||1);
+      var sw=s.w||220;
+      var rh=(s.txTime||s.txInitials)?103:90;
+      ctx.strokeStyle='#c00000';ctx.lineWidth=2.5;ctx.beginPath();ctx.roundRect(0,0,sw,rh,5);ctx.stroke();
+      var logoH=30;
+      if(logo&&logo.naturalWidth){
+        var lr=logo.naturalWidth/logo.naturalHeight, lw=Math.round(logoH*lr);
+        if(lw>sw-12){lw=sw-12;logoH=Math.round(lw/lr);}
+        ctx.drawImage(logo,(sw-lw)/2,5,lw,logoH);
+      }
+      var sep1=logoH+9;
+      ctx.strokeStyle='rgba(192,0,0,0.35)';ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(8,sep1);ctx.lineTo(sw-8,sep1);ctx.stroke();
+      ctx.textAlign='center';var ty=sep1+14;
+      ctx.fillStyle='#c00000';ctx.font='bold 11px Inter,sans-serif';ctx.fillText('RECIBIDO / RECEIVED',sw/2,ty);ty+=13;
+      ctx.fillStyle='#c00000';ctx.font='bold 10.5px "JetBrains Mono",monospace';ctx.fillText(s.timestamp||'',sw/2,ty);ty+=12;
+      if(s.txTime||s.txInitials){ctx.fillStyle='#c00000';ctx.font='bold 9.5px "JetBrains Mono",monospace';ctx.fillText(selloTxLine(s.txTime||'',(s.txInitials||'').toUpperCase()),sw/2,ty);ty+=11;}
+      ctx.fillStyle='#1a4fa0';ctx.font='bold 9px Inter,sans-serif';ctx.fillText('AIS/ARO \u2013 CORPAC S.A.',sw/2,ty);ty+=11;
+      var sedeCode=currentUser?(currentUser.sede||'SPHI'):'SPHI';
+      var sedeTxt=sedeCode;
+      try{var db2=getDB();var so=db2&&db2.sedes&&db2.sedes.find(function(z){return z.code===sedeCode;});if(so)sedeTxt=so.code+' \u2013 '+so.city;}catch(e){}
+      ctx.fillStyle='#1a4fa0';ctx.font='8px Inter,sans-serif';ctx.fillText(sedeTxt,sw/2,ty);
+      var gap=6,ph=120,py=rh+gap;
+      var pi=s.sigImg?sigs[s.sigImg]:null;
+      if(pi&&pi.naturalWidth){
+        var pr=pi.naturalWidth/pi.naturalHeight, pdw=sw, pdh=Math.round(sw/pr);
+        if(pdh>ph){pdh=ph;pdw=Math.round(ph*pr);}
+        ctx.drawImage(pi,(sw-pdw)/2,py+(ph-pdh)/2,pdw,pdh);
+      }else{
+        ctx.strokeStyle='#cccccc';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+        ctx.strokeRect(sw/2-45,py+8,90,ph-16);ctx.setLineDash([]);
+        ctx.fillStyle='#bbb';ctx.font='8px Inter';ctx.textAlign='center';
+        ctx.fillText('Sello Personal',sw/2,py+ph/2+3);
+      }
+    }
+    ctx.restore();
+  });
+}
+// «Guardar imagen»: A4 + sellos en el FORMATO ORIGINAL de la foto
+async function imgSaveOriginal(tab){
+  var im=tab._img;
+  var cv=await imgComposeCanvas(tab);
+  var mime=im.mime||'image/png', outExt=im.ext||'png';
+  // toDataURL/toBlob degradan en silencio a PNG si el tipo no es grabable:
+  // se detecta comparando el prefijo y se avisa al usuario.
+  var probe=cv.toDataURL(mime);
+  if(probe.indexOf('data:'+mime+',')!==0&&probe.indexOf('data:'+mime+';')!==0){
+    toast('El formato .'+outExt+' no se puede volver a grabar aquí — se guarda como PNG (sin pérdida)');
+    mime='image/png'; outExt='png';
+  }
+  var blob=await new Promise(function(res){cv.toBlob(function(b){res(b);},mime,0.92);});
+  if(!blob)throw new Error('no se pudo generar el archivo de imagen');
+  dlBlob(blob,tab.fileName+'.'+outExt);
+  tab._dirty=false; renderDocTabs();
+  var sb=document.getElementById('sbStatus'); if(sb)sb.textContent=tab.fileName;
+  toast('✅ Guardado '+tab.fileName+'.'+outExt+' — hoja A4 con tus sellos, en su formato original','ok');
+}
+// «Exportar PDF» para imágenes: la misma hoja A4 compuesta, como PDF A4
+async function imgPdfBytes(tab){
+  var im=tab._img;
+  var cv=await imgComposeCanvas(tab);
+  var PDFLib=window.PDFLib;
+  if(!PDFLib)throw new Error('pdf-lib no disponible');
+  var dataUrl=cv.toDataURL('image/jpeg',0.92);
+  var bin=atob(dataUrl.split(',')[1]), u8=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  var doc=await PDFLib.PDFDocument.create();
+  var jpg=await doc.embedJpg(u8);
+  var pw=595.28, ph=841.89;                     // A4 en puntos PDF
+  if(im.W>im.H){var t=pw;pw=ph;ph=t;}           // foto horizontal → A4 apaisado
+  var page=doc.addPage([pw,ph]);
+  page.drawImage(jpg,{x:0,y:0,width:pw,height:ph});
+  return await doc.save();
+}
+
 // ════ v2.9.0 — ACCIONES NATIVAS (ribbon / atajos) ════
 async function nativeSaveOriginal(){
   var tab=docTabGet(activeTabId);
@@ -10931,11 +11165,13 @@ async function nativeSaveOriginal(){
   try{
     if(tab.kind==='word') await wordSaveDocx(tab);
     else if(tab.kind==='excel'){ if(tab._xl.isXlsSrc) await xlsToXlsxSave(tab); else await xlsxPatchSave(tab); }
+    else if(tab.kind==='image') await imgSaveOriginal(tab);
   }catch(e){}
 }
 async function nativePdfBytes(tab){
   if(tab.kind==='word') return await wordExportPdfBytes(tab);
   if(tab.kind==='excel') return await excelToPdfBytes(null, tab.fileName, tab._xl.isCsv, tab._xl, tab.nvStamps||[]);
+  if(tab.kind==='image') return await imgPdfBytes(tab);
   throw new Error('Pestaña no compatible');
 }
 async function nativeExportPdf(){
@@ -10990,6 +11226,12 @@ function nativeUndo(){
     return;
   }
   if(tab.kind==='excel') xlUndo(tab);
+  // v2.9.9 — IMAGEN: deshacer quita el último sello colocado
+  if(tab.kind==='image'&&tab.nvStamps&&tab.nvStamps.length){
+    tab.nvStamps.pop();
+    nvRenderStamps(tab);
+    toast('Último sello quitado');
+  }
 }
 
 // ════ v2.9.0 — MODO EXCEL: geometría/estilos del modelo (px de pantalla) ════
