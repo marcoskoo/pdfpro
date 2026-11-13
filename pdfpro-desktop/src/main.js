@@ -15,8 +15,12 @@ const fs = require('fs');
 const APP_DIR = path.join(__dirname, 'app');
 const IS_DEV = !app.isPackaged;
 const IS_SMOKE = process.argv.includes('--smoke');
-const OPEN_EXTS = ['.pdf', '.xlsx', '.xlsm', '.xls', '.csv', '.docx', '.doc'];
+const OPEN_EXTS = ['.pdf', '.xlsx', '.xlsm', '.xls', '.csv', '.docx', '.doc',
+  '.jpg', '.jpeg', '.jfif', '.png', '.gif', '.bmp', '.webp', '.avif', '.ico', '.svg'];
 const OAUTH_REDIRECT = 'https://propdf-editor.netlify.app';
+
+/* Identidad de la app en Windows (agrupa notificaciones y accesos directos) */
+app.setAppUserModelId('pe.gob.corpac.pdfpro');
 
 /* ── Esquema app:// (debe registrarse antes de que la app esté lista) ── */
 protocol.registerSchemesAsPrivileged([
@@ -130,6 +134,9 @@ function createWindow() {
 
   win.on('closed', () => { win = null; });
 
+  // v2.9.12 — ofrecer (una vez) establecer PDFPro como aplicación predeterminada
+  setTimeout(maybeOfferDefaultApps, 3500);
+
   if (IS_DEV) {
     win.webContents.openDevTools({ mode: 'detach' });
   }
@@ -152,10 +159,11 @@ function buildMenu() {
               title: 'Abrir documento',
               properties: ['openFile', 'multiSelections'],
               filters: [
-                { name: 'Documentos compatibles', extensions: ['pdf', 'xlsx', 'xlsm', 'xls', 'csv', 'docx', 'doc'] },
+                { name: 'Documentos e imágenes compatibles', extensions: ['pdf', 'xlsx', 'xlsm', 'xls', 'csv', 'docx', 'doc', 'jpg', 'jpeg', 'jfif', 'png', 'gif', 'bmp', 'webp', 'avif', 'ico', 'svg'] },
                 { name: 'Documentos PDF', extensions: ['pdf'] },
                 { name: 'Excel', extensions: ['xlsx', 'xlsm', 'xls', 'csv'] },
                 { name: 'Word', extensions: ['docx', 'doc'] },
+                { name: 'Imágenes', extensions: ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'bmp', 'webp', 'avif', 'ico', 'svg'] },
                 { name: 'Todos los archivos', extensions: ['*'] }
               ]
             });
@@ -198,6 +206,27 @@ function buildMenu() {
     {
       label: 'Ayuda',
       submenu: [
+        {
+          label: 'Hacer de PDFPro la aplicación predeterminada…',
+          click: () => {
+            dialog.showMessageBox(win, {
+              type: 'info',
+              title: 'Aplicación predeterminada',
+              message: 'Se abrirá la configuración de Windows «Aplicaciones predeterminadas».',
+              detail: 'Elige PDFPro en la lista y marca los formatos que quieres que abra:\n' +
+                'PDF, Word (.docx/.doc), Excel (.xlsx/.xls/.csv) e imágenes (JPG, PNG, GIF, BMP, WebP…).\n\n' +
+                'Nota: Windows 10/11 exige confirmar los valores predeterminados en esta\n' +
+                'pantalla; ninguna aplicación puede cambiarlos por su cuenta.',
+              buttons: ['Abrir configuración', 'Cancelar'],
+              defaultId: 0,
+              cancelId: 1,
+              noLink: true
+            }).then(({ response }) => {
+              if (response === 0) openDefaultAppsSettings();
+            }).catch(() => {});
+          }
+        },
+        { type: 'separator' },
         {
           label: 'Acerca de PDFPro',
           click: () => {
@@ -247,6 +276,60 @@ function sendOpenFile(filePath) {
   } catch (e) {
     dialog.showErrorBox('PDFPro', 'No se pudo abrir el archivo:\n' + filePath + '\n\n' + e.message);
   }
+}
+
+/* ── «Aplicación predeterminada» (v2.9.12) ──
+   Windows 10/11 no permite que un programa se ponga como
+   predeterminado por su cuenta: el usuario debe confirmarlo en la
+   configuración del sistema. La app lo ofrece una vez (tras el primer
+   arranque) y deja la opción siempre disponible en el menú Ayuda.
+   Con el instalador, PDFPro queda registrado para esos formatos y
+   Windows lo ofrece en «¿Cómo quieres abrir este archivo?» y en
+   «Abrir con → Elegir otra aplicación». */
+function settingsPath() {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+function readSetting(key) {
+  try {
+    return JSON.parse(fs.readFileSync(settingsPath(), 'utf8'))[key];
+  } catch (e) {
+    return undefined;
+  }
+}
+function writeSetting(key, val) {
+  try {
+    let data = {};
+    try { data = JSON.parse(fs.readFileSync(settingsPath(), 'utf8')) || {}; } catch (e) { /* nuevo */ }
+    data[key] = val;
+    fs.writeFileSync(settingsPath(), JSON.stringify(data, null, 2));
+  } catch (e) { /* sin permisos: solo deja de persistir la oferta */ }
+}
+function openDefaultAppsSettings() {
+  shell.openExternal('ms-settings:defaultapps').catch(() => {});
+  writeSetting('defaultAppsOffer', 'done');
+}
+function maybeOfferDefaultApps() {
+  if (IS_SMOKE) return;
+  const st = readSetting('defaultAppsOffer');
+  if (st === 'done' || st === 'never') return;
+  if (!win || win.isDestroyed()) return;
+  dialog.showMessageBox(win, {
+    type: 'question',
+    title: 'PDFPro como aplicación predeterminada',
+    message: '¿Quieres que PDFPro sea la aplicación predeterminada para tus documentos e imágenes?',
+    detail: 'PDFPro puede abrir y editar PDF, Word (.docx/.doc), Excel (.xlsx/.xls/.csv) e imágenes (JPG, PNG, GIF, BMP, WebP…).\n\n' +
+      'Al continuar se abre la configuración de Windows «Aplicaciones predeterminadas»:\n' +
+      'elige PDFPro y marca los formatos que quieras. También podrás hacerlo\n' +
+      'en cualquier momento desde el menú Ayuda.',
+    buttons: ['Hacer predeterminada', 'Ahora no', 'No volver a preguntar'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true
+  }).then(({ response }) => {
+    if (response === 0) openDefaultAppsSettings();
+    else if (response === 2) writeSetting('defaultAppsOffer', 'never');
+    /* «Ahora no» → se volverá a ofrecer en el siguiente arranque */
+  }).catch(() => {});
 }
 
 /* ── Descargas: aviso al terminar ── */

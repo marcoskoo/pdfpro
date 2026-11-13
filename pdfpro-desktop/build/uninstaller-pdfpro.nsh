@@ -263,6 +263,27 @@ Section "un.${UNINSTALL_SECTION_NAME}"
 
   !ifmacrodef unregisterFileAssociations
     !insertmacro unregisterFileAssociations
+  !else
+    ; v2.9.12 — con script de instalador personalizado, electron-builder no genera
+    ; unregisterFileAssociations: limpiamos aquí las asociaciones registradas
+    ; (misma lista que fileAssociations de package.json)
+    !insertmacro APP_UNASSOCIATE "pdf" "PDFPro.Document.PDF"
+    !insertmacro APP_UNASSOCIATE "docx" "PDFPro.Document.Word"
+    !insertmacro APP_UNASSOCIATE "doc" "PDFPro.Document.Word"
+    !insertmacro APP_UNASSOCIATE "xlsx" "PDFPro.Document.Excel"
+    !insertmacro APP_UNASSOCIATE "xlsm" "PDFPro.Document.Excel"
+    !insertmacro APP_UNASSOCIATE "xls" "PDFPro.Document.Excel"
+    !insertmacro APP_UNASSOCIATE "csv" "PDFPro.Document.Excel"
+    !insertmacro APP_UNASSOCIATE "jpg" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "jpeg" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "jfif" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "png" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "gif" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "bmp" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "webp" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "avif" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "ico" "PDFPro.Image"
+    !insertmacro APP_UNASSOCIATE "svg" "PDFPro.Image"
   !endif
 
   Var /GLOBAL isDeleteAppData

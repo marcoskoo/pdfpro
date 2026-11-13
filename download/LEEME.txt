@@ -1,7 +1,62 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.11 — Versión de escritorio para Windows
+  PDFPro 2.9.12 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.12 (Windows ofrece abrir los archivos con PDFPro)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «que al abrir un archivo Windows pregunte si deseo
+  abrir el archivo con esta aplicación, y que ofrezca hacerlo de
+  manera predeterminada».
+
+  · El instalador registra PDFPro para 17 formatos: PDF (.pdf),
+    Word (.docx/.doc), Excel (.xlsx/.xlsm/.xls/.csv) e imágenes
+    (.jpg/.jpeg/.jfif/.png/.gif/.bmp/.webp/.avif/.ico/.svg).
+    Al abrir un archivo de esos tipos, Windows muestra a PDFPro en
+    «¿Cómo quieres abrir este archivo?» y en el clic derecho →
+    «Abrir con → Elegir otra aplicación» (con la casilla «Usar
+    siempre esta aplicación»).
+  · Al primer arranque, la app PREGUNTA si quieres hacerla la
+    aplicación predeterminada: un botón abre la configuración de
+    Windows «Aplicaciones predeterminadas» para que marques los
+    formatos con un clic. (Windows 10/11 exige esa confirmación:
+    ninguna aplicación puede cambiarse a sí misma de forma
+    predeterminada por su cuenta — es una medida de seguridad del
+    sistema). La opción queda siempre disponible en el menú
+    «Ayuda → Hacer de PDFPro la aplicación predeterminada…».
+  · Doble clic en un archivo (o «Abrir con → PDFPro») → la app lo
+    abre directamente como pestaña. Ahora también con IMÁGENES
+    (antes solo PDF/Word/Excel; y las imágenes abiertas así se
+    guardan ya en su formato correcto, p. ej. JPG→JPG).
+  · «Archivo → Abrir archivo…» ahora incluye las imágenes en sus
+    filtros.
+  · Al desinstalar, las asociaciones se limpian del registro (no
+    quedan entradas huérfanas de PDFPro en «Abrir con»).
+
+  IMPORTANTE: usa el instalador PDFPro-Setup-2.9.12.exe para tener
+  las asociaciones (la versión Portable no registra nada en el
+  sistema, es su naturaleza). Si ya tenías PDFPro instalado,
+  ejecuta el Setup encima: se actualiza conservando tus datos.
+
+VERIFICADO PUNTO A PUNTO (2.9.12):
+  · Script real del instalador compilado (capturado del
+    empaquetador): las 17 asociaciones APP_ASSOCIATE presentes
+    (PDF→PDFPro.Document.PDF, docx/doc→Word, xlsx/xlsm/xls/csv→
+    Excel, 10 formatos de imagen→PDFPro.Image) con comando de
+    apertura «PDFPro.exe "%1"» e iconos instalados en resources.
+  · Desinstalador compilado con las 17 limpiezas APP_UNASSOCIATE.
+  · Flujo «abrir desde Windows» simulado en navegador con el
+    desktop-bridge real: imagen JPG → pestaña de imagen con tipo
+    image/jpeg y hoja=foto completa; PDF → cargado (1 página,
+    2 pestañas); saludo del puente (ready) correcto.
+  · Smoke de Electron con el main.js 2.9.12: app arranca, puente
+    presente, todas las librerías cargan, protocolo app:// OK,
+    captura de pantalla con contenido (no en blanco).
+  · Sin errores de consola nuevos.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.11 (la hoja ES la foto completa)
+────────────────────────────────────────────────────────────────────
 
 NOVEDADES DE LA VERSIÓN 2.9.11 (la hoja ES la foto COMPLETA)
 ────────────────────────────────────────────────────────────────────

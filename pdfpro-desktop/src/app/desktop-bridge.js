@@ -21,7 +21,12 @@
       xls: 'application/vnd.ms-excel',
       csv: 'text/csv',
       docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      doc: 'application/msword'
+      doc: 'application/msword',
+      // v2.9.12 — imágenes abiertas desde Windows («Abrir con»)
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', jfif: 'image/jpeg',
+      png: 'image/png', gif: 'image/gif', bmp: 'image/bmp',
+      webp: 'image/webp', avif: 'image/avif', ico: 'image/x-icon',
+      svg: 'image/svg+xml'
     };
     return m[e] || 'application/octet-stream';
   }

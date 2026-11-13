@@ -1,9 +1,190 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.8 — Versión de escritorio para Windows
+  PDFPro 2.9.12 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.8 (sellos también al guardar Word)
+NOVEDADES DE LA VERSIÓN 2.9.12 (Windows ofrece abrir los archivos con PDFPro)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «que al abrir un archivo Windows pregunte si deseo
+  abrir el archivo con esta aplicación, y que ofrezca hacerlo de
+  manera predeterminada».
+
+  · El instalador registra PDFPro para 17 formatos: PDF (.pdf),
+    Word (.docx/.doc), Excel (.xlsx/.xlsm/.xls/.csv) e imágenes
+    (.jpg/.jpeg/.jfif/.png/.gif/.bmp/.webp/.avif/.ico/.svg).
+    Al abrir un archivo de esos tipos, Windows muestra a PDFPro en
+    «¿Cómo quieres abrir este archivo?» y en el clic derecho →
+    «Abrir con → Elegir otra aplicación» (con la casilla «Usar
+    siempre esta aplicación»).
+  · Al primer arranque, la app PREGUNTA si quieres hacerla la
+    aplicación predeterminada: un botón abre la configuración de
+    Windows «Aplicaciones predeterminadas» para que marques los
+    formatos con un clic. (Windows 10/11 exige esa confirmación:
+    ninguna aplicación puede cambiarse a sí misma de forma
+    predeterminada por su cuenta — es una medida de seguridad del
+    sistema). La opción queda siempre disponible en el menú
+    «Ayuda → Hacer de PDFPro la aplicación predeterminada…».
+  · Doble clic en un archivo (o «Abrir con → PDFPro») → la app lo
+    abre directamente como pestaña. Ahora también con IMÁGENES
+    (antes solo PDF/Word/Excel; y las imágenes abiertas así se
+    guardan ya en su formato correcto, p. ej. JPG→JPG).
+  · «Archivo → Abrir archivo…» ahora incluye las imágenes en sus
+    filtros.
+  · Al desinstalar, las asociaciones se limpian del registro (no
+    quedan entradas huérfanas de PDFPro en «Abrir con»).
+
+  IMPORTANTE: usa el instalador PDFPro-Setup-2.9.12.exe para tener
+  las asociaciones (la versión Portable no registra nada en el
+  sistema, es su naturaleza). Si ya tenías PDFPro instalado,
+  ejecuta el Setup encima: se actualiza conservando tus datos.
+
+VERIFICADO PUNTO A PUNTO (2.9.12):
+  · Script real del instalador compilado (capturado del
+    empaquetador): las 17 asociaciones APP_ASSOCIATE presentes
+    (PDF→PDFPro.Document.PDF, docx/doc→Word, xlsx/xlsm/xls/csv→
+    Excel, 10 formatos de imagen→PDFPro.Image) con comando de
+    apertura «PDFPro.exe "%1"» e iconos instalados en resources.
+  · Desinstalador compilado con las 17 limpiezas APP_UNASSOCIATE.
+  · Flujo «abrir desde Windows» simulado en navegador con el
+    desktop-bridge real: imagen JPG → pestaña de imagen con tipo
+    image/jpeg y hoja=foto completa; PDF → cargado (1 página,
+    2 pestañas); saludo del puente (ready) correcto.
+  · Smoke de Electron con el main.js 2.9.12: app arranca, puente
+    presente, todas las librerías cargan, protocolo app:// OK,
+    captura de pantalla con contenido (no en blanco).
+  · Sin errores de consola nuevos.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.11 (la hoja ES la foto completa)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.11 (la hoja ES la foto COMPLETA)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «se ve la imagen al tamaño del formato
+  A4, pero no permite ver el resto de la hoja, solo se visualiza
+  más o menos un 60% de la foto».
+
+  · La hoja ahora SE ADAPTA A LA FOTO: se ve la foto COMPLETA al
+    tamaño máximo que permite el A4 (la hoja adopta las proporciones
+    exactas de la foto). Nada recortado, nada de fondo blanco.
+    Ejemplo: una foto alta de celular (972×2160) se muestra entera
+    en una hoja de 505×1123 px; antes, al «llenar A4», solo se veía
+    el 63% de la foto.
+  · El botón de la cinta ahora ALTERNA TRES presentaciones:
+      1. «Hoja = foto» (por defecto) — foto completa, sin recortes
+         ni fondo blanco, al tamaño máximo A4.
+      2. «A4 exacto» — hoja A4 literal 794×1123 (o apaisada), la
+         foto la llena por completo recortando lo que sobra.
+      3. «Con margen» — foto completa centrada sobre hoja A4
+         blanca con un pequeño margen.
+    El guardado SIEMPRE respeta la presentación activa: lo que ves
+    es lo que se descarga (a 300 dpi, formato original de la foto).
+  · Los sellos colocados se REUBICAN solos al cambiar de
+    presentación (si la hoja se hace más pequeña, los sellos entran
+    dentro de ella; ninguno queda fuera).
+  · Además corrige un detalle de precisión presente desde la
+    2.9.9: la hoja se estaba encogiendo un poco a la altura de la
+    pantalla (p. ej. 1123 px se veían como 810), por lo que los
+    sellos podían caer un poco más arriba de donde hiciste clic.
+    Ahora la hoja se muestra a su tamaño real y el sello cae
+    EXACTAMENTE donde haces clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.11), flujo completo automatizado:
+  · Foto alta 972×2160 (el caso del 60%) → hoja 505×1123 con la
+    foto OCUPÁNDOLA por completo (rectángulo de la foto = rectángulo
+    de la hoja, sin recorte) y modo «Hoja = foto» activo por defecto.
+  · Guardar → JPEG real 1578×3509 (505×1123 a 300 dpi) con las 4
+    esquinas tomadas de la foto (0 blancas: sin fondo blanco) y el
+    sello de recepción grabado encima (20 909 píxeles de su marco).
+  · Alternar a «A4 exacto» → hoja 794×1123, la foto la llena
+    (cover). Alternar a «Con margen» → foto completa centrada con
+    margen (746 px de ancho dentro de la hoja). Volver a «Hoja =
+    foto» → 505×1123 de nuevo.
+  · Dos sellos colocados en hoja A4 exacta (uno abajo-derecha);
+    al volver a «Hoja = foto» (hoja más angosta) el sello se
+    reubicó automáticamente dentro de la hoja (de x=574 a x=283).
+  · Segunda foto 1200×1600 → hoja 794×1059, foto completa visible.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.10 (la foto llena la hoja A4, recortando)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.10 (la foto ES la hoja A4)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «la foto se visualiza sobre un fondo
+  blanco; lo que se quiere es que la foto se muestre del tamaño A4».
+
+  · Ahora la foto LLENA TODA LA HOJA A4 por defecto: es la propia
+    página, sin fondo blanco ni márgenes. Lo que sobra del encuadre
+    se recorta (como al imprimir a página completa).
+  · Nuevo botón «Ver completa» en la cinta de la pestaña de imagen:
+    un clic muestra la foto ENTERA con un pequeño margen (el
+    comportamiento anterior), por si alguna foto no debe recortarse.
+    El botón alterna entre ambos modos («Ver completa» ⇄ «Llenar
+    hoja») y el guardado SIEMPRE respeta el modo que estás viendo:
+    lo que ves es lo que se descarga.
+  · El tamaño de salida no cambia: hoja A4 a 300 dpi (2481×3509 o
+    3509×2481 si es apaisada), en el formato original de la foto
+    (JPG→JPG, PNG→PNG, WebP→WebP; otros → PNG con aviso).
+
+VERIFICADO PUNTO A PUNTO (2.9.10), flujo completo automatizado:
+  · Foto vertical con esquinas rojas → hoja A4 vertical 794×1123,
+    modo «cover» activo por defecto, foto llenando el papel.
+  · Guardar → JPEG real (cabecera JPEG) 2481×3509 con las CUATRO
+    esquinas del archivo tomadas de la foto (0 esquinas blancas:
+    sin fondo blanco) y el sello de recepción grabado encima.
+  · Botón «Ver completa» → la foto pasa a verse entera con margen;
+    guardar en ese modo produce el archivo con las 4 esquinas
+    blancas (margen de hoja) — el modo activo se respeta en la
+    descarga.
+  · Toggle de vuelta a «Llenar hoja» → la foto vuelve a llenar el
+    A4, el sello colocado sigue en su sitio.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.9 (fotos e imágenes en página A4)
+────────────────────────────────────────────────────────────────────
+  Ahora puedes cargar FOTOS o cualquier imagen (JPG, PNG, GIF, BMP,
+  WebP, AVIF, ICO, SVG) y la app la presenta sobre una página A4 en
+  blanco (apaisada si la foto es horizontal), lista para colocarle
+  el sello de recepción y el sello personal — igual que en Word y
+  Excel:
+
+  · «Abrir» o arrastra la foto: se abre en su propia pestaña «IMG».
+  · «Sello Rec.» → haz clic sobre la foto: el sello queda colocado
+    en la hoja A4 (se arrastra para moverlo, doble clic edita su
+    hora, ✕ lo borra, Ctrl+Z quita el último).
+  · «Guardar imagen» descarga la hoja A4 (300 dpi, calidad de
+    impresión) con la foto y los sellos, EN EL FORMATO ORIGINAL:
+    un .jpg se guarda como .jpg, un .png como .png, un .webp como
+    .webp. Si el formato de origen no se puede volver a grabar en
+    el navegador (GIF/BMP/ICO/AVIF/SVG), se guarda como PNG sin
+    pérdida y se te avisa.
+  · «Exportar PDF» también funciona: la misma hoja A4 con tus
+    sellos, como PDF puro.
+  · Se pueden abrir varias imágenes a la vez: cada una en su
+    pestaña (mezcladas con PDF/Excel/Word en la misma carga).
+
+VERIFICADO PUNTO A PUNTO (2.9.9), con la app real, flujo completo
+automatizado en el navegador:
+  · Dos imágenes a la vez (JPG vertical 1600×2000 + PNG horizontal
+    1920×1080): dos pestañas IMG, A4 vertical 794×1123 y A4
+    apaisada 1123×794, foto centrada con margen.
+  · Sello de recepción colocado con un clic dentro de la hoja
+    (RECIBIDO/RECEIVED + fecha y hora UTC + AIS/ARO – CORPAC +
+    sede SPHI – Chiclayo), pestaña marcada como modificada.
+  · Guardar PNG → archivo PNG real (cabecera PNG) de 3509×2481
+    px (= A4 apaisado a 300 dpi) con el sello grabado encima.
+  · Guardar JPG → archivo JPEG real (cabecera JPEG) de 2481×3509
+    px (= A4 vertical a 300 dpi), misma extensión que la original.
+  · Exportar PDF → PDF puro (cabecera %PDF-1.7).
+  · GIF de prueba → guardado como PNG con aviso (comportamiento
+    documentado arriba).
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.8 (sellos también al guardar Word)
 ────────────────────────────────────────────────────────────────────
   Corrige «abro un archivo excel/word, coloco sello, exporto, abro
   el archivo exportado y no hay sello». Causa real encontrada:
