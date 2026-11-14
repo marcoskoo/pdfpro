@@ -59,5 +59,19 @@ t('una sola palabra → 1 letra', FPLScan.inicialesDe('Cher'), 'C');
 t('nombre vacío', FPLScan.inicialesDe(''), '');
 t('minúsculas → mayúsculas', FPLScan.inicialesDe('marcos koo'), 'MK');
 
+console.log('══ 8. v2.9.17 — formularios con una casilla por carácter ══');
+t('«O B 2 1 4 7» suelto → OB2147', FPLScan.extraerMatricula('La aeronave O B 2 1 4 7 despega').matricula, 'OB2147');
+t('etiqueta + «C M P 4 6 8» → CMP468', FPLScan.extraerMatricula('IDENTIFICACION DE AERONAVE: C M P 4 6 8').matricula, 'CMP468');
+t('celdas Excel «O,B,2,1,4,7» → OB2147', FPLScan.extraerMatricula('7. IDENTIFICACION,DE,AERONAVE,,O,B,2,1,4,7,8. REGLAS DE VUELO').matricula, 'OB2147');
+t('«REG/ HP 1520» con espacios → HP1520', FPLScan.extraerMatricula('18. OTROS DATOS: REG/ HP 1520 SEL/MPJR').matricula, 'HP1520');
+t('«R E G / H P 1 5 2 0» extremo → HP1520', FPLScan.extraerMatricula('18: R E G / H P 1 5 2 0 SEL/MPJR').matricula, 'HP1520');
+t('texto normal NO se compacta (TAF sigue null)', FPLScan.extraerMatricula('TAF SPHI 130500Z 1306/1406 12010KT 8000 SCT020 PROB40 TEMPO RA'), null);
+
+console.log('══ 9. v2.9.17 — pareceFPL (aviso «FPL sin matrícula») ══');
+t('télex (FPL- sí es FPL', FPLScan.pareceFPL('(FPL-CM468-IS -N0450F180 DCT SPHI -DOF/261111 EET/0220 SKED0110'), true);
+t('formulario PLAN DE VUELO sí es FPL', FPLScan.pareceFPL('PLAN DE VUELO\n7. IDENTIFICACION DE AERONAVE: CMP 468\n8. REGLAS DE VUELO I S\n13. AERODROMO DE SALIDA SPJC 0737'), true);
+t('oficio NO es FPL', FPLScan.pareceFPL('Oficio múltiple N.º 214-2026: se adjunta el cuadro de personal de la oficina AIS para su conocimiento'), false);
+t('TAF NO es FPL', FPLScan.pareceFPL('TAF SPHI 130500Z 1306/1406 12010KT 8000 SCT020 PROB40 TEMPO RA'), false);
+
 console.log(fallos === 0 ? '\nTODAS LAS PRUEBAS PASARON ✓' : '\nFALLOS: ' + fallos);
 process.exit(fallos === 0 ? 0 : 1);

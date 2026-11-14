@@ -4,7 +4,7 @@
 #   1) FPL télex (callsign FAP211 en campo 7 + REG/OB1630 en el 18)
 #        → «Matrícula» = OB1630 (prioridad REG/) + «Iniciales» = EV (auto)
 #   2) FPL formulario (casillero 7 con OB-2147) → OB2147
-#   3) Oficio sin matrícula → el campo NO se toca (sigue OB2147)
+#   3) Oficio sin matrícula → el campo se LIMPIA (v2.9.17: no arrastra el FPL anterior)
 #   4) Sincronía con el panel móvil + persistencia sessionStorage
 set -u
 APP="http://localhost:3000/pdfpro/index.html"
@@ -66,11 +66,11 @@ step "5. Cargar FPL formulario (casillero 7: OB-2147) → espera OB2147"
 CARGAR tmp_e2e_fpl_form.pdf
 CAMPO OB2147 || exit 1
 
-step "6. Cargar oficio SIN matrícula → el campo no se toca (sigue OB2147)"
+step "6. Cargar oficio SIN matrícula → el campo se limpia (v2.9.17)"
 sleep 3
 CARGAR tmp_e2e_oficio.pdf
 sleep 6
-EV "document.getElementById('selloMatricula').value==='OB2147' ? '✓ sin matrícula → campo intacto (OB2147)' : '✗ cambió a: '+document.getElementById('selloMatricula').value"
+EV "document.getElementById('selloMatricula').value==='' ? '✓ no-FPL → campo limpio (v2.9.17)' : '✗ quedó: '+document.getElementById('selloMatricula').value"
 
 step "7. Nombre de archivo compuesto (MATRÍCULA INICIALES)"
-EV "fplNombreRegistro('documento_exportado.pdf')"
+EV "(function(){var m=document.getElementById('selloMatricula');m.value='OB2147';m.dispatchEvent(new Event('input'));return fplNombreRegistro('documento_exportado.pdf');})()"

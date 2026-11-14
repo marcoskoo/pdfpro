@@ -1,9 +1,56 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.16 — Versión de escritorio para Windows
+  PDFPro 2.9.17 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.16 (iniciales del operador de 2 letras)
+NOVEDADES DE LA VERSIÓN 2.9.17 (correcciones al escaneo FPL)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «he cargado 3 planes de vuelo y solo detecto una
+  sola matrícula, habiendo errores en la identificación de los otros 2.
+  Al cambiar de usuario aún se visualizan las iniciales del usuario
+  anterior».
+
+  CORREGIDO — matrícula en los FPL de Excel:
+  · Los FPL que llegan en .xlsx/.xls (los formularios ATC de las líneas
+    aéreas) NO se escaneaban: ahora se leen todas las hojas del libro y
+    la matrícula se detecta igual que en PDF/Word.
+  · Verificado con tus archivos reales «ATC CM468 11NOV»:
+    el .xlsx y el .pdf detectan HP1520 (casillero 18, ítem REG/HP1520).
+
+  CORREGIDO — la matrícula del FPL anterior ya no se arrastra:
+  · Al abrir otro archivo, el campo «Matrícula» parte de cero: si el
+    nuevo archivo no trae matrícula, queda VACÍO (antes mostraba la del
+    FPL anterior y podías sellar con la matrícula equivocada).
+  · Si el archivo ES un FPL pero no se reconoce la matrícula, aparece
+    el aviso «⚠ FPL sin matrícula reconocida — escríbela…» para que la
+    escribas a mano. Con documentos que no son FPL (oficios, NOTAM) el
+    campo simplemente queda limpio, sin avisos.
+  · Los formularios con UNA CASILLA POR CARÁCTER («C M P 4 6 8» en
+    casillero 7, típico de las aerolíneas) ahora se compactan antes de
+    buscar: «O B 2 1 4 7» → OB2147.
+
+  CORREGIDO — iniciales al cambiar de usuario:
+  · Al cambiar de usuario, las iniciales del campo cambian INMEDIATO a
+    las del nuevo usuario con sesión (antes quedaban las del anterior
+    aunque el campo mostrara otro nombre).
+  · Al cerrar sesión se limpian las iniciales y la matrícula: el
+    siguiente usuario empieza de cero.
+  · Si escribes tus iniciales a mano durante la sesión, se respetan.
+
+VERIFICADO PUNTO A PUNTO (2.9.17):
+  · 45 pruebas unitarias del escáner (27 anteriores + 6 de casillas por
+    carácter + 4 del aviso «FPL sin matrícula» + 8 de iniciales) ✓
+  · E2E con TUS ARCHIVOS REALES ATC CM468: .xlsx → HP1520 · .pdf →
+    HP1520 · oficio → campo limpio · FPL sin matrícula → aviso y campo
+    vacío · cambio de usuario → iniciales «AT» al instante y matrícula
+    limpia · recarga con el mismo usuario → la matrícula se conserva ✓
+  · Regresión completa del escaneo: télex → OB1630 · formulario →
+    OB2147 · nombre final «OB2147 EV.pdf» ✓
+  · Smoke de la app de escritorio empaquetada: fplScanCompacta y
+    fplScanAviso = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.16 (iniciales del operador de 2 letras)
 ────────────────────────────────────────────────────────────────────
   Lo que pediste: «solo 2 (letras) iniciales del operador (inicial del
   primer nombre e inicial del apellido paterno)».

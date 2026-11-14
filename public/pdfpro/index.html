@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.16 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.17 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1992,7 +1992,17 @@ function doRegister(){
   });
 }
 function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
-function logoutAll(){currentUser=null;clearSession();showLayer('loginLayer');toast('Sesión cerrada');}
+function logoutAll(){
+  currentUser=null;clearSession();
+  // v2.9.17 — al cerrar sesión no quedan las iniciales ni la matrícula del usuario anterior
+  try{sessionStorage.removeItem('fpl_user');sessionStorage.removeItem('fpl_matricula');}catch(e){}
+  try{
+    var _li=document.getElementById('selloTxInitials'),_lm=document.getElementById('mobSelloTxInitials');
+    var _mi=document.getElementById('selloMatricula'),_mm=document.getElementById('mobSelloMatricula');
+    if(_li)_li.value='';if(_lm)_lm.value='';if(_mi)_mi.value='';if(_mm)_mm.value='';
+  }catch(e){}
+  showLayer('loginLayer');toast('Sesión cerrada');
+}
 
 // ════ SUBSCRIPTION ════
 var selectedPlan=null,selectedPayMethod=null;
@@ -2625,7 +2635,7 @@ async function initEditor(){
   buildSwatches();
   buildStampGrid();
   updateSelloPreview();
-  try{fplAutoIniciales();}catch(e){} // v2.9.15 — iniciales del operador dueño del sello activo
+  try{fplSesionUsuario();}catch(e){} // v2.9.17 — usuario con sesión: al cambiar de usuario, iniciales nuevas + FPL limpio
   renderSigLib();
   updateDrivePathLabel();
   updateDriveConnectBtn();
@@ -4505,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.16',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.17',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -8504,6 +8514,7 @@ function docLegacyBlocks(txt){
 async function handleFileOpen(file){
   if(!file)return;
   var nm=String(file.name||'');
+  try{fplResetMatricula();}catch(e){} // v2.9.17 — cada archivo nuevo parte de cero: nada de la matrícula del FPL anterior
   // v2.9.9 — IMÁGENES: se presentan sobre una página A4 para colocar sellos
   // y se guardan en su formato original (JPG/PNG/WebP; otros formatos → PNG)
   if(isImageFileName(nm)||(file.type&&file.type.indexOf('image/')===0)){
@@ -9984,8 +9995,12 @@ async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero',
    ej. REG/OB2147) y se copia sola a «Matrícula (Aeronave / Espacio)».
    Las iniciales del operador (2 letras: primer nombre + apellido paterno)
    se rellenan con las del dueño del sello activo (usuario con sesión).
-   PDF/Word con texto → lectura directa;
-   PDF escaneado o foto de FPL → OCR (Tesseract) de la 1.ª página. */
+   PDF/Word/Excel con texto → lectura directa;
+   PDF escaneado o foto de FPL → OCR (Tesseract) de la 1.ª página.
+   v2.9.17 — el Excel (.xlsx/.xls) también se escanea; cada archivo nuevo
+   parte de cero (la matrícula del FPL anterior ya no se arrastra); al
+   cambiar de usuario las iniciales cambian de inmediato; formularios con
+   una casilla por carácter («C M P 4 6 8») se compactan antes de buscar. */
 function fplSetMatricula(v,origen){
   var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
   if(el){el.value=v;try{fplMatriculaChanged();}catch(e){}}
@@ -9994,16 +10009,40 @@ function fplSetMatricula(v,origen){
   try{updateSelloPreview();}catch(e){}
   toast('📋 Matrícula detectada: '+v+(origen?' — '+origen:''),'ok');
 }
-function fplAutoIniciales(){
+var _fplAvisoHecho=false;
+function fplResetMatricula(){ // v2.9.17 — al abrir otro archivo, la matrícula del FPL anterior NO se arrastra
+  var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
+  if(el)el.value='';if(mob)mob.value='';
+  try{sessionStorage.removeItem('fpl_matricula');}catch(e){}
+  _fplAvisoHecho=false;
+  try{updateSelloPreview();}catch(e){}
+}
+function fplSesionUsuario(){ // v2.9.17 — usuario con sesión: al cambiar de usuario → iniciales nuevas YA
+  var u=String((window.currentUser||{}).id||''),prev='';
+  try{prev=sessionStorage.getItem('fpl_user')||'';}catch(e){}
+  var cambio=!!(u&&prev&&prev!==u); // usuario distinto al que dejó las iniciales actuales
+  if(u&&prev!==u){try{sessionStorage.setItem('fpl_user',u);}catch(e){}}
+  if(cambio)fplResetMatricula(); // el FPL del usuario anterior no se arrastra
+  fplAutoIniciales(cambio);
+}
+function fplAutoIniciales(forzar){ // forzar: cambio de usuario → SOBRESCRIBE con las del nuevo dueño
   var el=document.getElementById('selloTxInitials'),mob=document.getElementById('mobSelloTxInitials');
-  if(!el||String(el.value||'').trim())return;
-  var ini=fplInicialesOperador(); // campo vacío → iniciales del usuario con sesión (dueño del sello activo)
-  if(ini){el.value=ini;if(mob)mob.value=ini;try{updateSelloPreview();}catch(e){}}
+  if(!el)return;
+  if(!forzar&&String(el.value||'').trim())return; // al abrir un documento: respeta lo escrito a mano
+  var n=String((window.currentUser||{}).name||'').trim();
+  var ini=(window.FPLScan&&n)?FPLScan.inicialesDe(n):'';
+  el.value=ini;if(mob)mob.value=ini;
+  try{updateSelloPreview();}catch(e){}
 }
 function fplEscaneaTexto(texto){
   try{
     var r=window.FPLScan?window.FPLScan.extraerMatricula(texto):null;
     if(r&&r.matricula){fplAutoIniciales();fplSetMatricula(r.matricula,r.origen);return true;}
+    // v2.9.17 — es un FPL pero no se reconoció la matrícula → avisar (el campo quedó vacío a propósito)
+    if(!_fplAvisoHecho&&window.FPLScan&&FPLScan.pareceFPL(texto)){
+      _fplAvisoHecho=true;
+      toast('⚠ FPL sin matrícula reconocida — escríbela en «Matrícula (Aeronave / Espacio)»','err');
+    }
   }catch(e){}
   return false;
 }
@@ -11952,6 +11991,13 @@ async function excelTabOpen(ab, base){
       return buildXlView(model, t);
     });
     xlRenderSheet(tab, 0);
+    // v2.9.17 — escaneo FPL del Excel: texto de TODAS las hojas (los FPL de
+    // las líneas aéreas llegan en .xlsx — ej. casillero 18 «REG/HP1520»)
+    try{
+      var wb=XLSX.read(ab,{type:'array'});
+      var txt=wb.SheetNames.map(function(s){return XLSX.utils.sheet_to_csv(wb.Sheets[s]);}).join('\n');
+      if(txt&&txt.replace(/[\s,]/g,''))fplEscaneaTexto(txt);
+    }catch(e){}
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
     return true;

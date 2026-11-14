@@ -64,10 +64,33 @@ def pdf_oficio(path):
         y -= 22
     c.save()
 
+def pdf_sin_matricula(path):
+    """FPL de formulario con el casillero 7 SIN valor (ni REG/ en el 18):
+    v2.9.17 → aviso «FPL sin matrícula reconocida» y campo vacío."""
+    c = canvas.Canvas(path, pagesize=A4)
+    y = 800
+    c.setFont("Helvetica-Bold", 13)
+    c.drawString(50, y, "PLAN DE VUELO (FORMULARIO DE LA OPERADORA)"); y -= 30
+    c.setFont("Helvetica", 10)
+    for ln in [
+        "3. TIPO DE MENSAJE: FPL",
+        "7. IDENTIFICACION DE AERONAVE:",
+        "8. REGLAS DE VUELO: I    9. TIPO DE VUELO: S",
+        "13. AERODROMO DE SALIDA: SPJC  HORA: 1120",
+        "15. VELOCIDAD: N0440  NIVEL: F380  RUTA: DCT SQU UL780",
+        "16. AERODROMO DE DESTINO: MPDA  EET: 0235",
+        "18. OTROS DATOS: DOF/261114 PBN/A1B1C1D1L1O1S2T1",
+        "19. AUTONOMIA: E/0436  PERSONAS A BORDO: P/191",
+    ]:
+        c.drawString(50, y, ln)
+        y -= 20
+    c.save()
+
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
     ("tmp_e2e_fpl_form.pdf", pdf_form),
     ("tmp_e2e_oficio.pdf", pdf_oficio),
+    ("tmp_e2e_fpl_sin_matricula.pdf", pdf_sin_matricula),
 ]:
     p = os.path.join(BASE, name)
     fn(p)

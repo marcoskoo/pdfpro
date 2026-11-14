@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.16)
+/* PDFPro — fpl-scan.js (v2.9.17)
  * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
  * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
  * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
@@ -21,6 +21,15 @@ function _norm(v) {
   return m;
 }
 
+/** Une caracteres sueltos separados por espacios o comas: los formularios
+ *  de las líneas aéreas traen UNA CASILLA POR CARÁCTER y el texto extraído
+ *  queda «C M P 4 6 8» (o «C,M,P,4,6,8» al pasar el Excel a CSV) → «CMP468».
+ *  Solo une letras/números MAYÚSCULOS de un carácter (las matrículas van en
+ *  mayúsculas), así que el texto normal queda intacto. */
+function _compacta(t) {
+  return String(t || '').replace(/([0-9A-Z])[\s,]+(?=[0-9A-Z](?:[\s,]|$))/g, '$1');
+}
+
 /** Extrae {matricula, origen} del texto del FPL; null si no encuentra.
  *  Orden de búsqueda:
  *   1. Casillero 18 — ítem «REG/» (la matrícula explícita tiene prioridad)
@@ -29,10 +38,16 @@ function _norm(v) {
  *   3. Formulario impreso — etiqueta «IDENTIFICACIÓN DE AERONAVE» /
  *      «AIRCRAFT IDENTIFICATION» seguida del valor
  *   4. Patrón suelto — matrícula peruana OB#### / OB-ABC en el texto
- *      (y prefijos vecinos HC/CP/CC/HK/XA/LV/LQ con guion) */
+ *      (y prefijos vecinos HC/CP/CC/HK/XA/LV/LQ con guion)
+ *  Si nada coincide, reintentará sobre el texto «compactado» (caracteres
+ *  sueltos de los formularios con casillas: «O B 2 1 4 7» → «OB2147»). */
 function extraerMatricula(texto) {
   var t = String(texto || '');
   if (!t.trim()) return null;
+  return _buscar(t) || _buscar(_compacta(t));
+}
+
+function _buscar(t) {
   var r;
 
   // 1) Casillero 18: REG/OB2147, REG/OB-ABC, REG/HC-COAS, REG/9V-OJK…
@@ -44,8 +59,9 @@ function extraerMatricula(texto) {
   if (r) { var v2 = _norm(r[2]); if (v2) return { matricula: v2, origen: 'casillero 7 (mensaje ' + r[1].toUpperCase() + ')' }; }
 
   // 3) Formulario: etiqueta del casillero 7 seguida del valor
-  r = t.match(/IDENTIFICACI[ÓO]N\s+DE\s+AERONAVE[^A-Z0-9]{0,40}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i)
-    || t.match(/AIRCRAFT\s+IDENTIFICATION[^A-Z0-9]{0,40}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  //    ([\s,]* — al pasar el Excel a CSV las palabras quedan «A,B,C»)
+  r = t.match(/IDENTIFICACI[ÓO]N[\s,]*DE[\s,]*AERONAVE[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i)
+    || t.match(/AIRCRAFT\s+IDENTIFICATION[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
   if (r) { var v3 = _norm(r[1]); if (v3) return { matricula: v3, origen: 'casillero 7 (formulario)' }; }
 
   // 4) Patrón suelto: OB####, OB-ABC, OB 1630 (Perú)… El lookahead
@@ -73,6 +89,18 @@ function inicialesDe(nombre) {
   return (w[0].charAt(0) + paterno.charAt(0)).toUpperCase();
 }
 
-var API = { extraerMatricula: extraerMatricula, inicialesDe: inicialesDe, _norm: _norm };
+/** ¿El texto parece un FPL (formulario o mensaje télex)? Se usa para avisar
+ *  «FPL sin matrícula reconocida» solo cuando el archivo ES un plan de
+ *  vuelo (no con un oficio o NOTAM cualquiera). */
+function pareceFPL(texto) {
+  var t = _compacta(String(texto || '')).toUpperCase().replace(/[\s,]+/g, ' ');
+  if (!t) return false;
+  var ind = Math.max(t.indexOf('PLAN DE VUELO'), t.indexOf('FLIGHT PLAN'), t.indexOf('(FPL-'));
+  if (ind === -1) return false;
+  // …y algo de contenido después de la portada (evita avisos por una mención suelta)
+  return t.slice(ind + 14).replace(/[^A-Z0-9]/g, '').length >= 40;
+}
+
+var API = { extraerMatricula: extraerMatricula, inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 if (typeof window !== 'undefined') window.FPLScan = API;

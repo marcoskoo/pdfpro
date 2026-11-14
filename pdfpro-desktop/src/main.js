@@ -660,6 +660,13 @@ function attachSmoke(w) {
           c.fplScanIniciales = !!(window.FPLScan && FPLScan.inicialesDe &&
             FPLScan.inicialesDe('Marcos Koo') === 'MK' &&
             FPLScan.inicialesDe('Ana María Torres Vega') === 'AT');
+          // v2.9.17 — Excel con casillas por carácter + aviso FPL sin matrícula
+          c.fplScanCompacta = !!(window.FPLScan &&
+            FPLScan.extraerMatricula('IDENTIFICACION,DE,AERONAVE,,O,B,2,1,4,7,8. REGLAS').matricula === 'OB2147' &&
+            FPLScan.extraerMatricula('18. OTROS DATOS: REG/HP1520 SEL/MPJR').matricula === 'HP1520');
+          c.fplScanAviso = !!(window.FPLScan && FPLScan.pareceFPL &&
+            FPLScan.pareceFPL('(FPL-CM468-IS -B737/M-SDE1E2E3GHRWIZ/HB1 -SPJC1120 -N0440F380 DCT -MPDA0235 -DOF/261114 EET/0225') &&
+            !FPLScan.pareceFPL('Oficio múltiple N.º 214-2026: cuadro de personal AIS'));
           return c;
         })()`);
         if (results.checks.fplRuta) {
