@@ -59,17 +59,31 @@ t('una sola palabra → 1 letra', FPLScan.inicialesDe('Cher'), 'C');
 t('nombre vacío', FPLScan.inicialesDe(''), '');
 t('minúsculas → mayúsculas', FPLScan.inicialesDe('marcos koo'), 'MK');
 
-console.log('══ 7b. v2.9.18 — nombres compuestos: el paterno sigue a los nombres ══');
+console.log('══ 7b. Nombres de 3 palabras: paterno = 3.ª si la 2.ª es segundo nombre ══');
 t('«Ana María Torres» → AT (NO «AM»)', FPLScan.inicialesDe('Ana María Torres'), 'AT');
 t('«Luis Alberto Ccahuana» → LC (NO «LA»)', FPLScan.inicialesDe('Luis Alberto Ccahuana'), 'LC');
 t('«Rosa María Flores» → RF (NO «RM»)', FPLScan.inicialesDe('Rosa María Flores'), 'RF');
 t('«Juan Carlos Morales» → JM (NO «JC»)', FPLScan.inicialesDe('Juan Carlos Morales'), 'JM');
-t('«José Luis Ramírez Rojas» → JR', FPLScan.inicialesDe('José Luis Ramírez Rojas'), 'JR');
+t('«José Ramírez Díaz» → JR (2.ª palabra ES el paterno)', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
 t('«María del Carmen Rojas» → MR (partícula «del»)', FPLScan.inicialesDe('María del Carmen Rojas'), 'MR');
-t('«José Ramírez Vega Silva» → JR (paterno 2.ª palabra, no la materna)', FPLScan.inicialesDe('José Ramírez Vega Silva'), 'JR');
-t('«Juan San Martín Palacios» → JS (partícula «San»)', FPLScan.inicialesDe('Juan San Martín Palacios'), 'JS');
 t('«Sr. Marcos Koo» → MK (título ignorado)', FPLScan.inicialesDe('Sr. Marcos Koo'), 'MK');
 t('«ana maría torres» minúsculas → AT', FPLScan.inicialesDe('ana maría torres'), 'AT');
+
+console.log('══ 7c. v2.9.19 — EJEMPLOS DEL USUARIO: 4 palabras = nombre1+nombre2+PATERNO+materno ══');
+t('«Marcos Roberto Koo Paz» → MK', FPLScan.inicialesDe('Marcos Roberto Koo Paz'), 'MK');
+t('«Frank Dave Asian Castro» → FA', FPLScan.inicialesDe('Frank Dave Asian Castro'), 'FA');
+t('«Ruswel Melciades Cacho Paredes» → RC', FPLScan.inicialesDe('Ruswel Melciades Cacho Paredes'), 'RC');
+t('«Jacqueline Cristina Vílchez Aguirre» → JV', FPLScan.inicialesDe('Jacqueline Cristina Vílchez Aguirre'), 'JV');
+t('«Francessca Michelle Chumpitaz Court» → FC', FPLScan.inicialesDe('Francessca Michelle Chumpitaz Court'), 'FC');
+t('mismos nombres SIN materno (3 palabras) → igual',
+  FPLScan.inicialesDe('Ruswel Melciades Cacho') === 'RC' &&
+  FPLScan.inicialesDe('Frank Dave Asian') === 'FA' &&
+  FPLScan.inicialesDe('Marcos Roberto Koo') === 'MK' &&
+  FPLScan.inicialesDe('Francessca Michelle Chumpitaz') === 'FC', true);
+t('«José Luis Ramírez Rojas» → JR (paterno = 3.ª)', FPLScan.inicialesDe('José Luis Ramírez Rojas'), 'JR');
+t('«José Ramírez Vega Silva» → JV (convención: nombres «José Ramírez» + paterno «Vega»)', FPLScan.inicialesDe('José Ramírez Vega Silva'), 'JV');
+t('«Juan San Martín Palacios» → JS («San» inicia el apellido)', FPLScan.inicialesDe('Juan San Martín Palacios'), 'JS');
+t('«Ana María Torres Vega» → AT (4 palabras, paterno «Torres»)', FPLScan.inicialesDe('Ana María Torres Vega'), 'AT');
 
 console.log('══ 8. v2.9.17 — formularios con una casilla por carácter ══');
 t('«O B 2 1 4 7» suelto → OB2147', FPLScan.extraerMatricula('La aeronave O B 2 1 4 7 despega').matricula, 'OB2147');

@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.18)
+/* PDFPro — fpl-scan.js (v2.9.19)
  * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
  * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
  * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
@@ -77,11 +77,14 @@ function _buscar(t) {
 }
 
 /** Partículas de nombres («María del Carmen»): nunca son por sí solas el
- *  apellido paterno. «San»/«Santa» NO van aquí: casi siempre INICIAN un
- *  apellido compuesto («San Martín», «Santa Cruz»). */
+ *  apellido paterno. «San»/«Santa»/«Santo» NO van aquí: casi siempre
+ *  INICIAN un apellido compuesto («San Martín», «Santa Cruz»). */
 var _PARTICULA = /^(de|del|la|las|los|van|von|mac|mc|di|da|dos)$/i;
+var _SAN = /^(san|santa|santo)$/i;
 /** Palabras que casi siempre son SEGUNDO nombre y casi nunca apellido
- *  paterno («Ana María Torres» → nombres «Ana María» + paterno «Torres»). */
+ *  paterno. SOLO se usan para nombres de 3 palabras, para decidir si la
+ *  2.ª palabra es nombre («Ana María Torres» → nombres «Ana María» +
+ *  paterno «Torres») o apellido («José Ramírez Díaz» → paterno «Ramírez»). */
 var _SEG_NOMBRE = {
   maria:1, jose:1, juan:1, luis:1, ana:1, rosa:1, carmen:1, elena:1, isabel:1,
   cristina:1, sofia:1, fernanda:1, valeria:1, gabriela:1, alejandra:1,
@@ -93,7 +96,23 @@ var _SEG_NOMBRE = {
   francisco:1, gabriel:1, gonzalo:1, gustavo:1, jaime:1, javier:1, jesus:1,
   joaquin:1, julio:1, mateo:1, nicolas:1, oscar:1, pablo:1, pedro:1, ramon:1,
   raul:1, ricardo:1, rodrigo:1, samuel:1, santiago:1, sebastian:1, sergio:1,
-  vicente:1, victor:1
+  vicente:1, victor:1, pilar:1, rocio:1, angeles:1, angel:1,
+  // nombres de la oficina / modernos peruanos (v2.9.19)
+  roberto:1, dave:1, david:1, daniel:1, michelle:1, melissa:1, mellisa:1,
+  melciades:1, melquiades:1, jacqueline:1, francessca:1, francesca:1,
+  ruswel:1, frank:1, william:1, kevin:1, brayan:1, alexander:1, alexis:1,
+  jhon:1, jhonatan:1, marcelo:1, walter:1, wilfredo:1, omar:1, nelson:1,
+  roger:1, rolando:1, ronald:1, cesar:1, hugo:1, ivan:1, marco:1, mauro:1,
+  milagros:1, nayeli:1, patricio:1, paul:1, renzo:1, roxana:1, sandro:1,
+  vanessa:1, yesenia:1, yolanda:1, erick:1, jimena:1, antonella:1,
+  valentina:1, julieta:1, renata:1, beatriz:1, blanca:1, carla:1, cecilia:1,
+  consuelo:1, emilia:1, estela:1, fabiola:1, gisela:1, hilda:1, irma:1,
+  judith:1, leonor:1, lourdes:1, magaly:1, magali:1, maribel:1, marisol:1,
+  miriam:1, natalia:1, noemi:1, raquel:1, sandra:1, shirley:1, viviana:1,
+  angela:1, claudia:1, wendy:1, debora:1, estefania:1, gerald:1, karina:1,
+  katherine:1, liliana:1, lorena:1, lucero:1, mariana:1, maritza:1,
+  micaela:1, nadia:1, nathalie:1, pamela:1, priscila:1, soledad:1, tamara:1,
+  tatiana:1, thalia:1, victoria:1, yasmin:1
 };
 function _sinTildes(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -101,21 +120,43 @@ function _sinTildes(s) {
 
 /** Iniciales del operador — SOLO 2 LETRAS: la PRIMERA es la inicial del
  *  PRIMER NOMBRE y la SEGUNDA la inicial del APELLIDO PATERNO.
- *  El apellido paterno es la palabra que sigue a los nombres de pila:
- *  se saltan las partículas («de», «del»…) y los segundos nombres
- *  típicos («María», «Luis»…).
- *  «Marcos Koo» → MK · «Ana María Torres Vega» → AT · «José Ramírez
- *  Díaz» → JR · «Ana María Torres» → AT (nombre compuesto, NO «AM») ·
- *  «María del Carmen Rojas» → MR (NO «MC»).
- *  Con una sola palabra solo hay inicial de nombre (ej. «Cher» → C). */
+ *  Convención de la oficina (ejemplos verificados): con 4 palabras el
+ *  nombre es nombre1 + nombre2 + PATERNO + materno, y el paterno es la
+ *  3.ª palabra:
+ *  · «Marcos Roberto Koo Paz»           → MK
+ *  · «Frank Dave Asian Castro»          → FA
+ *  · «Ruswel Melciades Cacho Paredes»   → RC
+ *  · «Jacqueline Cristina Vílchez Aguirre»   → JV
+ *  · «Francessca Michelle Chumpitaz Court»   → FC
+ *  Con 2 palabras: «Marcos Koo» → MK. Con 3: si la 2.ª palabra es un
+ *  segundo nombre típico o partícula, el paterno es la 3.ª («Ana María
+ *  Torres» → AT · «Luis Alberto Ccahuana» → LC); si no, es la 2.ª
+ *  («José Ramírez Díaz» → JR). Partículas: «María del Carmen Rojas» →
+ *  MR. «San/Santa» inicia el apellido: «Juan San Martín Palacios» → JS.
+ *  Títulos ignorados («Sr.»). Una sola palabra → 1 letra. */
 function inicialesDe(nombre) {
   var w = String(nombre || '').trim().split(/\s+/).filter(Boolean);
   while (w.length && /\.$/.test(w[0])) w.shift(); // títulos: «Sr.», «Ing.»…
   if (!w.length) return '';
   if (w.length === 1) return w[0].charAt(0).toUpperCase();
-  var i = 1; // índice del apellido paterno: 1.ª palabra que ya no es nombre
-  while (i < w.length - 1 && (_PARTICULA.test(w[i]) || _SEG_NOMBRE[_sinTildes(w[i])])) i++;
-  return (w[0].charAt(0) + w[i].charAt(0)).toUpperCase();
+  if (w.length === 2) return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase();
+  if (w.length === 3) {
+    // «Ana María Torres» (nombres «Ana María» + paterno) o
+    // «José Ramírez Díaz» (nombre + paterno + materno): si la 2.ª
+    // palabra es un segundo nombre típico o partícula, paterno = 3.ª
+    if (_PARTICULA.test(w[1]) || _SEG_NOMBRE[_sinTildes(w[1])])
+      return (w[0].charAt(0) + w[2].charAt(0)).toUpperCase();
+    return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase();
+  }
+  // 4+ palabras — convención de la oficina: nombre1 + nombre2 + paterno +
+  // materno → el paterno es la 3.ª palabra («Marcos Roberto Koo Paz» → MK).
+  if (_SAN.test(w[1])) return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase(); // «San Martín» inicia el apellido
+  if (_PARTICULA.test(w[1])) { // «María del Carmen Rojas»: el nombre sigue
+    var i = 1;
+    while (i < w.length - 1 && (_PARTICULA.test(w[i]) || _SEG_NOMBRE[_sinTildes(w[i])])) i++;
+    return (w[0].charAt(0) + w[i].charAt(0)).toUpperCase();
+  }
+  return (w[0].charAt(0) + w[2].charAt(0)).toUpperCase();
 }
 
 /** ¿El texto parece un FPL (formulario o mensaje télex)? Se usa para avisar

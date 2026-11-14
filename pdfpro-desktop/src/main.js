@@ -656,12 +656,17 @@ function attachSmoke(w) {
             FPLScan.extraerMatricula('(FPL-FAP211-IS -18/REG/OB1630 DOF/261114').matricula === 'OB1630');
           c.fplScanCasillero7 = !!(window.FPLScan &&
             FPLScan.extraerMatricula('(FPL-OB1630-IS -N0450F180 DCT').matricula === 'OB1630');
-          // v2.9.18 — iniciales: 1.ª letra = primer nombre, 2.ª = apellido paterno
+          // v2.9.19 — iniciales: 1.ª letra = primer nombre, 2.ª = apellido
+          // paterno. Con 4 palabras: nombre1+nombre2+PATERNO+materno (ejemplos
+          // verificados del usuario: MK, FA, RC, JV, FC)
           c.fplScanIniciales = !!(window.FPLScan && FPLScan.inicialesDe &&
+            FPLScan.inicialesDe('Marcos Roberto Koo Paz') === 'MK' &&
+            FPLScan.inicialesDe('Frank Dave Asian Castro') === 'FA' &&
+            FPLScan.inicialesDe('Ruswel Melciades Cacho Paredes') === 'RC' &&
+            FPLScan.inicialesDe('Jacqueline Cristina Vílchez Aguirre') === 'JV' &&
+            FPLScan.inicialesDe('Francessca Michelle Chumpitaz Court') === 'FC' &&
             FPLScan.inicialesDe('Marcos Koo') === 'MK' &&
-            FPLScan.inicialesDe('Ana María Torres Vega') === 'AT' &&
             FPLScan.inicialesDe('Ana María Torres') === 'AT' &&
-            FPLScan.inicialesDe('Luis Alberto Ccahuana') === 'LC' &&
             FPLScan.inicialesDe('María del Carmen Rojas') === 'MR');
           // v2.9.17 — Excel con casillas por carácter + aviso FPL sin matrícula
           c.fplScanCompacta = !!(window.FPLScan &&

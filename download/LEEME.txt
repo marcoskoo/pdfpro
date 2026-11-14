@@ -1,9 +1,55 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.18 — Versión de escritorio para Windows
+  PDFPro 2.9.19 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.18 (iniciales: primer nombre + apellido paterno)
+NOVEDADES DE LA VERSIÓN 2.9.19 (iniciales — ejemplos verificados)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste (tus ejemplos exactos):
+  · «Marcos Roberto Koo Paz»           = MK
+  · «Frank Dave Asian Castro»          = FA
+  · «Ruswel Melciades Cacho Paredes»   = RC
+  · «Jacqueline Cristina Vílchez Aguirre»    = JV
+  · «Francessca Michelle Chumpitaz Court»    = FC
+
+  CORREGIDO — la 2.9.18 se confundía con los segundos nombres: con
+  «Marcos Roberto Koo Paz» salía «MR» (la «R» de Roberto, que es
+  segundo NOMBRE, no apellido). Ahora la regla es la convención de la
+  oficina: con 4 palabras el nombre completo es
+  «nombre1 + nombre2 + APELLIDO PATERNO + apellido materno» y el
+  paterno es la TERCERA palabra:
+  · «Marcos Roberto Koo Paz»   → MK (paterno «Koo»)
+  · «Frank Dave Asian Castro»  → FA (paterno «Asian»)
+  · «Ruswel Melciades Cacho Paredes» → RC (paterno «Cacho»)
+  · «Jacqueline Cristina Vílchez Aguirre» → JV (paterno «Vílchez»)
+  · «Francessca Michelle Chumpitaz Court» → FC (paterno «Chumpitaz»)
+
+  La regla completa (todas las longitudes):
+  · 1.ª letra = inicial del PRIMER NOMBRE · 2.ª = APELLIDO PATERNO
+  · 4+ palabras → paterno = 3.ª palabra (convención de la oficina)
+  · 3 palabras → si la 2.ª es un segundo nombre típico o partícula,
+    el paterno es la 3.ª: «Ana María Torres» → AT · «Luis Alberto
+    Ccahuana» → LC · «Ruswel Melciades Cacho» → RC; si no, es la 2.ª:
+    «José Ramírez Díaz» → JR
+  · 2 palabras → «Marcos Koo» → MK
+  · Partículas del nombre: «María del Carmen Rojas» → MR · «San/Santa»
+    inicia el apellido: «Juan San Martín Palacios» → JS
+  · Títulos ignorados («Sr.», «Ing.») · lo que escribas a mano en el
+    campo se respeta tal cual
+
+VERIFICADO PUNTO A PUNTO (2.9.19):
+  · 65 pruebas unitarias del escáner: los 5 ejemplos del usuario
+    (MK, FA, RC, JV, FC) + variantes sin materno + 3 palabras ✓
+  · E2E en la app real: sesión con cada uno de los 5 nombres →
+    iniciales correctas en el campo Y en el espejo móvil ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
+    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: los 5 ejemplos del
+    usuario = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.18 (iniciales: primer nombre + apellido paterno)
 ────────────────────────────────────────────────────────────────────
   Lo que pediste: «corregir primera letra (inicial del primer nombre),
   segunda letra (inicial del apellido paterno)».
