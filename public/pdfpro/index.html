@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.15 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.16 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1279,14 +1279,16 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             </div>
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Iniciales del Operador</label>
-              <input class="f-input" id="selloTxInitials" maxlength="6" placeholder="EJ: MK" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z.\s]/g,'');updateSelloPreview()">
+              <input class="f-input" id="selloTxInitials" maxlength="2" placeholder="EJ: MK" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');updateSelloPreview()">
+              <!-- v2.9.16 — solo 2 letras: inicial del primer nombre + inicial del apellido paterno -->
+              <div style="font-size:9.5px;color:var(--t3);margin-top:3px">2 letras: inicial del primer nombre + inicial del apellido paterno (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo.</div>
             </div>
           </div>
           <!-- v2.9.13 — matrícula: nombra el archivo al guardar/exportar (ej. OB2147 MK) -->
           <div style="margin-bottom:10px">
             <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Matrícula (Aeronave / Espacio)</label>
             <input class="f-input" id="selloMatricula" maxlength="12" placeholder="EJ: OB2147" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
-            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al cargar el archivo, la matrícula se detecta sola (casillero 7 o ítem REG/ del 18) y las iniciales se rellenan con las del dueño del sello activo. Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al cargar el archivo, la matrícula se detecta sola (casillero 7 o ítem REG/ del 18) y las iniciales (2 letras: primer nombre + apellido paterno) se rellenan con las del dueño del sello activo. Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -1598,7 +1600,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       </div>
       <div>
         <label class="f-label" style="font-size:10px;margin-bottom:2px">Operador</label>
-        <input class="f-input" id="mobSelloTxInitials" maxlength="6" placeholder="EJ: MK" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z.\s]/g,'');mobSelloSync(true)">
+        <input class="f-input" id="mobSelloTxInitials" maxlength="2" placeholder="EJ: MK" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');mobSelloSync(true)">
       </div>
       <div>
         <label class="f-label" style="font-size:10px;margin-bottom:2px">Matrícula</label>
@@ -4503,7 +4505,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.15',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.16',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -9980,8 +9982,9 @@ async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero',
    Al abrir un documento se busca la matrícula en el casillero 7
    (identificación de aeronave) o en el casillero 18 (ítem REG/,
    ej. REG/OB2147) y se copia sola a «Matrícula (Aeronave / Espacio)».
-   Las iniciales del operador se rellenan con las del dueño del sello
-   activo (usuario con sesión). PDF/Word con texto → lectura directa;
+   Las iniciales del operador (2 letras: primer nombre + apellido paterno)
+   se rellenan con las del dueño del sello activo (usuario con sesión).
+   PDF/Word con texto → lectura directa;
    PDF escaneado o foto de FPL → OCR (Tesseract) de la 1.ª página. */
 function fplSetMatricula(v,origen){
   var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
@@ -10049,10 +10052,13 @@ async function fplTextoDocx(ab){ // texto plano del .docx (antes de que lo consu
    la carpeta del día/mes/año se crea automáticamente. */
 function fplInicialesOperador(){
   var v=String((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().replace(/[^A-Z]/g,'');
-  if(v)return v.slice(0,4);
+  if(v)return v.slice(0,2); // v2.9.16 — solo 2 letras
   var n=String((window.currentUser||{}).name||'').trim();
   if(!n)return '';
-  return n.split(/\s+/).map(function(w){return w.charAt(0);}).join('').toUpperCase().slice(0,4);
+  // 2 letras: inicial del primer nombre + inicial del apellido paterno
+  if(window.FPLScan&&FPLScan.inicialesDe)return FPLScan.inicialesDe(n);
+  var w=n.split(/\s+/);
+  return (w[0].charAt(0)+((w.length===2?w[1]:w[w.length-2])||'').charAt(0)).toUpperCase();
 }
 function fplMatricula(){
   var el=document.getElementById('selloMatricula');

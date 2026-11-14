@@ -49,9 +49,13 @@ t('palabra OBSTÁCULO no es matrícula', FPLScan.extraerMatricula('TORRE NUEVA, 
 t('texto administrativo', FPLScan.extraerMatricula('Oficio múltiple N.º 214-2026: se adjunta el cuadro de personal'), null);
 t('vacío', FPLScan.extraerMatricula(''), null);
 
-console.log('══ 7. Iniciales del operador ══');
+console.log('══ 7. Iniciales del operador (2 letras: primer nombre + apellido paterno) ══');
 t('«Marcos Koo» → MK', FPLScan.inicialesDe('Marcos Koo'), 'MK');
-t('«Ana María Torres Vega» → AMTV (máx 4)', FPLScan.inicialesDe('Ana María Torres Vega'), 'AMTV');
+t('«Ana María Torres Vega» → AT', FPLScan.inicialesDe('Ana María Torres Vega'), 'AT');
+t('«José Ramírez Díaz» → JR (paterno = penúltima)', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
+t('«Ana Torres» → AT (2 palabras)', FPLScan.inicialesDe('Ana Torres'), 'AT');
+t('«E2E Verificador» → EV', FPLScan.inicialesDe('E2E Verificador'), 'EV');
+t('una sola palabra → 1 letra', FPLScan.inicialesDe('Cher'), 'C');
 t('nombre vacío', FPLScan.inicialesDe(''), '');
 t('minúsculas → mayúsculas', FPLScan.inicialesDe('marcos koo'), 'MK');
 

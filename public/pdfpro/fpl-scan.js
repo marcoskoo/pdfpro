@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.15)
+/* PDFPro — fpl-scan.js (v2.9.16)
  * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
  * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
  * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
@@ -60,11 +60,17 @@ function extraerMatricula(texto) {
   return null;
 }
 
-/** Iniciales del operador a partir de su nombre completo:
- *  «Marcos Koo» → «MK» (máx. 4 letras, igual que fplInicialesOperador). */
+/** Iniciales del operador — SOLO 2 LETRAS: inicial del PRIMER NOMBRE +
+ *  inicial del APELLIDO PATERNO (convención peruana «nombres + paterno +
+ *  materno»: con 3+ palabras el paterno es la penúltima).
+ *  «Marcos Koo» → MK · «Ana María Torres Vega» → AT · «José Ramírez Díaz» → JR.
+ *  Con una sola palabra solo hay inicial de nombre (ej. «Cher» → C). */
 function inicialesDe(nombre) {
-  return String(nombre || '').trim().split(/\s+/).filter(Boolean)
-    .map(function (w) { return w.charAt(0); }).join('').toUpperCase().slice(0, 4);
+  var w = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+  if (!w.length) return '';
+  if (w.length === 1) return w[0].charAt(0).toUpperCase();
+  var paterno = (w.length === 2) ? w[1] : w[w.length - 2];
+  return (w[0].charAt(0) + paterno.charAt(0)).toUpperCase();
 }
 
 var API = { extraerMatricula: extraerMatricula, inicialesDe: inicialesDe, _norm: _norm };

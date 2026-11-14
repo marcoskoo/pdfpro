@@ -656,6 +656,10 @@ function attachSmoke(w) {
             FPLScan.extraerMatricula('(FPL-FAP211-IS -18/REG/OB1630 DOF/261114').matricula === 'OB1630');
           c.fplScanCasillero7 = !!(window.FPLScan &&
             FPLScan.extraerMatricula('(FPL-OB1630-IS -N0450F180 DCT').matricula === 'OB1630');
+          // v2.9.16 — iniciales del operador: 2 letras (primer nombre + apellido paterno)
+          c.fplScanIniciales = !!(window.FPLScan && FPLScan.inicialesDe &&
+            FPLScan.inicialesDe('Marcos Koo') === 'MK' &&
+            FPLScan.inicialesDe('Ana María Torres Vega') === 'AT');
           return c;
         })()`);
         if (results.checks.fplRuta) {

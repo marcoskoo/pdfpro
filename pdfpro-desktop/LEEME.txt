@@ -1,9 +1,43 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.15 — Versión de escritorio para Windows
+  PDFPro 2.9.16 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.15 (escaneo FPL automático al cargar)
+NOVEDADES DE LA VERSIÓN 2.9.16 (iniciales del operador de 2 letras)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «solo 2 (letras) iniciales del operador (inicial del
+  primer nombre e inicial del apellido paterno)».
+
+  · Las iniciales del operador ahora son SIEMPRE 2 letras: la inicial
+    del PRIMER NOMBRE + la inicial del APELLIDO PATERNO.
+      - «Marcos Koo»            → MK
+      - «Ana María Torres Vega» → AT  (Ana + Torres)
+      - «José Ramírez Díaz»     → JR  (José + Ramírez)
+      - «Ana Torres»            → AT
+    Con 3 o más palabras se aplica la convención peruana «nombres +
+    apellido paterno + apellido materno»: el paterno es la penúltima
+    palabra. Con una sola palabra solo hay inicial de nombre.
+  · El campo «Iniciales del Operador» (escritorio y panel móvil) ahora
+    admite como máximo 2 letras, sin puntos ni espacios.
+  · Se rellenan solas igual que antes: al entrar a la app y al cargar
+    cada FPL, con las del dueño del sello activo (usuario con sesión).
+  · El nombre del archivo sigue «MATRÍCULA INICIALES» (ej. OB2147 MK)
+    y el sello muestra «OPR: MK».
+
+VERIFICADO PUNTO A PUNTO (2.9.16):
+  · 35 pruebas unitarias: 27 del escáner de matrícula (sin cambios) +
+    8 de iniciales con la regla nueva (MK, AT, JR, EV, 1 letra, vacío,
+    minúsculas) ✓
+  · E2E en navegador: iniciales auto «EV» al entrar; nombre compuesto
+    «Ana María Torres Vega» → campo «AT» y nombre final «OB2147 AT.pdf»;
+    campos limitados a 2 letras (escritorio y móvil); «A.B» se sanea a
+    «AB»; escritas a mano se respetan ✓
+  · Regresión del escaneo FPL intacta: télex → OB1630, formulario →
+    OB2147, oficio → campo intacto, aviso y espejo móvil ✓
+  · Smoke de la app de escritorio empaquetada: fplScanIniciales = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.15 (escaneo FPL automático al cargar)
 ────────────────────────────────────────────────────────────────────
   Lo que pediste: «que al cargar el archivo se realice el escaneo para
   recolección de los datos de matrícula, que podría obtenerse del
