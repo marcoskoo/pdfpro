@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.17 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.18 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4515,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.17',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.18',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10096,8 +10096,17 @@ function fplInicialesOperador(){
   if(!n)return '';
   // 2 letras: inicial del primer nombre + inicial del apellido paterno
   if(window.FPLScan&&FPLScan.inicialesDe)return FPLScan.inicialesDe(n);
-  var w=n.split(/\s+/);
-  return (w[0].charAt(0)+((w.length===2?w[1]:w[w.length-2])||'').charAt(0)).toUpperCase();
+  var w=n.split(/\s+/).filter(Boolean);
+  while(w.length&&/\.$/.test(w[0]))w.shift(); // títulos: «Sr.», «Ing.»…
+  if(!w.length)return '';
+  if(w.length===1)return w[0].charAt(0).toUpperCase();
+  // v2.9.18 — misma regla que fpl-scan.js: el apellido paterno es la
+  // 1.ª palabra que ya no es nombre (salta partículas y segundos nombres)
+  var _p=/^(de|del|la|las|los|van|von)$/i;
+  var _s=/^(maria|jose|juan|luis|ana|rosa|carmen|elena|isabel|carlos|alberto|jorge|miguel|fernando|andres|jesus|javier|victor|sofia|francisco|pedro|pablo|raul)$/;
+  var i=1,ti=function(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+  while(i<w.length-1&&(_p.test(w[i])||_s.test(ti(w[i]))))i++;
+  return (w[0].charAt(0)+(w[i]||'').charAt(0)).toUpperCase();
 }
 function fplMatricula(){
   var el=document.getElementById('selloMatricula');

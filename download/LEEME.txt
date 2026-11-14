@@ -1,9 +1,51 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.17 — Versión de escritorio para Windows
+  PDFPro 2.9.18 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.17 (correcciones al escaneo FPL)
+NOVEDADES DE LA VERSIÓN 2.9.18 (iniciales: primer nombre + apellido paterno)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «corregir primera letra (inicial del primer nombre),
+  segunda letra (inicial del apellido paterno)».
+
+  CORREGIDO — la segunda letra era la inicial equivocada con nombres
+  compuestos: antes se tomaba la PENÚLTIMA palabra del nombre y con
+  «Ana María Torres» salía «AM» (la «M» de María, que es segundo
+  nombre, NO el apellido). Ahora el apellido paterno es la palabra que
+  SIGUE a los nombres de pila:
+  · «Ana María Torres»      → AT (antes AM ✗) — nombres «Ana María» + paterno «Torres»
+  · «Luis Alberto Ccahuana» → LC (antes LA ✗)
+  · «Rosa María Flores»     → RF (antes RM ✗)
+  · «Juan Carlos Morales»   → JM (antes JC ✗)
+  · «María del Carmen Rojas»→ MR (antes MC ✗) — «del» no es apellido
+  · «José Ramírez Vega Silva» → JR — el paterno es la 2.ª palabra,
+    no la materna
+  · «Juan San Martín Palacios» → JS — «San» inicia el apellido
+    compuesto «San Martín»
+  · «José Ramírez Díaz»     → JR (sin cambio) — nombre simple + paterno + materno
+  · «Ana María Torres Vega» → AT (sin cambio) — 4 palabras
+  · «Marcos Koo»            → MK (sin cambio) — 2 palabras
+  · «Sr. Marcos Koo»        → MK — títulos ignorados
+  La regla completa: 1.ª letra = inicial del PRIMER NOMBRE · 2.ª letra
+  = inicial del APELLIDO PATERNO. Se saltan las partículas («de»,
+  «del», «la»…) y los segundos nombres típicos («María», «Luis»,
+  «Alberto», «Carmen»…) para encontrar el paterno. Si escribes tus
+  iniciales a mano en el campo, se respetan tal cual.
+
+VERIFICADO PUNTO A PUNTO (2.9.18):
+  · 55 pruebas unitarias del escáner: 18 de iniciales con nombres
+    compuestos y partículas reales ✓
+  · E2E en la app real: sesión «Ana María Torres» → AT · «Luis
+    Alberto Ccahuana» → LC · «María del Carmen Rojas» → MR (campo +
+    espejo móvil) ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
+    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: fplScanIniciales con
+    los 5 nombres compuestos = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.17 (correcciones al escaneo FPL)
 ────────────────────────────────────────────────────────────────────
   Lo que reportaste: «he cargado 3 planes de vuelo y solo detecto una
   sola matrícula, habiendo errores en la identificación de los otros 2.

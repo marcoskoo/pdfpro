@@ -656,10 +656,13 @@ function attachSmoke(w) {
             FPLScan.extraerMatricula('(FPL-FAP211-IS -18/REG/OB1630 DOF/261114').matricula === 'OB1630');
           c.fplScanCasillero7 = !!(window.FPLScan &&
             FPLScan.extraerMatricula('(FPL-OB1630-IS -N0450F180 DCT').matricula === 'OB1630');
-          // v2.9.16 — iniciales del operador: 2 letras (primer nombre + apellido paterno)
+          // v2.9.18 — iniciales: 1.ª letra = primer nombre, 2.ª = apellido paterno
           c.fplScanIniciales = !!(window.FPLScan && FPLScan.inicialesDe &&
             FPLScan.inicialesDe('Marcos Koo') === 'MK' &&
-            FPLScan.inicialesDe('Ana María Torres Vega') === 'AT');
+            FPLScan.inicialesDe('Ana María Torres Vega') === 'AT' &&
+            FPLScan.inicialesDe('Ana María Torres') === 'AT' &&
+            FPLScan.inicialesDe('Luis Alberto Ccahuana') === 'LC' &&
+            FPLScan.inicialesDe('María del Carmen Rojas') === 'MR');
           // v2.9.17 — Excel con casillas por carácter + aviso FPL sin matrícula
           c.fplScanCompacta = !!(window.FPLScan &&
             FPLScan.extraerMatricula('IDENTIFICACION,DE,AERONAVE,,O,B,2,1,4,7,8. REGLAS').matricula === 'OB2147' &&

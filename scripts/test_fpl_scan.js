@@ -49,15 +49,27 @@ t('palabra OBSTÁCULO no es matrícula', FPLScan.extraerMatricula('TORRE NUEVA, 
 t('texto administrativo', FPLScan.extraerMatricula('Oficio múltiple N.º 214-2026: se adjunta el cuadro de personal'), null);
 t('vacío', FPLScan.extraerMatricula(''), null);
 
-console.log('══ 7. Iniciales del operador (2 letras: primer nombre + apellido paterno) ══');
+console.log('══ 7. Iniciales del operador (1.ª letra = primer nombre · 2.ª = apellido paterno) ══');
 t('«Marcos Koo» → MK', FPLScan.inicialesDe('Marcos Koo'), 'MK');
 t('«Ana María Torres Vega» → AT', FPLScan.inicialesDe('Ana María Torres Vega'), 'AT');
-t('«José Ramírez Díaz» → JR (paterno = penúltima)', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
+t('«José Ramírez Díaz» → JR (nombre simple + paterno + materno)', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
 t('«Ana Torres» → AT (2 palabras)', FPLScan.inicialesDe('Ana Torres'), 'AT');
 t('«E2E Verificador» → EV', FPLScan.inicialesDe('E2E Verificador'), 'EV');
 t('una sola palabra → 1 letra', FPLScan.inicialesDe('Cher'), 'C');
 t('nombre vacío', FPLScan.inicialesDe(''), '');
 t('minúsculas → mayúsculas', FPLScan.inicialesDe('marcos koo'), 'MK');
+
+console.log('══ 7b. v2.9.18 — nombres compuestos: el paterno sigue a los nombres ══');
+t('«Ana María Torres» → AT (NO «AM»)', FPLScan.inicialesDe('Ana María Torres'), 'AT');
+t('«Luis Alberto Ccahuana» → LC (NO «LA»)', FPLScan.inicialesDe('Luis Alberto Ccahuana'), 'LC');
+t('«Rosa María Flores» → RF (NO «RM»)', FPLScan.inicialesDe('Rosa María Flores'), 'RF');
+t('«Juan Carlos Morales» → JM (NO «JC»)', FPLScan.inicialesDe('Juan Carlos Morales'), 'JM');
+t('«José Luis Ramírez Rojas» → JR', FPLScan.inicialesDe('José Luis Ramírez Rojas'), 'JR');
+t('«María del Carmen Rojas» → MR (partícula «del»)', FPLScan.inicialesDe('María del Carmen Rojas'), 'MR');
+t('«José Ramírez Vega Silva» → JR (paterno 2.ª palabra, no la materna)', FPLScan.inicialesDe('José Ramírez Vega Silva'), 'JR');
+t('«Juan San Martín Palacios» → JS (partícula «San»)', FPLScan.inicialesDe('Juan San Martín Palacios'), 'JS');
+t('«Sr. Marcos Koo» → MK (título ignorado)', FPLScan.inicialesDe('Sr. Marcos Koo'), 'MK');
+t('«ana maría torres» minúsculas → AT', FPLScan.inicialesDe('ana maría torres'), 'AT');
 
 console.log('══ 8. v2.9.17 — formularios con una casilla por carácter ══');
 t('«O B 2 1 4 7» suelto → OB2147', FPLScan.extraerMatricula('La aeronave O B 2 1 4 7 despega').matricula, 'OB2147');

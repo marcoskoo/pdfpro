@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.17)
+/* PDFPro — fpl-scan.js (v2.9.18)
  * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
  * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
  * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
@@ -76,17 +76,46 @@ function _buscar(t) {
   return null;
 }
 
-/** Iniciales del operador — SOLO 2 LETRAS: inicial del PRIMER NOMBRE +
- *  inicial del APELLIDO PATERNO (convención peruana «nombres + paterno +
- *  materno»: con 3+ palabras el paterno es la penúltima).
- *  «Marcos Koo» → MK · «Ana María Torres Vega» → AT · «José Ramírez Díaz» → JR.
+/** Partículas de nombres («María del Carmen»): nunca son por sí solas el
+ *  apellido paterno. «San»/«Santa» NO van aquí: casi siempre INICIAN un
+ *  apellido compuesto («San Martín», «Santa Cruz»). */
+var _PARTICULA = /^(de|del|la|las|los|van|von|mac|mc|di|da|dos)$/i;
+/** Palabras que casi siempre son SEGUNDO nombre y casi nunca apellido
+ *  paterno («Ana María Torres» → nombres «Ana María» + paterno «Torres»). */
+var _SEG_NOMBRE = {
+  maria:1, jose:1, juan:1, luis:1, ana:1, rosa:1, carmen:1, elena:1, isabel:1,
+  cristina:1, sofia:1, fernanda:1, valeria:1, gabriela:1, alejandra:1,
+  guadalupe:1, esperanza:1, gloria:1, luz:1, ines:1, mercedes:1, teresa:1,
+  lucia:1, clara:1, alicia:1, sara:1, marta:1, irene:1, camila:1, daniela:1,
+  monica:1, olga:1, ruth:1, susana:1, veronica:1, ximena:1, silvia:1,
+  virginia:1, patricia:1, norma:1, carlos:1, jorge:1, miguel:1, rafael:1,
+  alberto:1, fernando:1, andres:1, eduardo:1, enrique:1, ernesto:1,
+  francisco:1, gabriel:1, gonzalo:1, gustavo:1, jaime:1, javier:1, jesus:1,
+  joaquin:1, julio:1, mateo:1, nicolas:1, oscar:1, pablo:1, pedro:1, ramon:1,
+  raul:1, ricardo:1, rodrigo:1, samuel:1, santiago:1, sebastian:1, sergio:1,
+  vicente:1, victor:1
+};
+function _sinTildes(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Iniciales del operador — SOLO 2 LETRAS: la PRIMERA es la inicial del
+ *  PRIMER NOMBRE y la SEGUNDA la inicial del APELLIDO PATERNO.
+ *  El apellido paterno es la palabra que sigue a los nombres de pila:
+ *  se saltan las partículas («de», «del»…) y los segundos nombres
+ *  típicos («María», «Luis»…).
+ *  «Marcos Koo» → MK · «Ana María Torres Vega» → AT · «José Ramírez
+ *  Díaz» → JR · «Ana María Torres» → AT (nombre compuesto, NO «AM») ·
+ *  «María del Carmen Rojas» → MR (NO «MC»).
  *  Con una sola palabra solo hay inicial de nombre (ej. «Cher» → C). */
 function inicialesDe(nombre) {
   var w = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+  while (w.length && /\.$/.test(w[0])) w.shift(); // títulos: «Sr.», «Ing.»…
   if (!w.length) return '';
   if (w.length === 1) return w[0].charAt(0).toUpperCase();
-  var paterno = (w.length === 2) ? w[1] : w[w.length - 2];
-  return (w[0].charAt(0) + paterno.charAt(0)).toUpperCase();
+  var i = 1; // índice del apellido paterno: 1.ª palabra que ya no es nombre
+  while (i < w.length - 1 && (_PARTICULA.test(w[i]) || _SEG_NOMBRE[_sinTildes(w[i])])) i++;
+  return (w[0].charAt(0) + w[i].charAt(0)).toUpperCase();
 }
 
 /** ¿El texto parece un FPL (formulario o mensaje télex)? Se usa para avisar
