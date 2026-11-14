@@ -1,9 +1,54 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.19 — Versión de escritorio para Windows
+  PDFPro 2.9.20 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.19 (iniciales — ejemplos verificados)
+NOVEDADES DE LA VERSIÓN 2.9.20 (iniciales KM → MK corregido)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «inicio de sesión Marcos Koo, el sistema muestra
+  iniciales KM, debería mostrar MK».
+
+  CAUSA — el formulario de registro/editar pedía el nombre completo
+  como «Apellidos y Nombres», así que tu cuenta quedó guardada con el
+  nombre al revés («Koo Paz Marcos Roberto» o «Koo Marcos»). Con la
+  regla de la 2.9.19 (4 palabras = nombres + PATERNO + materno) eso
+  daba K de «Koo» + M de «Marcos» = KM.
+
+  CORREGIDO — ahora el cálculo de iniciales TAMBIÉN entiende el orden
+  «Apellidos y Nombres», lo Detecta y lo voltea:
+  · «Koo Paz, Marcos Roberto» (con coma)  → MK
+  · «Koo Paz Marcos Roberto» (sin coma)   → MK
+  · «Koo Marcos»                           → MK
+  · «Koo Paz Marcos» / «Koo Marcos Roberto» → MK
+  · «Asian Castro, Frank Dave»  → FA · «Chumpitaz Court Francessca
+    Michelle» → FC
+  El orden normal sigue igual: «Marcos Roberto Koo Paz» → MK · tus 5
+  ejemplos (MK, FA, RC, JV, FC) sin cambios.
+
+  ADEMÁS — el formulario de registro y el editor de usuarios ahora
+  piden «Nombres y Apellidos (ej. Marcos Roberto Koo Paz)» para que
+  las cuentas nuevas se guarden en el orden correcto desde el inicio.
+
+  No necesitas editar tu usuario: aunque el nombre siga guardado al
+  revés, las iniciales ya salen bien (MK).
+
+VERIFICADO PUNTO A PUNTO (2.9.20):
+  · 77 pruebas unitarias del escáner: 12 nuevas del orden «Apellidos
+    y Nombres» (incluye anti-falsos-positivos: «Ana María Torres»
+    sigue AT, «José Ramírez Díaz» sigue JR) ✓
+  · E2E en la app real: sesión «Koo Paz, Marcos Roberto», «Koo Paz
+    Marcos Roberto», «Koo Marcos», «Marcos Koo», «Marcos Roberto Koo
+    Paz» → todas MK (campo + espejo móvil) · «Asian Castro, Frank
+    Dave» → FA · «Chumpitaz Court Francessca Michelle» → FC ✓
+  · E2E 2.9.19: tus 5 ejemplos siguen OK (MK, FA, RC, JV, FC) ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · Excel real ATC CM468 → HP1520 · cambio
+    de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: 11 nombres de prueba
+    (incluidos los invertidos) = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.19 (iniciales — ejemplos verificados)
 ────────────────────────────────────────────────────────────────────
   Lo que pediste (tus ejemplos exactos):
   · «Marcos Roberto Koo Paz»           = MK

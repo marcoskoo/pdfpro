@@ -85,6 +85,20 @@ t('«José Ramírez Vega Silva» → JV (convención: nombres «José Ramírez»
 t('«Juan San Martín Palacios» → JS («San» inicia el apellido)', FPLScan.inicialesDe('Juan San Martín Palacios'), 'JS');
 t('«Ana María Torres Vega» → AT (4 palabras, paterno «Torres»)', FPLScan.inicialesDe('Ana María Torres Vega'), 'AT');
 
+console.log('══ 7d. v2.9.20 — orden «Apellidos y Nombres» (como pedía el formulario) ══');
+t('«Koo Paz, Marcos Roberto» (con coma) → MK', FPLScan.inicialesDe('Koo Paz, Marcos Roberto'), 'MK');
+t('«Koo Paz Marcos Roberto» (sin coma) → MK — el caso reportado', FPLScan.inicialesDe('Koo Paz Marcos Roberto'), 'MK');
+t('«Koo Marcos» (2 palabras) → MK', FPLScan.inicialesDe('Koo Marcos'), 'MK');
+t('«Koo Paz Marcos» (3 palabras) → MK', FPLScan.inicialesDe('Koo Paz Marcos'), 'MK');
+t('«Koo Marcos Roberto» (3 palabras) → MK', FPLScan.inicialesDe('Koo Marcos Roberto'), 'MK');
+t('«Koo, Marcos» (con coma) → MK', FPLScan.inicialesDe('Koo, Marcos'), 'MK');
+t('«Asian Castro, Frank Dave» (con coma) → FA', FPLScan.inicialesDe('Asian Castro, Frank Dave'), 'FA');
+t('«Chumpitaz Court Francessca Michelle» (sin coma) → FC', FPLScan.inicialesDe('Chumpitaz Court Francessca Michelle'), 'FC');
+t('«Torres Ana» (apellidos y nombres, 2 palabras) → AT', FPLScan.inicialesDe('Torres Ana'), 'AT');
+t('falso volteo NO: «Marcos Roberto Koo Paz» sigue MK', FPLScan.inicialesDe('Marcos Roberto Koo Paz'), 'MK');
+t('falso volteo NO: «Ana María Torres» sigue AT', FPLScan.inicialesDe('Ana María Torres'), 'AT');
+t('falso volteo NO: «José Ramírez Díaz» sigue JR', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
+
 console.log('══ 8. v2.9.17 — formularios con una casilla por carácter ══');
 t('«O B 2 1 4 7» suelto → OB2147', FPLScan.extraerMatricula('La aeronave O B 2 1 4 7 despega').matricula, 'OB2147');
 t('etiqueta + «C M P 4 6 8» → CMP468', FPLScan.extraerMatricula('IDENTIFICACION DE AERONAVE: C M P 4 6 8').matricula, 'CMP468');

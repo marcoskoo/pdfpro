@@ -722,7 +722,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
         <div class="err-box" id="registerErr"></div>
         <div class="f-grid">
-          <div class="f-group"><label class="f-label">Nombre Completo</label><input class="f-input" id="regName" placeholder="Apellidos y Nombres"></div>
+          <div class="f-group"><label class="f-label">Nombre Completo</label><input class="f-input" id="regName" placeholder="Nombres y Apellidos (ej. Marcos Roberto Koo Paz)"></div>
           <div class="f-group"><label class="f-label">Usuario</label><input class="f-input" id="regUser" placeholder="mi.usuario"></div>
         </div>
         <div class="f-group"><label class="f-label">Email</label><input class="f-input" id="regEmail" type="email" placeholder="correo@corpac.gob.pe"></div>
@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.19 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.20 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -985,7 +985,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     <div class="modal-body">
       <input type="hidden" id="editUserId">
       <div class="f-grid">
-        <div class="f-group"><label class="f-label">Nombre Completo</label><input class="f-input" id="uName" placeholder="Apellidos y Nombres"></div>
+        <div class="f-group"><label class="f-label">Nombre Completo</label><input class="f-input" id="uName" placeholder="Nombres y Apellidos (ej. Marcos Roberto Koo Paz)"></div>
         <div class="f-group"><label class="f-label">Usuario (login)</label><input class="f-input" id="uLogin"></div>
       </div>
       <div class="f-group"><label class="f-label">Email</label><input class="f-input" id="uEmail" type="email"></div>
@@ -1281,7 +1281,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Iniciales del Operador</label>
               <input class="f-input" id="selloTxInitials" maxlength="2" placeholder="EJ: MK" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');updateSelloPreview()">
               <!-- v2.9.16 — solo 2 letras: inicial del primer nombre + inicial del apellido paterno -->
-              <div style="font-size:9.5px;color:var(--t3);margin-top:3px">2 letras: inicial del primer nombre + inicial del apellido paterno (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo.</div>
+              <div style="font-size:9.5px;color:var(--t3);margin-top:3px">2 letras: inicial del primer nombre + inicial del apellido paterno (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo. Acepta «Nombres y Apellidos» y también «Apellidos, Nombres».</div>
             </div>
           </div>
           <!-- v2.9.13 — matrícula: nombra el archivo al guardar/exportar (ej. OB2147 MK) -->
@@ -4515,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.19',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.20',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10096,23 +10096,34 @@ function fplInicialesOperador(){
   if(!n)return '';
   // 2 letras: inicial del primer nombre + inicial del apellido paterno
   if(window.FPLScan&&FPLScan.inicialesDe)return FPLScan.inicialesDe(n);
-  var w=n.split(/\s+/).filter(Boolean);
+  // v2.9.20 — misma regla que fpl-scan.js, incluido el orden
+  // «Apellidos y Nombres»: con coma lo de antes son apellidos
+  // («Koo Paz, Marcos Roberto» → MK); sin coma, un nombre de pila donde
+  // iría el apellido delata el orden («Koo Paz Marcos Roberto» → MK)
+  var ci=n.indexOf(',');
+  if(ci!==-1)n=n.slice(ci+1).trim()+' '+n.slice(0,ci).replace(/,/g,'').trim();
+  var w=n.replace(/,/g,' ').split(/\s+/).filter(Boolean);
   while(w.length&&/\.$/.test(w[0]))w.shift(); // títulos: «Sr.», «Ing.»…
   if(!w.length)return '';
   if(w.length===1)return w[0].charAt(0).toUpperCase();
-  if(w.length===2)return (w[0].charAt(0)+w[1].charAt(0)).toUpperCase();
-  // v2.9.19 — misma regla que fpl-scan.js: con 4 palabras el paterno es
-  // la 3.ª («Marcos Roberto Koo Paz» → MK); con 3, solo si la 2.ª
-  // palabra es un segundo nombre típico o partícula («Ana María Torres» → AT)
   var _p=/^(de|del|la|las|los|van|von)$/i,_san=/^(san|santa|santo)$/i;
-  var _s=/^(maria|jose|juan|luis|ana|rosa|carmen|elena|isabel|cristina|sofia|carlos|alberto|jorge|miguel|fernando|andres|jesus|javier|victor|roberto|dave|david|daniel|michelle|melciades|melquiades|frank|kevin|william|cesar|hugo|walter|omar|nelson|roger|ronald|pilar|rocio)$/;
+  var _s=/^(maria|jose|juan|luis|ana|rosa|carmen|elena|isabel|cristina|sofia|carlos|alberto|jorge|miguel|fernando|andres|jesus|javier|victor|roberto|dave|david|daniel|michelle|melciades|melquiades|frank|kevin|william|cesar|hugo|walter|omar|nelson|roger|ronald|pilar|rocio|marcos|ruswel|jacqueline|francessca|francesca)$/;
   var ti=function(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
-  var i;
-  if(w.length===3)i=(_p.test(w[1])||_s.test(ti(w[1])))?2:1;
-  else if(_san.test(w[1]))i=1; // «San Martín» inicia el apellido
-  else if(_p.test(w[1])){i=1;while(i<w.length-1&&(_p.test(w[i])||_s.test(ti(w[i]))))i++;}
-  else i=2; // nombre1 + nombre2 + paterno + materno
-  return (w[0].charAt(0)+(w[i]||'').charAt(0)).toUpperCase();
+  var d=function(x){return _s.test(ti(x));};
+  var a=0,b=1; // a = índice del primer nombre · b = índice del apellido paterno
+  if(w.length===2){ if(!d(w[0])&&d(w[1])){a=1;b=0;} }                 // «Koo Marcos» → MK
+  else if(w.length===3){
+    if(!d(w[0])&&!d(w[1])&&d(w[2])){a=2;b=0;}                         // «Koo Paz Marcos» → MK
+    else if(!d(w[0])&&d(w[1])&&d(w[2])){a=1;b=0;}                     // «Koo Marcos Roberto» → MK
+    else if(_p.test(w[1])||d(w[1]))b=2;                               // «Ana María Torres» → AT
+    // else b=1                                                        // «José Ramírez Díaz» → JR
+  } else {
+    if(_san.test(w[1]))b=1;                                           // «Juan San Martín» → JS
+    else if(_p.test(w[1])){b=1;while(b<w.length-1&&(_p.test(w[b])||d(w[b])))b++;} // «María del Carmen Rojas» → MR
+    else if(!d(w[0])&&!d(w[1])&&d(w[2])){a=2;b=0;}                    // «Koo Paz Marcos Roberto» → MK
+    else b=2;                                                         // «Marcos Roberto Koo Paz» → MK
+  }
+  return (w[a].charAt(0)+w[b].charAt(0)).toUpperCase();
 }
 function fplMatricula(){
   var el=document.getElementById('selloMatricula');

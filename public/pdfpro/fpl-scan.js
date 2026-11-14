@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.19)
+/* PDFPro — fpl-scan.js (v2.9.20)
  * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
  * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
  * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
@@ -97,8 +97,8 @@ var _SEG_NOMBRE = {
   joaquin:1, julio:1, mateo:1, nicolas:1, oscar:1, pablo:1, pedro:1, ramon:1,
   raul:1, ricardo:1, rodrigo:1, samuel:1, santiago:1, sebastian:1, sergio:1,
   vicente:1, victor:1, pilar:1, rocio:1, angeles:1, angel:1,
-  // nombres de la oficina / modernos peruanos (v2.9.19)
-  roberto:1, dave:1, david:1, daniel:1, michelle:1, melissa:1, mellisa:1,
+  // nombres de la oficina / modernos peruanos (v2.9.19-20)
+  marcos:1, roberto:1, dave:1, david:1, daniel:1, michelle:1, melissa:1, mellisa:1,
   melciades:1, melquiades:1, jacqueline:1, francessca:1, francesca:1,
   ruswel:1, frank:1, william:1, kevin:1, brayan:1, alexander:1, alexis:1,
   jhon:1, jhonatan:1, marcelo:1, walter:1, wilfredo:1, omar:1, nelson:1,
@@ -128,23 +128,43 @@ function _sinTildes(s) {
  *  · «Ruswel Melciades Cacho Paredes»   → RC
  *  · «Jacqueline Cristina Vílchez Aguirre»   → JV
  *  · «Francessca Michelle Chumpitaz Court»   → FC
- *  Con 2 palabras: «Marcos Koo» → MK. Con 3: si la 2.ª palabra es un
- *  segundo nombre típico o partícula, el paterno es la 3.ª («Ana María
- *  Torres» → AT · «Luis Alberto Ccahuana» → LC); si no, es la 2.ª
- *  («José Ramírez Díaz» → JR). Partículas: «María del Carmen Rojas» →
- *  MR. «San/Santa» inicia el apellido: «Juan San Martín Palacios» → JS.
- *  Títulos ignorados («Sr.»). Una sola palabra → 1 letra. */
+ *  v2.9.20 — TAMBIÉN acepta el orden «Apellidos y Nombres» (como pedía
+ *  el formulario de registro): si hay una coma, lo de antes son los
+ *  apellidos («Koo Paz, Marcos Roberto»); si no la hay, un nombre de
+ *  pila donde iría el apellido delata el orden («Koo Paz Marcos
+ *  Roberto», «Koo Marcos») y se dan la vuelta:
+ *  · «Koo Paz, Marcos Roberto» → MK · «Koo Paz Marcos Roberto» → MK ·
+ *    «Koo Paz Marcos» → MK · «Koo Marcos Roberto» → MK · «Koo Marcos» → MK
+ *  Con 3 palabras en orden normal: si la 2.ª es un segundo nombre
+ *  típico o partícula, el paterno es la 3.ª («Ana María Torres» → AT);
+ *  si no, es la 2.ª («José Ramírez Díaz» → JR). Partículas: «María del
+ *  Carmen Rojas» → MR. «San/Santa» inicia el apellido («Juan San
+ *  Martín Palacios» → JS). Títulos ignorados («Sr.»). 1 palabra → 1 letra. */
 function inicialesDe(nombre) {
-  var w = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+  var s = String(nombre || '').trim();
+  // «Apellidos, Nombres» (formato antiguo del formulario): la coma separa
+  // apellidos de nombres → nombres primero («Koo Paz, Marcos Roberto» →
+  // «Marcos Roberto Koo Paz»)
+  var coma = s.indexOf(',');
+  if (coma !== -1) s = s.slice(coma + 1).trim() + ' ' + s.slice(0, coma).replace(/,/g, '').trim();
+  var w = s.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
   while (w.length && /\.$/.test(w[0])) w.shift(); // títulos: «Sr.», «Ing.»…
   if (!w.length) return '';
   if (w.length === 1) return w[0].charAt(0).toUpperCase();
-  if (w.length === 2) return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase();
+  var dado = function (x) { return !!_SEG_NOMBRE[_sinTildes(x)]; };
+  if (w.length === 2) {
+    // «Koo Marcos» (apellidos y nombres) → MK · «Marcos Koo» → MK
+    if (!dado(w[0]) && dado(w[1])) return (w[1].charAt(0) + w[0].charAt(0)).toUpperCase();
+    return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase();
+  }
   if (w.length === 3) {
-    // «Ana María Torres» (nombres «Ana María» + paterno) o
-    // «José Ramírez Díaz» (nombre + paterno + materno): si la 2.ª
-    // palabra es un segundo nombre típico o partícula, paterno = 3.ª
-    if (_PARTICULA.test(w[1]) || _SEG_NOMBRE[_sinTildes(w[1])])
+    // «Apellidos y Nombres» sin coma: un nombre de pila donde iría el
+    // apellido delata el orden → «Koo Paz Marcos» · «Koo Marcos Roberto»
+    if (!dado(w[0]) && !dado(w[1]) && dado(w[2])) return (w[2].charAt(0) + w[0].charAt(0)).toUpperCase();
+    if (!dado(w[0]) && dado(w[1]) && dado(w[2])) return (w[1].charAt(0) + w[0].charAt(0)).toUpperCase();
+    // orden normal: «Ana María Torres» (nombres «Ana María» + paterno) o
+    // «José Ramírez Díaz» (nombre + paterno + materno)
+    if (_PARTICULA.test(w[1]) || dado(w[1]))
       return (w[0].charAt(0) + w[2].charAt(0)).toUpperCase();
     return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase();
   }
@@ -153,9 +173,12 @@ function inicialesDe(nombre) {
   if (_SAN.test(w[1])) return (w[0].charAt(0) + w[1].charAt(0)).toUpperCase(); // «San Martín» inicia el apellido
   if (_PARTICULA.test(w[1])) { // «María del Carmen Rojas»: el nombre sigue
     var i = 1;
-    while (i < w.length - 1 && (_PARTICULA.test(w[i]) || _SEG_NOMBRE[_sinTildes(w[i])])) i++;
+    while (i < w.length - 1 && (_PARTICULA.test(w[i]) || dado(w[i]))) i++;
     return (w[0].charAt(0) + w[i].charAt(0)).toUpperCase();
   }
+  // «Apellidos y Nombres» sin coma: «Koo Paz Marcos Roberto» — las dos
+  // primeras no son nombres de pila y la 3.ª sí → dar la vuelta
+  if (!dado(w[0]) && !dado(w[1]) && dado(w[2])) return (w[2].charAt(0) + w[0].charAt(0)).toUpperCase();
   return (w[0].charAt(0) + w[2].charAt(0)).toUpperCase();
 }
 
