@@ -44,9 +44,9 @@ upload() {
     "https://uploads.github.com/repos/$REPO/releases/$REL_ID/assets?name=$(basename "$f")" \
     | python3 -c "import json,sys; d=json.load(sys.stdin); print('   ✓', d.get('name'), d.get('state'), d.get('size'), 'bytes') if d.get('state') else print('   ✗', d.get('message'))"
 }
-upload download/PDFPro-Setup-2.9.22.exe
-upload download/PDFPro-Portable-2.9.22.exe
-upload download/PDFPro-Setup-2.9.22.exe.blockmap
+upload download/PDFPro-Setup-2.9.23.exe
+upload download/PDFPro-Portable-2.9.23.exe
+upload download/PDFPro-Setup-2.9.23.exe.blockmap
 upload download/latest.yml
 
 # 3) verificación: activos publicados y latest.yml íntegro
