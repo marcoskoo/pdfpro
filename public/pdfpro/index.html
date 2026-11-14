@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.20 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.21 · Matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4515,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.20',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.21',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -9990,17 +9990,27 @@ async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero',
 
 // ── HELPERS ──
 /* ══ v2.9.15 — ESCANEO FPL AUTOMÁTICO AL CARGAR ══
-   Al abrir un documento se busca la matrícula en el casillero 7
-   (identificación de aeronave) o en el casillero 18 (ítem REG/,
-   ej. REG/OB2147) y se copia sola a «Matrícula (Aeronave / Espacio)».
-   Las iniciales del operador (2 letras: primer nombre + apellido paterno)
-   se rellenan con las del dueño del sello activo (usuario con sesión).
+   Al abrir un documento se busca la matrícula y se copia sola a
+   «Matrícula (Aeronave / Espacio)». Las iniciales del operador (2 letras:
+   primer nombre + apellido paterno) se rellenan con las del dueño del
+   sello activo (usuario con sesión).
    PDF/Word/Excel con texto → lectura directa;
    PDF escaneado o foto de FPL → OCR (Tesseract) de la 1.ª página.
    v2.9.17 — el Excel (.xlsx/.xls) también se escanea; cada archivo nuevo
    parte de cero (la matrícula del FPL anterior ya no se arrastra); al
    cambiar de usuario las iniciales cambian de inmediato; formularios con
-   una casilla por carácter («C M P 4 6 8») se compactan antes de buscar. */
+   una casilla por carácter («C M P 4 6 8») se compactan antes de buscar.
+   v2.9.21 — ORDEN OACI (Doc 4444, Ap. 2): la identificación del CASILLERO
+   7 va primero — si es la matrícula (Anexo 7: OB… de Perú, CC/HC/CP… de
+   vecinos; RAP 45.205), ESA es la matrícula y ya no se busca en el
+   casillero 18; el ítem REG/ del 18 queda como respaldo para los vuelos
+   con designador de empresa (Doc 8585: CMP468, LPE1234, FAP211…), tal
+   como define el propio Doc 4444 (REG/ «si difiere de la identificación
+   del casillero 7»). Los formularios impresos se leen por GEOMETRÍA: con
+   las coordenadas de cada casilla se reconstruye la fila del casillero 7
+   en orden visual, porque el texto interno llega revuelto, y la etiqueta
+   «Flight Rules» ya no se cuela como matrícula («FLIGHT»/«FLIGT» en el
+   FlightPlan SPHI-SPST.pdf con OB1630 en el casillero 7). */
 function fplSetMatricula(v,origen){
   var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
   if(el){el.value=v;try{fplMatriculaChanged();}catch(e){}}
@@ -10034,9 +10044,9 @@ function fplAutoIniciales(forzar){ // forzar: cambio de usuario → SOBRESCRIBE 
   el.value=ini;if(mob)mob.value=ini;
   try{updateSelloPreview();}catch(e){}
 }
-function fplEscaneaTexto(texto){
+function fplEscanea(texto,items){ // v2.9.21 — texto + geometría (ítems pdf.js {str,x,y})
   try{
-    var r=window.FPLScan?window.FPLScan.extraerMatricula(texto):null;
+    var r=window.FPLScan?window.FPLScan.extraerFPL(texto,items||null):null;
     if(r&&r.matricula){fplAutoIniciales();fplSetMatricula(r.matricula,r.origen);return true;}
     // v2.9.17 — es un FPL pero no se reconoció la matrícula → avisar (el campo quedó vacío a propósito)
     if(!_fplAvisoHecho&&window.FPLScan&&FPLScan.pareceFPL(texto)){
@@ -10046,6 +10056,7 @@ function fplEscaneaTexto(texto){
   }catch(e){}
   return false;
 }
+function fplEscaneaTexto(texto){return fplEscanea(texto,null);} // OCR/Word/Excel: solo texto
 var _fplOcrBus=false;
 async function fplOcrTexto(src){ // src = dataURL de la página/imagen
   if(_fplOcrBus||!window.Tesseract)return '';
@@ -10060,7 +10071,17 @@ async function fplOcrTexto(src){ // src = dataURL de la página/imagen
 async function fplEscaneaPDF(){ // pageTexts ya extraído por loadPDF
   fplAutoIniciales();
   for(var i=0;i<3;i++){
-    if(pageTexts[i]&&String(pageTexts[i]).trim().length>30&&fplEscaneaTexto(pageTexts[i]))return;
+    if(pageTexts[i]&&String(pageTexts[i]).trim().length>30){
+      // v2.9.21 — casillero 7 por GEOMETRÍA: los formularios traen una
+      // casilla por carácter y el orden del texto interno llega revuelto
+      // («4 6 8 … C M P»); con las coordenadas se reconstruye la fila
+      // (izquierda→derecha) y la matrícula del casillero 7 sale sola
+      var its=null;
+      try{
+        its=(pageItems[i]||[]).map(function(o){var t=(o&&o.transform)||[0,0,0,0,0,0];return{str:o.str,x:t[4],y:t[5]};});
+      }catch(e){}
+      if(fplEscanea(pageTexts[i],its))return;
+    }
   }
   if(pdfDoc&&pageCount&&(!pageTexts[0]||!String(pageTexts[0]).trim())){
     // PDF escaneado (sin capa de texto) → OCR de la página 1

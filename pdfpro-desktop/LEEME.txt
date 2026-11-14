@@ -1,9 +1,61 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.20 — Versión de escritorio para Windows
+  PDFPro 2.9.21 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.20 (iniciales KM → MK corregido)
+NOVEDADES DE LA VERSIÓN 2.9.21 (matrícula del casillero 7 primero)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «se carga el archivo FlightPlan SPHI-SPST.pdf,
+  el sistema muestra "FLIGT"; debería mostrar "Matrícula (Aeronave /
+  Espacio)": OB1630. Cuando la matrícula ya está en el casillero 7,
+  ya no es necesario buscarla en el casillero 18».
+
+  INVESTIGACIÓN OACI (base de la corrección):
+  · Doc 4444 (PANS-ATM), Apéndice 2, casillero 7 «IDENTIFICACIÓN DE
+    AERONAVE»: es BIEN la MATRÍCULA (Anexo 7: marca de nacionalidad +
+    marca de matrícula; Perú = OB, RAP 45.205) BIEN el designador de
+    la empresa + nº de vuelo (Doc 8585: CMP468, LPE1234, FAP211).
+  · Casillero 18, ítem REG/: lleva la matrícula «si difiere de la
+    identificación del casillero 7» — o sea: el REG/ solo hace falta
+    cuando el casillero 7 trae el designador del vuelo.
+
+  CORREGIDO — el orden de búsqueda ahora sigue esa doctrina:
+  1) CASILLERO 7 PRIMERO: si la identificación ES una matrícula
+     (OB… de Perú; CC/HC/CP/HK/XA/LV… de vecinos; N… de EE.UU.),
+     ESA es la matrícula y ya no se mira el casillero 18 (OB1630
+     aunque el formulario también traiga REG/).
+  2) Si el casillero 7 trae designador + nº de vuelo (CMP468,
+     LPE1234, FAP211), la matrícula sale del REG/ del 18 — y el
+     aviso dice el vuelo: «casillero 18 (REG/) · vuelo CMP468».
+  3) Sin casillero 7 reconocible → REG/ del casillero 18.
+
+  EL BUG DE «FLIGHT/FLIGT» — en los formularios impresos (una casilla
+  por carácter) la etiqueta «Aircraft Identification» va seguida de la
+  etiqueta «Flight Rules», y el escáner tomaba esa palabra como si
+  fuera la matrícula. Ahora todo valor capturado se valida (una
+  matrícula nunca es «FLIGHT», «RULES», «REG», «EET»… ni un código de
+  aeródromo como SPST/SPJC) y las casillas del casillero 7 se leen
+  por GEOMETRÍA: con las coordenadas de cada casilla se reconstruye
+  la fila en orden visual izquierda→derecha, porque el texto interno
+  del PDF llega revuelto («4 6 8 … C M P»).
+
+VERIFICADO PUNTO A PUNTO (2.9.21):
+  · 129 pruebas unitarias del escáner (antes 77): doctrina OACI,
+    designadores del Doc 8585 (OBC/OBJ/OBK/OBS/OBT no se hacen pasar
+    por OB…), matrícula provisional OB1234P y de traslado OB1234T
+    (RAP 45), rechazo de FLIGHT/FLIGT y de aeródromos SPST-SPJC-SKBQ ✓
+  · Con el FPL REAL «ATC CM468 11NOV.pdf»: matrícula HP1520, vuelo
+    CMP468, origen «casillero 18 (REG/) · vuelo CMP468» ✓
+  · E2E en la app real con una réplica fiel del «FlightPlan
+    SPHI-SPST.pdf» (casillero 7 con OB1630 en casillas, sin REG/):
+    campo OB1630, aviso «casillero 7», sin rastro de FLIGHT/FLIGT ✓
+  · E2E aerolínea (casillero 7 = CMP468 + REG/HP1520): HP1520 ✓
+  · Regresiones: télex FAP211+REG/OB1630 → OB1630 · formulario con
+    etiqueta OB-2147 → OB2147 · oficio → campo limpio · nombre de
+    archivo de registro «OB1630 EV.pdf» ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.20 (iniciales KM → MK corregido)
 ────────────────────────────────────────────────────────────────────
   Lo que reportaste: «inicio de sesión Marcos Koo, el sistema muestra
   iniciales KM, debería mostrar MK».

@@ -1,12 +1,42 @@
-/* PDFPro — fpl-scan.js (v2.9.20)
- * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
- * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
- * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
+/* PDFPro — fpl-scan.js (v2.9.21)
+ * Escaneo del FPL cargado, según la doctrina OACI:
+ *
+ *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
+ *     AERONAVE» (máx. 7 caracteres alfanuméricos, sin guiones): es BIEN
+ *     la MATRÍCULA — Anexo 7: marca de nacionalidad + marca de matrícula,
+ *     p.ej. OB1630; Perú = OB (RAP 45.205: OB + números correlativos,
+ *     provisional OB1234P, traslado OB1234T) — BIEN el designador OACI de
+ *     la empresa + identificación del vuelo (Doc 8585; p.ej. CMP468 Copa,
+ *     LPE1234 LATAM Perú, FAP211 FAP).
+ *   · Doc 4444, CASILLERO 18, ítem REG/: «la marca de nacionalidad y la de
+ *     matrícula de la aeronave, SI DIFIERE de la identificación del
+ *     casillero 7». Es decir: REG/ solo hace falta cuando el casillero 7
+ *     lleva designador + nº de vuelo.
+ *
+ *   → ORDEN DE BÚSQUEDA (v2.9.21, como pide la oficina): si el casillero 7
+ *     YA trae la matrícula, se usa ESA y no se busca en el casillero 18;
+ *     el REG/ del 18 queda como respaldo para los vuelos con designador.
+ *     Con casillero 7 vacío también se acude al REG/.
+ *
+ *   Además v2.9.21 corrige un defecto real: en los formularios impresos
+ *     (una casilla por carácter) la etiqueta «Aircraft Identification»
+ *     seguida de la etiqueta «Flight Rules» hacía que se capturara la
+ *     palabra «FLIGHT»/«FLIGT» como matrícula («FlightPlan SPHI-SPST.pdf»,
+ *     matrícula OB1630 en el casillero 7). Ahora todo valor capturado se
+ *     VALIDA (matrícula / identificación de vuelo / palabra prohibida) y
+ *     los formularios se leen por GEOMETRÍA: con las coordenadas de cada
+ *     casilla se reconstruye la fila del casillero 7 en orden visual
+ *     izquierda→derecha (el orden del texto interno llega revuelto:
+ *     «4 6 8 … C M P»).
+ *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';
 
 function _limpia(v) {
   return String(v || '').toUpperCase().replace(/\s+/g, '').trim();
+}
+function _sinAcentos(s) {
+  return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /** Normaliza una matrícula capturada:
@@ -30,50 +60,221 @@ function _compacta(t) {
   return String(t || '').replace(/([0-9A-Z])[\s,]+(?=[0-9A-Z](?:[\s,]|$))/g, '$1');
 }
 
-/** Extrae {matricula, origen} del texto del FPL; null si no encuentra.
- *  Orden de búsqueda:
- *   1. Casillero 18 — ítem «REG/» (la matrícula explícita tiene prioridad)
- *   2. Mensaje télex OACI — «(FPL-<identificación>-…» (campo 7; también
- *      CHG/DLA/DEP/ARR/CNL)
- *   3. Formulario impreso — etiqueta «IDENTIFICACIÓN DE AERONAVE» /
- *      «AIRCRAFT IDENTIFICATION» seguida del valor
- *   4. Patrón suelto — matrícula peruana OB#### / OB-ABC en el texto
- *      (y prefijos vecinos HC/CP/CC/HK/XA/LV/LQ con guion)
- *  Si nada coincide, reintentará sobre el texto «compactado» (caracteres
- *  sueltos de los formularios con casillas: «O B 2 1 4 7» → «OB2147»). */
-function extraerMatricula(texto) {
-  var t = String(texto || '');
-  if (!t.trim()) return null;
-  return _buscar(t) || _buscar(_compacta(t));
+/* ══ Doctrine OACI: ¿el identificador del casillero 7 ES la matrícula? ══ */
+
+/* Designadores OACI de 3 letras (Doc 8585 / FAA JO 7340.2) que se prestan a
+ * confusión con matrícula — los «OB…» (OBC, OBJ, OBK, OBS, OBT existen como
+ * designadores) y los que chocan con prefijos vecinos (CCA Air China vs
+ * Chile CC-ABC…). Se aplica solo cuando lo que sigue es TODO NÚMEROS:
+ * «CCA486» = designador + nº de vuelo; «CCABC» (CC-ABC, letras) = matrícula. */
+var _DESIGNADOR = /^(OBC|OBJ|OBK|OBS|OBT|CMP|LPE|LAN|SKU|AMP|ATC|AVA|TPU|JAP|SKX|VPE|AND|LCB|SRU|APU|CPR|KLM|NGA|NLA|JTR|TAE|BAW|AEA|IBE|AAL|UAL|DAL|CCA|ACA|AMX|GLO|AZU|ARG|FAB|FAP|FPR|INP)$/;
+
+/* Palabras que NUNCA pueden ser matrícula ni identificación de vuelo:
+ * etiquetas del formulario bilingüe («Flight Rules» → se colaba «FLIGHT»/
+ * «FLIGT»), tipos de mensaje e indicadores del casillero 18. Emparejado
+ * completo (las matrículas reales nunca coinciden con estas palabras). */
+var _PALABRA = /^(FPL|CHG|DLA|DEP|ARR|CNL|COR|CDN|ALR|RCL|FIGHT|FLIGHT|FLIGT|FLIHT|RULES|TYPE|PLAN|PRIORITY|VUELO|REGLAS|TIPO|MENSAGE|MENSAJE|MESSAGE|AERONAVE|AIRCRAFT|IDENTIFICATION|IDENTIFICACION|EXACTA|NUMBER|NUMERO|DEPOSITO|REMITENTE|ENDURANCE|AUTONOMIA|PERSONAS|EQUIPO|SURVIVAL|JACKETS|DINGHIES|CAPACITY|COLOR|COLLOR|MARKING|OBSERVACIONES|REMARKS|PILOTO|COMAND|FILED|SPACE|RESERVED|ADDITIONAL|REQUERIMENTS|NAV|SUR|REG|SEL|DOF|EET|EEET|PBN|RMK|CODE|OPR|PER|SKED|DCT|STS|TYP|ALT|RALT|TALT|ENR|RIF|REF|DAT|EQT)$/;
+
+/** ¿El identificador del casillero 7 es la MATRÍCULA? (Doc 4444 Ap. 2,
+ *  opción b: marca de nacionalidad + marca de matrícula del Anexo 7).
+ *  Formatos reconocidos (Anexo 7 · RAP 45.205 peruana · países vecinos):
+ *   Perú     OB + 3-4 (OB1630, OB-2147; provisional OB1234P, traslado OB1234T)
+ *   Vecinos  CC Chile · HC Ecuador · CP/HJ Bolivia · HK Colombia · XA/XB/XC
+ *            México · LV/LQ Argentina · YV Venezuela · HP Panamá · PP/PR/PS/
+ *            PT/PU Brasil + 3-4 caracteres (HCCGF, HC-COAS…)
+ *   EE.UU.   N + 1-4 dígitos + 0-2 letras (N2567GA — ejemplo del Doc 4444;
+ *            dígitos primero: así «NGA213» no se hace pasar por matrícula)
+ *   Otros    4X Israel · 9V Singapur · 9H Malta · 9A Croacia · 9G Ghana
+ *  Los códigos OACI de aeródromo de 4 letras (SPJC, SPST, SKBQ…) quedan
+ *  fuera: solo tienen 2 caracteres tras el prefijo. Antes se descarta que
+ *  sea designador + nº de vuelo (Doc 8585) o palabra de etiqueta. */
+function esMatricula(id) {
+  var m = _limpia(id).replace(/[^A-Z0-9]/g, '');
+  if (!m || m.length < 4 || m.length > 7) return false;
+  if (_PALABRA.test(m)) return false;
+  if (/^[A-Z]{3}$/.test(m.slice(0, 3)) && _DESIGNADOR.test(m.slice(0, 3)) && /^[0-9]+$/.test(m.slice(3))) return false;
+  if (/^OB[0-9]{3,4}[PT]?$/.test(m)) return true;   // Perú (RAP 45.205)
+  if (/^OB[A-Z0-9]{3,4}$/.test(m)) return true;     // Perú, series con letras
+  if (/^(CC|HC|CP|HJ|HK|XA|XB|XC|LV|LQ|YV|HP|PP|PR|PS|PT|PU|4X|9V|9H|9A|9G)[A-Z0-9]{3,4}$/.test(m)) return true;
+  if (/^N[0-9]{1,4}[A-Z]{0,2}$/.test(m)) return true; // EE.UU. (N2567GA)
+  return false;
 }
 
-function _buscar(t) {
-  var r;
+/* ══ Fuentes de datos ══ */
 
-  // 1) Casillero 18: REG/OB2147, REG/OB-ABC, REG/HC-COAS, REG/9V-OJK…
-  r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
-  if (r) { var v1 = _norm(r[1]); if (v1) return { matricula: v1, origen: 'casillero 18 (REG/)' }; }
+/** Mensaje télex OACI — casillero 7: «(FPL-<ident>-…» (también CHG, DLA,
+ *  DEP, ARR, CNL). Devuelve {ident, tipo} o null. */
+function _telex(t) {
+  var r = t.match(/\(?\s*(FPL|CHG|DLA|DEP|ARR|CNL)\s*[-\u2013]([A-Z0-9]{2,7})\s*[-\u2013]/i);
+  return r ? { ident: _norm(_limpia(r[2]).replace(/[^A-Z0-9]/g, '')), tipo: r[1].toUpperCase() } : null;
+}
 
-  // 2) Mensaje télex: (FPL-OB1630-IS … también (CHG-, (CNL-, (DEP-…
-  r = t.match(/\(?\s*(FPL|CHG|DLA|DEP|ARR|CNL)\s*[-\u2013]([A-Z0-9]{2,7})\s*[-\u2013]/i);
-  if (r) { var v2 = _norm(r[2]); if (v2) return { matricula: v2, origen: 'casillero 7 (mensaje ' + r[1].toUpperCase() + ')' }; }
+/** Casillero 18 — ítem REG/: la matrícula explícita (Doc 4444: se usa
+ *  cuando difiere de la del casillero 7). Devuelve el valor bruto o ''.
+ *  Se valida: ≥4 caracteres, sin palabras de etiqueta (un «REG/» vacío
+ *  seguido de otro indicador no puede colar «EET…»). */
+function _reg(t) {
+  var r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  if (!r) return '';
+  var v = _norm(r[1]);
+  if (!v || _PALABRA.test(v.replace(/[^A-Z]/g, ''))) return '';
+  if (esMatricula(v)) return v;
+  return /^[A-Z0-9-]{4,8}$/.test(v) ? v : '';
+}
 
-  // 3) Formulario: etiqueta del casillero 7 seguida del valor
-  //    ([\s,]* — al pasar el Excel a CSV las palabras quedan «A,B,C»)
-  r = t.match(/IDENTIFICACI[ÓO]N[\s,]*DE[\s,]*AERONAVE[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i)
-    || t.match(/AIRCRAFT\s+IDENTIFICATION[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
-  if (r) { var v3 = _norm(r[1]); if (v3) return { matricula: v3, origen: 'casillero 7 (formulario)' }; }
+/** Formulario impreso — valor del casillero 7 tras la etiqueta, en TEXTO
+ *  (si no hay geometría: OCR, Excel). El valor capturado ya NO se acepta a
+ *  ciegas (v2.9.21): «Aircraft Identification … Flight Rules» hacía pasar
+ *  «FLIGHT»/«FLIGT» por matrícula; ahora se valida. */
+function _etiqueta(t) {
+  var r = t.match(/IDENTIFICACI[ÓO]N[\s,]*DE[\s,]*(LA[\s,]*)?AERONAVE[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i)
+       || t.match(/AIRCRAFT\s+IDENTIFICATION[^A-Z0-9]{0,60}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  if (!r) return '';
+  var v = _norm(r[r.length - 1]);
+  if (!v || _PALABRA.test(v)) return '';
+  return /^[A-Z0-9]{2,7}$/.test(v) ? v : '';
+}
 
-  // 4) Patrón suelto: OB####, OB-ABC, OB 1630 (Perú)… El lookahead
-  //    impide falsas alarmas con palabras como «OBSTÁCULO» o «OBSTACLE»
-  r = t.match(/\bOB[-\s]?([0-9]{3,4}|[A-Z]{2,4})(?![A-ZÁÉÍÓÚÜÑ0-9])/i);
-  if (r) return { matricula: _norm('OB' + r[1]), origen: 'texto del FPL' };
+/** Patrón suelto en el texto: OB####, OB-ABC, OB 1630 (Perú)…
+ *  · Con DÍGITOS se toleran 1-2 letras pegadas después (el OCR y los
+ *    formularios compactados dejan el casillero 8 junto: «OB1630VG») y el
+ *    sufijo oficial P/T (RAP 45: provisional OB1234P, traslado OB1234T);
+ *    «OBSTÁCULO»/«OBSTACLE» no entran porque no traen dígitos.
+ *  · Con LETRAS (OB-ABC) el lookahead es estricto. */
+function _suelto(t) {
+  // sufijo P/T separado (RAP 45: «OB-1234-P» provisional, «OB-1234-T» traslado)
+  var r = t.match(/\bOB[-\s]?([0-9]{3,4})[-\s]([PT])(?![A-Z0-9])/i);
+  if (r) return _norm('OB' + r[1] + r[2]);
+  // pegado: tolera letras inmediatas (el casillero 8 queda junto: «OB1630VG»)
+  // y el sufijo P/T contiguo («OB1234P»); «OBSTÁCULO»/«OBSTACLE» no traen dígitos
+  r = t.match(/\bOB[-\s]?([0-9]{3,4}[PT]?)(?![0-9])/i);
+  if (r) return _norm('OB' + r[1]);
+  r = t.match(/\bOB[-\s]?([A-Z]{2,4})(?![A-ZÁÉÍÓÚÜÑ0-9])/i);
+  if (r) return _norm('OB' + r[1]);
+  // …y prefijos vecinos con guion (HC-Ecuador, CP-Bolivia, CC-Chile…): el
+  // guion delata matrícula y evita confundirla con códigos de aeródromo
+  r = t.match(/\b(HC|CP|CC|HK|XA|XB|LV|LQ|YV|HP|PP|PR|PT|PU|4X|9V|9H|9A|9G)-([A-Z0-9]{2,4})\b/i);
+  if (r) return _norm(r[0]);
+  return '';
+}
 
-  // …y prefijos vecinos con guion (HC-Ecuador, CP-Bolivia, CC-Chile…)
-  r = t.match(/\b(HC|CP|CC|HK|XA|LV|LQ|YV)-([A-Z0-9]{2,4})\b/i);
-  if (r) return { matricula: _norm(r[0]), origen: 'texto del FPL' };
+/* ══ Casillero 7 por GEOMETRÍA (v2.9.21) ══
+ * Los FPL impresos traen UNA CASILLA POR CARÁCTER y el orden interno del
+ * texto llega revuelto («4 6 8 … C M P»). Con las coordenadas (pdf.js
+ * transform) se reconstruye la fila de casillas del casillero 7 en orden
+ * visual izquierda→derecha:
+ *   · ancla: la etiqueta «IDENTIFICACIÓN DE AERONAVE» / «Aircraft
+ *     Identification» y el «7.» de la misma fila;
+ *   · límite derecho: el «8.» / «REGLAS…» de esa fila (las casillas del
+ *     casillero 8 quedan fuera);
+ *   · banda vertical: las casillas van justo DEBAJO de la etiqueta;
+ *   · los caracteres se ordenan por X y se cortan por huecos grandes (>45 pt,
+ *     p.ej. la separación hasta el casillero 8) → el primer grupo válido es
+ *     la identificación del casillero 7. */
+function identDeFormulario(items) {
+  try {
+    if (!items || !items.length) return '';
+    var i, it, cap = null, num7 = null, num8 = null;
+    for (i = 0; i < items.length; i++) {
+      it = items[i];
+      var s = _sinAcentos(String(it.str || '')).replace(/\s+/g, ' ').trim();
+      if (!s) continue;
+      if (!cap && /IDENTIFICACION DE (LA )?AERONAVE|AIRCRAFT IDENTIFICATION/.test(s)) cap = it;
+      if (!num7 && /^7\.?$/.test(s)) num7 = it;
+      if (!num8 && /^8\.?$/.test(s)) num8 = it;
+    }
+    if (!cap) return '';
+    var usoNum7 = !!(num7 && Math.abs(num7.y - cap.y) < 12); // «7.» en la fila de la etiqueta
+    var fila = usoNum7 ? num7.y : cap.y;                      // fila del ancla
+    var x0 = usoNum7 ? num7.x : cap.x - 45;                   // casillas a la altura del «7.»
+    var h = usoNum7 ? 24 : 16;                                // banda bajo el ancla (la fila del
+    // «7.» queda 2 filas por encima de las casillas; la etiqueta inglesa, 1)
+    var x1 = (num8 && Math.abs(num8.y - cap.y) < 12) ? num8.x : cap.x + 200;
+    if (!(num8 && Math.abs(num8.y - cap.y) < 12)) {
+      // límite derecho: «REGLAS/FLIGHT RULES/TIPO…» en la fila de la etiqueta
+      var minX = x1;
+      for (i = 0; i < items.length; i++) {
+        var it2 = items[i];
+        if (it2 === cap || it2.x <= cap.x) continue;
+        var s2 = _sinAcentos(String(it2.str || '')).replace(/\s+/g, ' ').trim();
+        if (Math.abs(it2.y - fila) < 6 && /^(REGLAS|FLIGHT|RULES|TIPO|TYPE)\b/.test(s2) && it2.x < minX) minX = it2.x;
+      }
+      x1 = minX;
+    }
+    var ch = [];
+    for (i = 0; i < items.length; i++) {
+      it = items[i];
+      var c = String(it.str || '').trim();
+      if (!/^[A-Z0-9]{1,3}$/i.test(c)) continue; // casillas: 1 carácter (a veces «CM», «468»)
+      if (/^(FPL|CHG|DLA|DEP|ARR|CNL|DOF|EET|REG|SEL|PBN|RMK|NAV|SUR|CODE|OPR|PER)$/i.test(c)) continue;
+      if (it.x >= x0 && it.x < x1 && it.y <= fila + 5 && it.y >= fila - h) ch.push(it);
+    }
+    ch.sort(function (a, b) { return a.x - b.x; });
+    // cortar por huecos grandes (>45 pt): [C][M][P][4][6][8]   (8. REGLAS…)
+    var grupos = [], cur = ch.length ? [ch[0]] : [];
+    for (i = 1; i < ch.length; i++) {
+      if (ch[i].x - ch[i - 1].x > 45) { grupos.push(cur); cur = []; }
+      cur.push(ch[i]);
+    }
+    if (cur.length) grupos.push(cur);
+    for (i = 0; i < grupos.length; i++) {
+      var ident = grupos[i].map(function (o) { return String(o.str).trim().toUpperCase(); }).join('');
+      if (/^[A-Z0-9]{2,7}$/.test(ident) && !_PALABRA.test(ident)) return ident;
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/* ══ Extracción unificada (v2.9.21 — orden OACI) ══ */
+
+/** Extrae {matricula, origen, ident} del FPL; null si no encuentra nada.
+ *  texto — capa de texto (o texto OCR / celdas del Excel);
+ *  items — OPCIONAL: ítems con geometría {str,x,y} del pdf.js (formulario
+ *  impreso con casillas); en Node/aduana vale null.
+ *
+ *  Orden de búsqueda (Doc 4444, petición de la oficina):
+ *   1. CASILLERO 7 — identificación de aeronave: geometría del formulario,
+ *      mensaje télex «(FPL-…-», o etiqueta impresa. Si ES la matrícula
+ *      (Anexo 7 / RAP 45) → esa ES la matrícula; NO se mira el casillero 18.
+ *   2. CASILLERO 18 — ítem REG/ (respaldo cuando el 7 trae designador de
+ *      empresa + nº de vuelo: CMP468, LPE1234, FAP211…).
+ *   3. PATRÓN SUELTO — matrícula OB#### / vecinos con guion en el texto.
+ *  Si el casillero 7 trae un designador sin REG/, se devuelve esa
+ *  identificación del vuelo (mejor eso que nada; el operador corrige). */
+function extraerFPL(texto, items) {
+  var t = String(texto || '');
+  if (!t.trim() && !(items && items.length)) return null;
+
+  // 1) casillero 7 — identificación de la aeronave
+  var ident = '', origenIdent = 'casillero 7 (formulario)';
+  var g = identDeFormulario(items);
+  if (g) ident = g;
+  var tx = _telex(t);
+  if (!ident && tx) { ident = tx.ident; origenIdent = 'casillero 7 (mensaje ' + tx.tipo + ')'; }
+  if (!ident) { var e1 = _etiqueta(t) || _etiqueta(_compacta(t)); if (e1) ident = e1; }
+  if (ident && esMatricula(ident))
+    return { matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }; // el 7 YA trae la matrícula
+
+  // 2) casillero 18 — REG/ (matrícula «si difiere de la del casillero 7»)
+  var reg = _reg(t) || _reg(_compacta(t));
+  if (reg)
+    return { matricula: reg, origen: 'casillero 18 (REG/)' + (ident ? ' · vuelo ' + ident : ''), ident: ident };
+
+  // 3) patrón suelto en el texto
+  var su = _suelto(t) || _suelto(_compacta(t));
+  if (su) return { matricula: su, origen: 'texto del FPL', ident: ident };
+
+  // casillero 7 con designador y sin REG/ → identificación del vuelo
+  if (ident && /^[A-Z0-9]{2,7}$/.test(ident) && !_PALABRA.test(ident))
+    return { matricula: ident, origen: origenIdent + ' · identificación de vuelo', ident: ident };
 
   return null;
+}
+
+/** Compatibilidad (v2.9.15-20): solo texto. */
+function extraerMatricula(texto) {
+  var r = extraerFPL(texto, null);
+  return r ? { matricula: r.matricula, origen: r.origen } : null;
 }
 
 /** Partículas de nombres («María del Carmen»): nunca son por sí solas el
@@ -194,6 +395,10 @@ function pareceFPL(texto) {
   return t.slice(ind + 14).replace(/[^A-Z0-9]/g, '').length >= 40;
 }
 
-var API = { extraerMatricula: extraerMatricula, inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta };
+var API = {
+  extraerMatricula: extraerMatricula, extraerFPL: extraerFPL,
+  identDeFormulario: identDeFormulario, esMatricula: esMatricula,
+  inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta
+};
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 if (typeof window !== 'undefined') window.FPLScan = API;

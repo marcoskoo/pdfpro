@@ -678,6 +678,17 @@ function attachSmoke(w) {
           c.fplScanAviso = !!(window.FPLScan && FPLScan.pareceFPL &&
             FPLScan.pareceFPL('(FPL-CM468-IS -B737/M-SDE1E2E3GHRWIZ/HB1 -SPJC1120 -N0440F380 DCT -MPDA0235 -DOF/261114 EET/0225') &&
             !FPLScan.pareceFPL('Oficio múltiple N.º 214-2026: cuadro de personal AIS'));
+          // v2.9.21 — orden OACI (Doc 4444): la matrícula del CASILLERO 7 va
+          // primero y el REG/ del 18 queda de respaldo; la etiqueta «Flight
+          // Rules» ya no se cuela como matrícula (bug FLIGHT/FLIGT del
+          // FlightPlan SPHI-SPST.pdf con OB1630 en el casillero 7)
+          c.fplScanOACI = !!(window.FPLScan && FPLScan.extraerFPL &&
+            FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO Message Type Aircraft Identification Flight Rules Type of Flight O B 1 6 3 0 V G', null).matricula === 'OB1630' &&
+            FPLScan.extraerFPL('(FPL-CMP468-IS -18/REG/HP1520 SEL/MPJR').matricula === 'HP1520' &&
+            FPLScan.extraerFPL('(FPL-OB1630-IS -18/REG/OB1630 DOF/261114').origen === 'casillero 7 (mensaje FPL)' &&
+            FPLScan.esMatricula('FLIGHT') === false &&
+            FPLScan.esMatricula('CMP468') === false &&
+            FPLScan.esMatricula('OB1630') === true);
           return c;
         })()`);
         if (results.checks.fplRuta) {
