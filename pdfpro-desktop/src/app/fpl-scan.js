@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.22)
+/* PDFPro — fpl-scan.js (v2.9.23)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -39,6 +39,15 @@
  *     MATRÍCULA DE LA AERONAVE (FAP329/INP255/PNP042/EP828), aunque ese
  *     mismo formato en el casillero 7 es designador + NÚMERO DE VUELO
  *     (FAP001): el CONTEXTO del casillero decide qué es.
+ *
+ *   Además v2.9.23 — VUELO DEL JEFE DE ESTADO (petición de la oficina): la
+ *     sigla del operador estatal + «001» en el casillero 7 (FAP001, EP001,
+ *     PNP001, INP001) identifica el vuelo que TRANSPORTA AL JEFE DE ESTADO.
+ *     En ese caso el casillero «Matrícula» de la app lleva VUELO + MATRÍCULA:
+ *     «EP001 - EP246» (plan de vuelo EP001 cuya aeronave es EP246). El aviso
+ *     lo marca con «· JEFE DE ESTADO». Solo el «001»: FAP002 etc. son vuelos
+ *     ordinarios y el campo lleva solo la matrícula. Otros países: añadir su
+ *     sigla a _JEFEE.
  *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';
@@ -272,7 +281,28 @@ function identDeFormulario(items) {
   } catch (e) { return ''; }
 }
 
-/* ══ Extracción unificada (v2.9.22 — orden OACI) ══ */
+/* ══ Extracción unificada (v2.9.23 — orden OACI + JEFE DE ESTADO) ══ */
+
+/* Vuelos del JEFE DE ESTADO (v2.9.23, petición de la oficina): la sigla del
+ * operador estatal + «001» en el casillero 7 (FAP001, EP001, PNP001, INP001)
+ * transporta al Jefe de Estado → el campo «Matrícula» lleva VUELO - MATRÍCULA.
+ * Solo el «001» exacto (FAP002 es un vuelo ordinario; LPE001/CMP001 son
+ * vuelos comerciales y NO entran). Otros países: añadir la sigla aquí. */
+var _JEFEE = /^(FAP|INP|PNP|EP)001$/;
+
+/** Post-proceso el resultado de extraerFPL: si la identificación del
+ *  casillero 7 es un vuelo del Jefe de Estado (sigla estatal + 001) y hay
+ *  matrícula, el campo muestra «EP001 - EP246» (vuelo - matrícula) y el
+ *  aviso se marca con «· JEFE DE ESTADO». Sin matrícula queda solo el
+ *  vuelo (EP001) pero el aviso igual la marca. */
+function _final(r) {
+  if (!r || !r.ident) return r;
+  var id = String(r.ident).toUpperCase();
+  if (!_JEFEE.test(id)) return r;
+  if (r.matricula && r.matricula !== id) r.matricula = id + ' - ' + r.matricula;
+  r.origen = r.origen + ' · JEFE DE ESTADO';
+  return r;
+}
 
 /** Extrae {matricula, origen, ident} del FPL; null si no encuentra nada.
  *  texto — capa de texto (o texto OCR / celdas del Excel);
@@ -290,7 +320,9 @@ function identDeFormulario(items) {
  *      número tras REG es la MATRÍCULA de la aeronave, p.ej. FAP329).
  *   3. PATRÓN SUELTO — matrícula OB#### / vecinos con guion en el texto.
  *  Si el casillero 7 trae un designador sin REG/, se devuelve esa
- *  identificación del vuelo (mejor eso que nada; el operador corrige). */
+ *  identificación del vuelo (mejor eso que nada; el operador corrige).
+ *  v2.9.23: vuelo del JEFE DE ESTADO (sigla estatal + 001) → el campo
+ *  lleva «EP001 - EP246» (vuelo - matrícula). */
 function extraerFPL(texto, items) {
   var t = String(texto || '');
   if (!t.trim() && !(items && items.length)) return null;
@@ -303,24 +335,24 @@ function extraerFPL(texto, items) {
   if (!ident && tx) { ident = tx.ident; origenIdent = 'casillero 7 (mensaje ' + tx.tipo + ')'; }
   if (!ident) { var e1 = _etiqueta(t) || _etiqueta(_compacta(t)); if (e1) ident = e1; }
   if (ident && esMatricula(ident))
-    return { matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }; // el 7 YA trae la matrícula
+    return _final({ matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }); // el 7 YA trae la matrícula
 
   // 2) casillero 18 — REG/ (matrícula «si difiere de la del casillero 7»);
   //    v2.9.22: también «REG FAP 329» sin barra (fallo de presentación del
   //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado
   var ri = _regInfo(t) || _regInfo(_compacta(t));
   if (ri)
-    return { matricula: ri.v,
+    return _final({ matricula: ri.v,
              origen: 'casillero 18 (REG' + (ri.conBarra ? '/' : ' sin «/»') + ')' + (ident ? ' · vuelo ' + ident : ''),
-             ident: ident };
+             ident: ident });
 
   // 3) patrón suelto en el texto
   var su = _suelto(t) || _suelto(_compacta(t));
-  if (su) return { matricula: su, origen: 'texto del FPL', ident: ident };
+  if (su) return _final({ matricula: su, origen: 'texto del FPL', ident: ident });
 
   // casillero 7 con designador y sin REG/ → identificación del vuelo
   if (ident && /^[A-Z0-9]{2,7}$/.test(ident) && !_PALABRA.test(ident))
-    return { matricula: ident, origen: origenIdent + ' · identificación de vuelo', ident: ident };
+    return _final({ matricula: ident, origen: origenIdent + ' · identificación de vuelo', ident: ident });
 
   return null;
 }

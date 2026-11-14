@@ -1,8 +1,54 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.22 — Versión de escritorio para Windows
+  PDFPro 2.9.23 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 2.9.23 (vuelo del JEFE DE ESTADO: «EP001 - EP246»)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «cuando se trate del FAP001/EP001/PNP001/INP001 quiere
+  decir que en ese vuelo transporta al JEFE DE ESTADO, por lo cual deberás
+  tomar la matrícula + FAP001... por ejemplo, presentan plan de vuelo
+  EP001, cuya matrícula es EP246; en el casillero de la app PDFPro
+  colocar EP001 - EP246».
+
+  LA REGLA: la sigla del operador estatal + «001» en el casillero 7
+  (FAP001, EP001, PNP001, INP001) identifica el vuelo que transporta
+  al Jefe de Estado → el casillero «Matrícula (Aeronave / Espacio)»
+  lleva VUELO - MATRÍCULA:
+  · Plan EP001 cuya aeronave es EP246   →   «EP001 - EP246»
+  · El «FAP 001 13-11.pdf» (REG FAP 329 sin barra)   →   «FAP001 - FAP329»
+  · El aviso lo marca: «casillero 18 (REG/) · vuelo EP001 · JEFE DE
+    ESTADO», y el archivo de registro sale «EP001 - EP246 EV.pdf».
+  · SOLO el «001»: FAP002 o cualquier otro número es un vuelo
+    ordinario → el campo lleva solo la matrícula (FAP329). Los vuelos
+    comerciales (LPE001, CMP001) tampoco combinan.
+  · EP001 sin REG conocido → el campo queda con el vuelo (EP001) y el
+    aviso igual marca JEFE DE ESTADO para que la oficina complete la
+    matrícula a mano.
+
+VERIFICADO PUNTO A PUNTO (2.9.23):
+  · 171 pruebas unitarias del escáner (antes 155): el ejemplo EP001 +
+    EP246 → «EP001 - EP246», los 4 operadores (FAP/INP/PNP/EP), vuelo
+    presidencial con aeronave civil (EP001 - OB1630) y los negativos:
+    FAP002, EP01, LPE001 y CMP001 NO combinan ✓
+  · 8/8 PDFs de verificación con el mismo pdf.js de la app, incluida
+    una réplica fiel del plan EP001 (casillas del 7 + REG/EP246) y el
+    FAP real: «EP001 - EP246» y «FAP001 - FAP329», ambos con el aviso
+    «· JEFE DE ESTADO» ✓
+  · E2E en la app real (10/10): campo «EP001 - EP246», iniciales EV,
+    aviso «casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO», nombre
+    de registro «EP001 - EP246 EV.pdf»; y el FAP001 con «REG FAP 329»
+    sin barra → «FAP001 - FAP329» ✓
+  · Regresiones intactas: CM468 → HP1520 (sin marca presidencial) ·
+    SPHI-SPST → OB1630 del casillero 7 · télex FAP211 + REG/OB1630 →
+    OB1630 (vuelo ordinario) · formulario OB-2147 → OB2147 · oficio →
+    campo limpio ✓
+  · Smoke de la app de escritorio (Electron real en pantalla virtual):
+    appVersion 2.9.23, escáner OACI con los casos FAP/EP, archivado
+    real en REGISTROS FPL NOTAM con la fecha UTC ✓
+
+  HISTORIAL — versión 2.9.22 (REG sin barra: FPL de operadores estatales)
+────────────────────────────────────────────────────────────────────
 NOVEDADES DE LA VERSIÓN 2.9.22 (REG sin barra — FPL de operadores estatales)
 ────────────────────────────────────────────────────────────────────
   Lo que reportaste: «se cargó FAP 001 13-11.pdf; en el casillero 18
@@ -713,7 +759,7 @@ CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
   PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
   PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.22.zip     Proyecto completo para recompilar
+  pdfpro-fuentes-v2.9.23.zip     Proyecto completo para recompilar
   PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
                                 Muestra real: ábrela en Word y verás
                                 el sello de recepción (con firma) y el
@@ -768,7 +814,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.22.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.23.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -787,4 +833,4 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.22.zip)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-PDFPro 2.9.22 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.23 · © 2026 CORPAC AIS/ARO SPHI

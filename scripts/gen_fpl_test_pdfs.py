@@ -213,6 +213,24 @@ def pdf_fap_001(path):
     c.drawString(50, 30, "FAP 001 13-11.pdf")
 
 
+def pdf_ep001(path):
+    """VUELO DEL JEFE DE ESTADO (v2.9.23, ejemplo del usuario): presentan
+    plan de vuelo EP001 (Ejército del Perú, vuelo presidencial) cuya
+    matrícula es EP246 → el casillero «Matrícula» de la app lleva
+    «EP001 - EP246». Aquí el REG/ del 18 viene en formato CORRECTO con
+    barra (el FAP cubre la variante sin barra). Las casillas van
+    CONSECUTIVAS (E,P,0,0,1 en los primeros 5 recuadros, como llena el
+    piloto en el formulario real)."""
+    c = canvas.Canvas(path, pagesize=A4)
+    _plantilla(c,
+               casillero7=[("E", 153.1), ("P", 169.8), ("0", 187.3),
+                           ("0", 218.8), ("1", 232.7)],
+               casillero8=[("I", 316.4), ("G", 393.9)],
+               reg18="REG/EP246 SEL/ABCD DOF/261115 RMK/VUELO PRESIDENCIAL")
+    c.setFont("Helvetica", 6)
+    c.drawString(50, 30, "EP001 - ejemplo jefe de estado.pdf")
+
+
 
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
@@ -222,6 +240,7 @@ for name, fn in [
     ("tmp_e2e_fpl_sphi_spst.pdf", pdf_sphi_spst),
     ("tmp_e2e_fpl_form_casillas.pdf", pdf_form_casillas),
     ("tmp_e2e_fpl_fap001.pdf", pdf_fap_001),
+    ("tmp_e2e_fpl_ep001.pdf", pdf_ep001),
 ]:
     p = os.path.join(BASE, name)
     fn(p)

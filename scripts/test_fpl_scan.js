@@ -4,7 +4,10 @@
  *   respaldo; bug «FLIGHT/FLIGT» corregido; casillero 7 por geometría.
  * v2.9.22 — FALLA DEL PILOTO (FPL de operadores estatales): «REG FAP 329»
  *   sin barra y con dígitos separados → FAP329; sigla+nº tras REG es la
- *   MATRÍCULA de la aeronave (FAP/INP/PNP/EP); sin falsos positivos. */
+ *   MATRÍCULA de la aeronave (FAP/INP/PNP/EP); sin falsos positivos.
+ * v2.9.23 — VUELO DEL JEFE DE ESTADO: sigla estatal + «001» (FAP001,
+ *   EP001, PNP001, INP001) → el campo lleva «EP001 - EP246» (vuelo -
+ *   matrícula) y el aviso se marca con «· JEFE DE ESTADO». */
 'use strict';
 const FPLScan = require('/home/z/my-project/pdfpro-desktop/src/app/fpl-scan.js');
 const fs = require('fs');
@@ -232,8 +235,8 @@ console.log('══ 15. v2.9.22 — FALLA DEL PILOTO: «REG FAP 329» (sin barra
 // número tras REG es la MATRÍCULA DE LA AERONAVE (FAP329). Lo mismo con las
 // demás siglas: FAP (Fuerza Aérea), INP (Instituto Naval), PNP (Policía
 // Nacional), EP (Ejército) — y las de otros países.
-t('«REG FAP 329» (PDF FAP real) → FAP329', FPLScan.extraerFPL('(FPL-FAP001-IS -B737/M-SD -SPJC0730 -18/REG FAP 329 DOF/261113').matricula, 'FAP329');
-t('…el origen avisa del REG sin barra y del vuelo', FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').origen, 'casillero 18 (REG sin «/») · vuelo FAP001');
+t('«REG FAP 329» (PDF FAP real) → «FAP001 - FAP329» (Jefe de Estado)', FPLScan.extraerFPL('(FPL-FAP001-IS -B737/M-SD -SPJC0730 -18/REG FAP 329 DOF/261113').matricula, 'FAP001 - FAP329');
+t('…el origen avisa del REG sin barra, el vuelo y el Jefe de Estado', FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').origen, 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO');
 t('…ident conserva el nº de vuelo FAP001', FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329').ident, 'FAP001');
 t('«REG INP 255» → INP255 (Instituto Naval del Perú)', FPLScan.extraerMatricula('-18/REG INP 255 DOF/261113').matricula, 'INP255');
 t('«REG PNP 042» → PNP042 (Policía Nacional del Perú)', FPLScan.extraerMatricula('-18/REG PNP 042 SEL/ABCD').matricula, 'PNP042');
@@ -285,12 +288,42 @@ var IT_FAP = [
 ];
 var TXT_FAP = 'PLAN DE VUELO Aircraft Identification Flight Rules Type of Flight F A P 0 0 1 I S FPL 9. NÚMERO 18. OTROS DATOS REG FAP 329 DOF/261113';
 t('geometría: casillero 7 del formulario FAP → FAP001 (nº de vuelo)', FPLScan.identDeFormulario(IT_FAP), 'FAP001');
-t('geometría + texto: FAP001 + «REG FAP 329» → matrícula FAP329', FPLScan.extraerFPL(TXT_FAP, IT_FAP).matricula, 'FAP329');
+t('geometría + texto: FAP001 + «REG FAP 329» → «FAP001 - FAP329»', FPLScan.extraerFPL(TXT_FAP, IT_FAP).matricula, 'FAP001 - FAP329');
 t('…ident = FAP001 (nº de vuelo, casillero 7)', FPLScan.extraerFPL(TXT_FAP, IT_FAP).ident, 'FAP001');
-t('…origen: casillero 18 (REG sin «/») · vuelo FAP001', FPLScan.extraerFPL(TXT_FAP, IT_FAP).origen, 'casillero 18 (REG sin «/») · vuelo FAP001');
-t('solo texto (OCR del formulario FAP) → FAP329', FPLScan.extraerFPL(TXT_FAP, null).matricula, 'FAP329');
+t('…origen: casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO', FPLScan.extraerFPL(TXT_FAP, IT_FAP).origen, 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO');
+t('solo texto (OCR del formulario FAP) → FAP329 — sin geometría no hay vuelo', FPLScan.extraerFPL(TXT_FAP, null).matricula, 'FAP329');
+// (el OCR no ve las casillas del casillero 7: la etiqueta «Flight Rules»
+//  bloquea la captura por texto — protección v2.9.21 contra «FLIGHT» —
+//  así que solo queda la matrícula del REG; el PDF real con geometría
+//  sí entrega «FAP001 - FAP329»)
 
-console.log('══ 17. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
+console.log('══ 17. v2.9.23 — VUELO DEL JEFE DE ESTADO: sigla estatal + «001» → «EP001 - EP246» ══');
+// Petición de la oficina: FAP001/EP001/PNP001/INP001 transportan al JEFE DE
+// ESTADO → el casillero «Matrícula» de la app lleva VUELO - MATRÍCULA.
+// Ejemplo del usuario: presentan plan de vuelo EP001, cuya matrícula es
+// EP246 → en el casillero se coloca «EP001 - EP246». Solo el «001»: cualquier
+// otro número es un vuelo ordinario (solo la matrícula).
+t('EP001 + REG/EP246 → «EP001 - EP246» (ejemplo del usuario)', FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246 SEL/ABCD DOF/261115').matricula, 'EP001 - EP246');
+t('…origen marca el Jefe de Estado', FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246 SEL/ABCD').origen, 'casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO');
+t('…ident queda EP001 (nº de vuelo)', FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246').ident, 'EP001');
+t('FAP001 + «REG FAP 329» sin barra → «FAP001 - FAP329»', FPLScan.extraerMatricula('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').matricula, 'FAP001 - FAP329');
+t('INP001 + «REG INP 255» → «INP001 - INP255»', FPLScan.extraerMatricula('(FPL-INP001-IS -18/REG INP 255').matricula, 'INP001 - INP255');
+t('PNP001 + REG/PNP042 → «PNP001 - PNP042»', FPLScan.extraerMatricula('(FPL-PNP001-IS -18/REG/PNP042 SEL/ABCD').matricula, 'PNP001 - PNP042');
+t('EP001 con aeronave civil OB1630 → «EP001 - OB1630»', FPLScan.extraerMatricula('(FPL-EP001-IS -18/REG OB 1630').matricula, 'EP001 - OB1630');
+// SOLO el «001»: otro número es vuelo ordinario → solo la matrícula
+t('FAP002 + «REG FAP 329» → FAP329 (vuelo ordinario, SIN combinar)', FPLScan.extraerMatricula('(FPL-FAP002-IS -18/REG FAP 329').matricula, 'FAP329');
+t('…y el aviso NO dice Jefe de Estado', FPLScan.extraerMatricula('(FPL-FAP002-IS -18/REG FAP 329').origen, 'casillero 18 (REG sin «/») · vuelo FAP002');
+t('EP01 (no es «001») no combina → EP246', FPLScan.extraerMatricula('(FPL-EP01-IS -18/REG/EP246').matricula, 'EP246');
+t('LPE001 (comercial) no combina → OB2201', FPLScan.extraerMatricula('(FPL-LPE001-IS -18/REG/OB2201').matricula, 'OB2201');
+t('CMP001 (comercial) no combina → HP1520', FPLScan.extraerMatricula('(FPL-CMP001-IS -18/REG/HP1520').matricula, 'HP1520');
+// sin REG conocido: el campo queda con el vuelo, pero el aviso igual lo marca
+t('EP001 sin REG → campo EP001', FPLScan.extraerMatricula('(FPL-EP001-IS -B737/M-SD').matricula, 'EP001');
+t('…con la marca en el aviso', FPLScan.extraerMatricula('(FPL-EP001-IS -B737/M-SD').origen, 'casillero 7 (mensaje FPL) · identificación de vuelo · JEFE DE ESTADO');
+// REG sin casillero 7: no hay vuelo que combinar
+t('REG/EP246 solo (sin casillero 7) → EP246', FPLScan.extraerMatricula('18. OTROS DATOS REG/EP246 SEL/ABCD').matricula, 'EP246');
+t('esMatricula: EP001 no es matrícula (es nº de vuelo)', FPLScan.esMatricula('EP001'), false);
+
+console.log('══ 18. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
 (async function () {
   const pdfReal = '/home/z/my-project/upload/ATC CM468  11NOV.pdf';
   if (!fs.existsSync(pdfReal)) {

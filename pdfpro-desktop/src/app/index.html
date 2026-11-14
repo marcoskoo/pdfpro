@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.22 · Matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto en FPL de operadores estatales: FAP/INP/PNP/EP) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.23 · Matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto: FAP/INP/PNP/EP) — vuelo del JEFE DE ESTADO (FAP001/EP001/PNP001/INP001): el campo lleva «EP001 - EP246» (vuelo - matrícula) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4515,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.22',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.23',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10018,7 +10018,13 @@ async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero',
    EP828 — FAP Fuerza Aérea, INP Instituto Naval, PNP Policía Nacional,
    EP Ejército del Perú; otros países cambian las siglas), mientras que
    esa misma sigla + número en el casillero 7 es el Nº DE VUELO (FAP001).
-   El aviso indica «REG sin «/»» cuando el piloto omitió la barra. */
+   El aviso indica «REG sin «/»» cuando el piloto omitió la barra.
+   v2.9.23 — VUELO DEL JEFE DE ESTADO: la sigla del operador estatal +
+   «001» en el casillero 7 (FAP001, EP001, PNP001, INP001) transporta al
+   Jefe de Estado → el casillero «Matrícula» lleva VUELO - MATRÍCULA
+   («EP001 - EP246»: plan EP001 cuya aeronave es EP246) y el aviso se
+   marca con «· JEFE DE ESTADO». Solo el «001»: FAP002 y los comerciales
+   (LPE001, CMP001) no combinan. */
 function fplSetMatricula(v,origen){
   var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
   if(el){el.value=v;try{fplMatriculaChanged();}catch(e){}}

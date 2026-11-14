@@ -685,12 +685,19 @@ function attachSmoke(w) {
           // v2.9.22 — FALLA DEL PILOTO (FPL de operadores estatales): «REG
           // FAP 329» sin barra y con dígitos separados → FAP329 (matrícula
           // de la aeronave), mientras FAP001 del casillero 7 es el nº de vuelo
+          // v2.9.23 — VUELO DEL JEFE DE ESTADO: sigla estatal + «001»
+          // (FAP001/EP001/PNP001/INP001) → el campo lleva «EP001 - EP246»
+          // (vuelo - matrícula); FAP002 y los comerciales NO combinan
           c.fplScanOACI = !!(window.FPLScan && FPLScan.extraerFPL &&
             FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO Message Type Aircraft Identification Flight Rules Type of Flight O B 1 6 3 0 V G', null).matricula === 'OB1630' &&
             FPLScan.extraerFPL('(FPL-CMP468-IS -18/REG/HP1520 SEL/MPJR').matricula === 'HP1520' &&
             FPLScan.extraerFPL('(FPL-OB1630-IS -18/REG/OB1630 DOF/261114').origen === 'casillero 7 (mensaje FPL)' &&
-            FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').matricula === 'FAP329' &&
+            FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').matricula === 'FAP001 - FAP329' &&
             FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').ident === 'FAP001' &&
+            FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246 SEL/ABCD').matricula === 'EP001 - EP246' &&
+            FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246 SEL/ABCD').origen === 'casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO' &&
+            FPLScan.extraerFPL('(FPL-FAP002-IS -18/REG FAP 329').matricula === 'FAP329' &&
+            FPLScan.extraerFPL('(FPL-LPE001-IS -18/REG/OB2201').matricula === 'OB2201' &&
             FPLScan.extraerFPL('RMK/ENTRENAMIENTO REG ANTERIOR AUTORIZADO') === null &&
             FPLScan.esMatricula('FLIGHT') === false &&
             FPLScan.esMatricula('CMP468') === false &&

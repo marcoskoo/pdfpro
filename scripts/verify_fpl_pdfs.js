@@ -8,20 +8,25 @@ const FPLScan = require('/home/z/my-project/public/pdfpro/fpl-scan.js');
 const fs = require('fs');
 
 // [archivo, matrícula, origen (subcadena), ident, matrícula SOLO TEXTO]
-// v2.9.22 — incluye el FAP real: casillero 7 = FAP001 (nº de VUELO) y el 18
-// con la falla del piloto «REG FAP 329» (sin barra, dígitos separados).
+// v2.9.22 — FAP real: casillero 7 = FAP001 (nº de VUELO) y el 18 con la
+// falla del piloto «REG FAP 329» (sin barra, dígitos separados).
+// v2.9.23 — vuelos del JEFE DE ESTADO (sigla estatal + 001): el campo lleva
+// «FAP001 - FAP329» / «EP001 - EP246» (vuelo - matrícula).
 // Nota SPHI: el fixture replica el ORDEN REVUELTO del content-stream real
 // («1 6 3 0 … O B»); eso lo resuelve la GEOMETRÍA (como hace la app con los
 // PDF). El modo «solo texto» es para OCR, que lee orden VISUAL — cubierto en
-// las pruebas unitarias — por eso aquí se espera null en solo-texto.
+// las pruebas unitarias — por eso aquí se espera null en solo-texto. En los
+// formularios FAP/EP el OCR solo ve la matrícula del REG (sin geometría no
+// hay nº de vuelo) → «solo texto» espera la matrícula sin combinar.
 const CASOS = [
-  ['tmp_e2e_fpl_telex.pdf',          'OB1630', 'casillero 18 (REG/)',              'FAP211', 'OB1630'],
-  ['tmp_e2e_fpl_form.pdf',           'OB2147', 'casillero 7 (formulario)',         'OB2147', 'OB2147'],
-  ['tmp_e2e_fpl_sin_matricula.pdf',  null,     null,                                null,     null],
-  ['tmp_e2e_fpl_sphi_spst.pdf',      'OB1630', 'casillero 7 (formulario)',         'OB1630',  null],
-  ['tmp_e2e_fpl_form_casillas.pdf',  'HP1520', 'casillero 18 (REG/)',              'CMP468', 'HP1520'],
-  ['tmp_e2e_fpl_fap001.pdf',         'FAP329', 'casillero 18 (REG sin «/»)',      'FAP001', 'FAP329'],
-  ['tmp_e2e_oficio.pdf',             null,     null,                                null,     null],
+  ['tmp_e2e_fpl_telex.pdf',          'OB1630', 'casillero 18 (REG/)',                              'FAP211', 'OB1630'],
+  ['tmp_e2e_fpl_form.pdf',           'OB2147', 'casillero 7 (formulario)',                         'OB2147', 'OB2147'],
+  ['tmp_e2e_fpl_sin_matricula.pdf',  null,     null,                                                null,     null],
+  ['tmp_e2e_fpl_sphi_spst.pdf',      'OB1630', 'casillero 7 (formulario)',                         'OB1630',  null],
+  ['tmp_e2e_fpl_form_casillas.pdf',  'HP1520', 'casillero 18 (REG/)',                              'CMP468', 'HP1520'],
+  ['tmp_e2e_fpl_fap001.pdf',         'FAP001 - FAP329', 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO', 'FAP001', 'FAP329'],
+  ['tmp_e2e_fpl_ep001.pdf',          'EP001 - EP246', 'casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO',       'EP001', 'EP246'],
+  ['tmp_e2e_oficio.pdf',             null,     null,                                                null,     null],
 ];
 
 (async () => {

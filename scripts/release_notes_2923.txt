@@ -1,0 +1,40 @@
+PDFPro 2.9.23 — Vuelo del JEFE DE ESTADO: «EP001 - EP246»
+
+LO QUE PEDISTE
+«Cuando se trate del FAP001/EP001/PNP001/INP001 quiere decir que en ese
+vuelo transporta al JEFE DE ESTADO, por lo cual deberás tomar la matrícula
++ FAP001... por ejemplo, presentan plan de vuelo EP001, cuya matrícula es
+EP246; en el casillero de la app PDFPro colocar EP001 - EP246».
+
+LA REGLA
+La sigla del operador estatal + «001» en el casillero 7 (FAP001, EP001,
+PNP001, INP001) identifica el vuelo que transporta al Jefe de Estado →
+el casillero «Matrícula (Aeronave / Espacio)» lleva VUELO - MATRÍCULA:
+· Plan EP001 cuya aeronave es EP246        →  «EP001 - EP246»
+· El «FAP 001 13-11.pdf» (REG FAP 329)     →  «FAP001 - FAP329»
+· El aviso lo marca: «casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO»
+· El archivo de registro sale «EP001 - EP246 EV.pdf»
+· SOLO el «001»: FAP002 u otro número es vuelo ordinario → solo la
+  matrícula; los comerciales (LPE001, CMP001) tampoco combinan
+· EP001 sin REG conocido → el campo queda con el vuelo y el aviso igual
+  marca JEFE DE ESTADO (la oficina completa la matrícula a mano)
+
+VERIFICADO
+· 171 pruebas unitarias (antes 155): ejemplo EP001+EP246, los 4 operadores
+  (FAP/INP/PNP/EP), vuelo presidencial con aeronave civil (EP001 - OB1630),
+  negativos FAP002/EP01/LPE001/CMP001 sin combinar
+· 8/8 PDFs con el mismo pdf.js de la app: réplica del plan EP001
+  (casillas + REG/EP246) y el FAP real → «EP001 - EP246» y
+  «FAP001 - FAP329» con el aviso «· JEFE DE ESTADO»
+· E2E en la app real 10/10: campo «EP001 - EP246», iniciales EV, aviso
+  completo, nombre de registro «EP001 - EP246 EV.pdf»
+· Regresiones intactas: CM468 → HP1520 · SPHI-SPST → OB1630 · télex
+  FAP211+REG/OB1630 → OB1630 · OB-2147 → OB2147 · oficio → campo limpio
+· Smoke de la app de escritorio (Electron real): appVersion 2.9.23,
+  escáner OACI con los casos FAP/EP, archivado real con fecha UTC
+
+DESCARGA
+· PDFPro-Setup-2.9.23.exe — instalador (la app instalada se auto-actualiza)
+· PDFPro-Portable-2.9.23.exe — portable (reemplaza al anterior)
+· Los equipos con 2.9.14+ instalada recibirán el aviso de actualización
+  automáticamente al abrir la app.
