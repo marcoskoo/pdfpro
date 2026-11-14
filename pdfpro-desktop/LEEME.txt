@@ -1,7 +1,63 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.14 — Versión de escritorio para Windows
+  PDFPro 2.9.15 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.15 (escaneo FPL automático al cargar)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «que al cargar el archivo se realice el escaneo para
+  recolección de los datos de matrícula, que podría obtenerse del
+  casillero 7 o del casillero 18 (ejemplo: REG/OB2147), y se copie de
+  manera automática a "Matrícula (Aeronave / Espacio)"… sabemos a
+  quienes pertenecen los sellos, entonces esto nos permite obtener las
+  iniciales, las cuales se copiarán de manera automática en "Iniciales
+  del Operador"».
+
+  · AL CARGAR EL ARCHIVO (PDF, Word o foto/escaneo) PDFPro lo escanea
+    y copia la MATRÍCULA sola al campo «Matrícula (Aeronave / Espacio)»:
+      - Casillero 18 — ítem «REG/» (ej. REG/OB2147): tiene prioridad
+        porque es la matrícula explícita (aunque el casillero 7 traiga
+        un callsign distinto, ej. FAP211).
+      - Casillero 7 — identificación de aeronave: tanto del mensaje
+        télex OACI «(FPL-OB1630-IS…» (también CHG/CNL/DEP/DLA/ARR)
+        como de la etiqueta del formulario impreso «IDENTIFICACIÓN DE
+        AERONAVE» / «AIRCRAFT IDENTIFICATION».
+      - Acepta OB1630, OB-1630, OB 1630 → se normaliza a OB1630 (como
+        en tu ejemplo); también matrículas extranjeras (REG/HC-COAS,
+        REG/N123AB, REG/9V-OJK…). Si el OCR confunde la O con un cero
+        (0B1630) se corrige sola.
+      - PDF y Word con texto → lectura instantánea (1-2 s). FOTO o PDF
+        ESCANEADO (sin capa de texto) → OCR automático de la primera
+        página en español (unos segundos; verás «🔎 Escaneando FPL…»).
+  · INICIALES DEL OPERADOR: se rellenan solas con las del dueño del
+    SELLO ACTIVO (el usuario con sesión iniciada, ej. «Marcos Koo» →
+    «MK»), al entrar a la app y al cargar cada FPL. Si ya escribiste
+    iniciales a mano, se respetan.
+  · Aviso «📋 Matrícula detectada: OB1630 — casillero 18 (REG/)» al
+    detectarla; el panel móvil del sello recibe el mismo dato.
+  · Si el archivo NO es un FPL (oficio, NOTAM…) no toca los campos:
+    lo que ya escribiste se mantiene.
+  · Al guardar/exportar sigue el flujo de siempre: el archivo se
+    nombra «MATRÍCULA INICIALES» (ej. OB1630 MK.pdf) y se archiva solo
+    en la carpeta del día UTC.
+
+VERIFICADO PUNTO A PUNTO (2.9.15):
+  · 31 pruebas unitarias del extractor: REG/ con guion/espacio,
+    prioridad sobre callsign, télex (FPL/CHG/CNL/DEP), formulario
+    español/inglés, OCR sucio (0B→OB), y SIN falsas alarmas (PROB40,
+    «OBSTÁCULO», oficios) ✓
+  · Extracción real con el mismo pdf.js de la app sobre PDFs de
+    prueba: télex → OB1630, formulario → OB2147, oficio → nada ✓
+  · E2E en navegador (flujo completo de usuario): FPL télex con
+    callsign FAP211 + REG/OB1630 → campo «OB1630» en 1 s; formulario
+    → «OB2147»; oficio → campo intacto; iniciales «EV» auto al
+    entrar; aviso visible; espejo móvil; nombre final «OB2147 EV.pdf» ✓
+  · Smoke de la app de escritorio empaquetada: fpl-scan.js cargado
+    vía app:// y extractor correcto dentro de la app ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.14 (carpeta por fecha UTC + auto-actualización)
+────────────────────────────────────────────────────────────────────
 
 NOVEDADES DE LA VERSIÓN 2.9.14 (carpeta por fecha UTC + auto-actualización)
 ────────────────────────────────────────────────────────────────────

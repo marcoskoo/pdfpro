@@ -651,6 +651,11 @@ function attachSmoke(w) {
             c.fplSave = !!(fr && fr.ok);
             c.fplRuta = fr ? String(fr.ruta || '') : '';
           } catch (e) { c.fplSave = false; c.fplRuta = ''; }
+          // v2.9.15 — escáner de matrícula (fpl-scan.js) cargado y funcionando
+          c.fplScanLib = !!(window.FPLScan && FPLScan.extraerMatricula &&
+            FPLScan.extraerMatricula('(FPL-FAP211-IS -18/REG/OB1630 DOF/261114').matricula === 'OB1630');
+          c.fplScanCasillero7 = !!(window.FPLScan &&
+            FPLScan.extraerMatricula('(FPL-OB1630-IS -N0450F180 DCT').matricula === 'OB1630');
           return c;
         })()`);
         if (results.checks.fplRuta) {

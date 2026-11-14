@@ -1,0 +1,72 @@
+/* PDFPro — fpl-scan.js (v2.9.15)
+ * Escaneo del FPL cargado: recoge la MATRÍCULA de la aeronave/espacio del
+ * casillero 7 (identificación de aeronave) o del casillero 18 (ítem REG/,
+ * ej. REG/OB2147) y las copia a «Matrícula (Aeronave / Espacio)».
+ * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
+'use strict';
+
+function _limpia(v) {
+  return String(v || '').toUpperCase().replace(/\s+/g, '').trim();
+}
+
+/** Normaliza una matrícula capturada:
+ *  OB-1630 / OB 1630 / OB1630 → OB1630 (convención de la oficina);
+ *  «0B…» (OCR que confunde la O con cero) → OB…; el resto se mantiene. */
+function _norm(v) {
+  var m = _limpia(v);
+  if (!m) return '';
+  if (/^0B/.test(m)) m = 'O' + m.slice(1); // OCR: 0B1630 → OB1630
+  var ob = m.match(/^OB-?([0-9A-Z]{3,5})$/);
+  if (ob) return 'OB' + ob[1];
+  return m;
+}
+
+/** Extrae {matricula, origen} del texto del FPL; null si no encuentra.
+ *  Orden de búsqueda:
+ *   1. Casillero 18 — ítem «REG/» (la matrícula explícita tiene prioridad)
+ *   2. Mensaje télex OACI — «(FPL-<identificación>-…» (campo 7; también
+ *      CHG/DLA/DEP/ARR/CNL)
+ *   3. Formulario impreso — etiqueta «IDENTIFICACIÓN DE AERONAVE» /
+ *      «AIRCRAFT IDENTIFICATION» seguida del valor
+ *   4. Patrón suelto — matrícula peruana OB#### / OB-ABC en el texto
+ *      (y prefijos vecinos HC/CP/CC/HK/XA/LV/LQ con guion) */
+function extraerMatricula(texto) {
+  var t = String(texto || '');
+  if (!t.trim()) return null;
+  var r;
+
+  // 1) Casillero 18: REG/OB2147, REG/OB-ABC, REG/HC-COAS, REG/9V-OJK…
+  r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  if (r) { var v1 = _norm(r[1]); if (v1) return { matricula: v1, origen: 'casillero 18 (REG/)' }; }
+
+  // 2) Mensaje télex: (FPL-OB1630-IS … también (CHG-, (CNL-, (DEP-…
+  r = t.match(/\(?\s*(FPL|CHG|DLA|DEP|ARR|CNL)\s*[-\u2013]([A-Z0-9]{2,7})\s*[-\u2013]/i);
+  if (r) { var v2 = _norm(r[2]); if (v2) return { matricula: v2, origen: 'casillero 7 (mensaje ' + r[1].toUpperCase() + ')' }; }
+
+  // 3) Formulario: etiqueta del casillero 7 seguida del valor
+  r = t.match(/IDENTIFICACI[ÓO]N\s+DE\s+AERONAVE[^A-Z0-9]{0,40}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i)
+    || t.match(/AIRCRAFT\s+IDENTIFICATION[^A-Z0-9]{0,40}([A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  if (r) { var v3 = _norm(r[1]); if (v3) return { matricula: v3, origen: 'casillero 7 (formulario)' }; }
+
+  // 4) Patrón suelto: OB####, OB-ABC, OB 1630 (Perú)… El lookahead
+  //    impide falsas alarmas con palabras como «OBSTÁCULO» o «OBSTACLE»
+  r = t.match(/\bOB[-\s]?([0-9]{3,4}|[A-Z]{2,4})(?![A-ZÁÉÍÓÚÜÑ0-9])/i);
+  if (r) return { matricula: _norm('OB' + r[1]), origen: 'texto del FPL' };
+
+  // …y prefijos vecinos con guion (HC-Ecuador, CP-Bolivia, CC-Chile…)
+  r = t.match(/\b(HC|CP|CC|HK|XA|LV|LQ|YV)-([A-Z0-9]{2,4})\b/i);
+  if (r) return { matricula: _norm(r[0]), origen: 'texto del FPL' };
+
+  return null;
+}
+
+/** Iniciales del operador a partir de su nombre completo:
+ *  «Marcos Koo» → «MK» (máx. 4 letras, igual que fplInicialesOperador). */
+function inicialesDe(nombre) {
+  return String(nombre || '').trim().split(/\s+/).filter(Boolean)
+    .map(function (w) { return w.charAt(0); }).join('').toUpperCase().slice(0, 4);
+}
+
+var API = { extraerMatricula: extraerMatricula, inicialesDe: inicialesDe, _norm: _norm };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+if (typeof window !== 'undefined') window.FPLScan = API;

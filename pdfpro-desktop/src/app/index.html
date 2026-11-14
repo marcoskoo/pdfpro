@@ -8,6 +8,7 @@
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/pdf-lib.min.js"></script>
 <script src="vendor/mammoth.browser.min.js"></script>
+<script src="fpl-scan.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/docx-preview.min.js"></script>
 <script src="vendor/fontkit.umd.min.js"></script>
@@ -758,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.14 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.15 · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1285,7 +1286,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
           <div style="margin-bottom:10px">
             <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Matrícula (Aeronave / Espacio)</label>
             <input class="f-input" id="selloMatricula" maxlength="12" placeholder="EJ: OB2147" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
-            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al cargar el archivo, la matrícula se detecta sola (casillero 7 o ítem REG/ del 18) y las iniciales se rellenan con las del dueño del sello activo. Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -2622,6 +2623,7 @@ async function initEditor(){
   buildSwatches();
   buildStampGrid();
   updateSelloPreview();
+  try{fplAutoIniciales();}catch(e){} // v2.9.15 — iniciales del operador dueño del sello activo
   renderSigLib();
   updateDrivePathLabel();
   updateDriveConnectBtn();
@@ -4501,7 +4503,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.14',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.15',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -8527,7 +8529,11 @@ async function handleFileOpen(file){
     // original (sin conversión previa) para editar sin distorsión
     if(/\.docx$/i.test(nm)&&window.docx&&window.JSZip){
       hideProg();
-      return await wordTabOpen(ab,base);
+      // v2.9.15 — texto para el escaneo FPL ANTES de que el editor Word consuma el buffer
+      var _docxTxt=await fplTextoDocx(ab);
+      var _okW=await wordTabOpen(ab,base);
+      if(_okW)fplEscaneaTexto(_docxTxt);
+      return _okW;
     }
     if(/\.(xlsx|xlsm|xls)$/i.test(nm)&&typeof XLSX!=='undefined'){
       hideProg();
@@ -8644,6 +8650,7 @@ async function loadPDF(file){
   document.getElementById('sbZoom').textContent=Math.round(scale*100)+'%';
   toast(fileName+' cargado – '+pageCount+' pág.','ok');
   updateDrivePathLabel();
+  fplEscaneaPDF().catch(function(){}); // v2.9.15 — matrícula del casillero 7 o 18 (REG/) al cargar
 }
 
 // ── RENDER ──
@@ -9969,10 +9976,76 @@ async function exportWord(){if(!pageOrder.length){toast('Carga un PDF primero','
 async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero','err');return;}toast('Generando Excel…');var wb=XLSX.utils.book_new();var ta=Object.values(annotations).reduce(function(s,v){return s+v.length;},0);var wsR=XLSX.utils.aoa_to_sheet([['PDF Editor Pro'],[''],['CAMPO','VALOR'],['Archivo',fileName+'.pdf'],['Páginas',pageOrder.length],['Anotaciones',ta],['Exportado',new Date().toLocaleDateString('es-PE')]]);wsR['!cols']=[{wch:24},{wch:44}];XLSX.utils.book_append_sheet(wb,wsR,'Resumen');var aRows=[['Pág.','Tipo','Texto','Color','X','Y']];for(var s=0;s<pageOrder.length;s++)(annotations[s]||[]).forEach(function(a){aRows.push([s+1,a.type,a.text||'',a.color,Math.round(a.x||0),Math.round(a.y||0)]);});var wsA=XLSX.utils.aoa_to_sheet(aRows);XLSX.utils.book_append_sheet(wb,wsA,'Anotaciones');var buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});dlBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),fileName+'_datos.xlsx');toast('Excel exportado','ok');}
 
 // ── HELPERS ──
+/* ══ v2.9.15 — ESCANEO FPL AUTOMÁTICO AL CARGAR ══
+   Al abrir un documento se busca la matrícula en el casillero 7
+   (identificación de aeronave) o en el casillero 18 (ítem REG/,
+   ej. REG/OB2147) y se copia sola a «Matrícula (Aeronave / Espacio)».
+   Las iniciales del operador se rellenan con las del dueño del sello
+   activo (usuario con sesión). PDF/Word con texto → lectura directa;
+   PDF escaneado o foto de FPL → OCR (Tesseract) de la 1.ª página. */
+function fplSetMatricula(v,origen){
+  var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
+  if(el){el.value=v;try{fplMatriculaChanged();}catch(e){}}
+  if(mob)mob.value=v;
+  try{sessionStorage.setItem('fpl_matricula',v);}catch(e){}
+  try{updateSelloPreview();}catch(e){}
+  toast('📋 Matrícula detectada: '+v+(origen?' — '+origen:''),'ok');
+}
+function fplAutoIniciales(){
+  var el=document.getElementById('selloTxInitials'),mob=document.getElementById('mobSelloTxInitials');
+  if(!el||String(el.value||'').trim())return;
+  var ini=fplInicialesOperador(); // campo vacío → iniciales del usuario con sesión (dueño del sello activo)
+  if(ini){el.value=ini;if(mob)mob.value=ini;try{updateSelloPreview();}catch(e){}}
+}
+function fplEscaneaTexto(texto){
+  try{
+    var r=window.FPLScan?window.FPLScan.extraerMatricula(texto):null;
+    if(r&&r.matricula){fplAutoIniciales();fplSetMatricula(r.matricula,r.origen);return true;}
+  }catch(e){}
+  return false;
+}
+var _fplOcrBus=false;
+async function fplOcrTexto(src){ // src = dataURL de la página/imagen
+  if(_fplOcrBus||!window.Tesseract)return '';
+  _fplOcrBus=true;
+  try{
+    toast('🔎 Escaneando FPL (OCR)…');
+    var res=await Tesseract.recognize(src,'spa',{logger:function(){}});
+    return (res&&res.data&&res.data.text)||'';
+  }catch(e){return '';}
+  finally{_fplOcrBus=false;}
+}
+async function fplEscaneaPDF(){ // pageTexts ya extraído por loadPDF
+  fplAutoIniciales();
+  for(var i=0;i<3;i++){
+    if(pageTexts[i]&&String(pageTexts[i]).trim().length>30&&fplEscaneaTexto(pageTexts[i]))return;
+  }
+  if(pdfDoc&&pageCount&&(!pageTexts[0]||!String(pageTexts[0]).trim())){
+    // PDF escaneado (sin capa de texto) → OCR de la página 1
+    try{
+      var pg=await pdfDoc.getPage(1);
+      var vp=pg.getViewport({scale:2});
+      var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+      await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      fplEscaneaTexto(await fplOcrTexto(cv.toDataURL('image/png')));
+    }catch(e){}
+  }
+}
+async function fplEscaneaImagen(dataUrl){ // foto o escaneo de FPL
+  fplAutoIniciales();
+  fplEscaneaTexto(await fplOcrTexto(dataUrl));
+}
+async function fplTextoDocx(ab){ // texto plano del .docx (antes de que lo consuma el editor)
+  try{
+    if(!window.mammoth)return '';
+    var r=await mammoth.extractRawText({arrayBuffer:ab});
+    return (r&&r.value)||'';
+  }catch(e){return '';}
+}
 /* ══ v2.9.13 — REGISTRO FPL: nombre del archivo y archivado ══
    Al guardar/exportar, el archivo se nombra «MATRÍCULA INICIALES» (ej. OB2147 MK,
    iniciales del operador) y en la versión de escritorio se archiva solo en
-   REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> (fecha de Lima, UTC-5);
+   REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> (fecha UTC, hora zulú);
    la carpeta del día/mes/año se crea automáticamente. */
 function fplInicialesOperador(){
   var v=String((document.getElementById('selloTxInitials')||{}).value||'').toUpperCase().replace(/[^A-Z]/g,'');
@@ -11090,6 +11163,7 @@ async function imgTabOpen(file){
   setProg(45);
   var img=await _ldImg(dataUrl);   // valida que la imagen decodifique
   setProg(70);
+  try{fplEscaneaImagen(dataUrl);}catch(e){} // v2.9.15 — OCR: matrícula del FPL fotografiado/escaneado
   // A4 a 96 dpi: 794×1123 px. Si la foto es horizontal → marco A4 apaisado.
   var land=img.naturalWidth>img.naturalHeight;
   var a4w=land?1123:794, a4h=land?794:1123;
