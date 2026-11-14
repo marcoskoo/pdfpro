@@ -1,0 +1,8 @@
+version: 2.9.21
+files:
+  - url: PDFPro-Setup-2.9.21.exe
+    sha512: hLb4UKFcBvkj0hecEeHLIbeByuO8epeiJmbutdS3aaZN2gOz2psenMRnJlfhTvkLt8Ue7XqHZr3RzBBOyHyblg==
+    size: 141861159
+path: PDFPro-Setup-2.9.21.exe
+sha512: hLb4UKFcBvkj0hecEeHLIbeByuO8epeiJmbutdS3aaZN2gOz2psenMRnJlfhTvkLt8Ue7XqHZr3RzBBOyHyblg==
+releaseDate: '2026-11-14T22:06:17.000Z'
