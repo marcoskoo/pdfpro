@@ -58,3 +58,6 @@ download/*.exe
 # core dumps (crashes de Electron)
 core
 core.*
+
+# wine portable para compilar Windows (Kron4ek) — demasiado grande para git
+tools/

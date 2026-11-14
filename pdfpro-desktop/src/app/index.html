@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.21 · Matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.22 · Matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto en FPL de operadores estatales: FAP/INP/PNP/EP) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -4515,7 +4515,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.21',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.22',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -10010,7 +10010,15 @@ async function exportExcel(){if(!pageOrder.length){toast('Carga un PDF primero',
    las coordenadas de cada casilla se reconstruye la fila del casillero 7
    en orden visual, porque el texto interno llega revuelto, y la etiqueta
    «Flight Rules» ya no se cuela como matrícula («FLIGHT»/«FLIGT» en el
-   FlightPlan SPHI-SPST.pdf con OB1630 en el casillero 7). */
+   FlightPlan SPHI-SPST.pdf con OB1630 en el casillero 7).
+   v2.9.22 — FALLA DEL PILOTO en los FPL de operadores estatales (PDF
+   «FAP 001 13-11.pdf»): el ítem del casillero 18 llega SIN barra y con
+   los dígitos separados — «REG FAP 329». Se tolera: la sigla + número
+   tras REG es la MATRÍCULA de la aeronave (FAP329, INP255, PNP042,
+   EP828 — FAP Fuerza Aérea, INP Instituto Naval, PNP Policía Nacional,
+   EP Ejército del Perú; otros países cambian las siglas), mientras que
+   esa misma sigla + número en el casillero 7 es el Nº DE VUELO (FAP001).
+   El aviso indica «REG sin «/»» cuando el piloto omitió la barra. */
 function fplSetMatricula(v,origen){
   var el=document.getElementById('selloMatricula'),mob=document.getElementById('mobSelloMatricula');
   if(el){el.value=v;try{fplMatriculaChanged();}catch(e){}}

@@ -1,7 +1,10 @@
 /* Pruebas unitarias de fpl-scan.js (Node puro, sin Electron)
  * Ejecutar: node /home/z/my-project/scripts/test_fpl_scan.js
  * v2.9.21 — orden OACI: casillero 7 prioritario, REG/ (casillero 18) de
- * respaldo; bug «FLIGHT/FLIGT» corregido; casillero 7 por geometría. */
+ *   respaldo; bug «FLIGHT/FLIGT» corregido; casillero 7 por geometría.
+ * v2.9.22 — FALLA DEL PILOTO (FPL de operadores estatales): «REG FAP 329»
+ *   sin barra y con dígitos separados → FAP329; sigla+nº tras REG es la
+ *   MATRÍCULA de la aeronave (FAP/INP/PNP/EP); sin falsos positivos. */
 'use strict';
 const FPLScan = require('/home/z/my-project/pdfpro-desktop/src/app/fpl-scan.js');
 const fs = require('fs');
@@ -222,7 +225,72 @@ t('falso volteo NO: «Marcos Roberto Koo Paz» sigue MK', FPLScan.inicialesDe('M
 t('falso volteo NO: «Ana María Torres» sigue AT', FPLScan.inicialesDe('Ana María Torres'), 'AT');
 t('falso volteo NO: «José Ramírez Díaz» sigue JR', FPLScan.inicialesDe('José Ramírez Díaz'), 'JR');
 
-console.log('══ 15. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
+console.log('══ 15. v2.9.22 — FALLA DEL PILOTO: «REG FAP 329» (sin barra, dígitos separados) ══');
+// PDF real «FAP 001 13-11.pdf» (operadores estatales del Perú): el casillero
+// 7 lleva el Nº DE VUELO (FAP001) y en el casillero 18 el piloto escribió el
+// ítem REG SIN «/» y con los dígitos separados — «REG FAP 329». La sigla +
+// número tras REG es la MATRÍCULA DE LA AERONAVE (FAP329). Lo mismo con las
+// demás siglas: FAP (Fuerza Aérea), INP (Instituto Naval), PNP (Policía
+// Nacional), EP (Ejército) — y las de otros países.
+t('«REG FAP 329» (PDF FAP real) → FAP329', FPLScan.extraerFPL('(FPL-FAP001-IS -B737/M-SD -SPJC0730 -18/REG FAP 329 DOF/261113').matricula, 'FAP329');
+t('…el origen avisa del REG sin barra y del vuelo', FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').origen, 'casillero 18 (REG sin «/») · vuelo FAP001');
+t('…ident conserva el nº de vuelo FAP001', FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329').ident, 'FAP001');
+t('«REG INP 255» → INP255 (Instituto Naval del Perú)', FPLScan.extraerMatricula('-18/REG INP 255 DOF/261113').matricula, 'INP255');
+t('«REG PNP 042» → PNP042 (Policía Nacional del Perú)', FPLScan.extraerMatricula('-18/REG PNP 042 SEL/ABCD').matricula, 'PNP042');
+t('«REG EP 828» → EP828 (Ejército del Perú)', FPLScan.extraerMatricula('-18/REG EP 828 DOF/261113').matricula, 'EP828');
+t('«REG FAP-329» con guion → FAP329', FPLScan.extraerMatricula('-18/REG FAP-329 DOF/261113').matricula, 'FAP329');
+t('«REG OB 1630» sin barra → OB1630 (matrícula civil)', FPLScan.extraerMatricula('18. OTROS DATOS REG OB 1630 SEL/ABCD').matricula, 'OB1630');
+t('«REG/ FAP 329» con barra y espacios → FAP329 (formato correcto)', FPLScan.extraerMatricula('REG/ FAP 329 DOF/261113').matricula, 'FAP329');
+t('«REG/FAP329» con barra → FAP329 (como ya funcionaba)', FPLScan.extraerMatricula('-18/REG/FAP329 SEL/ABCD').matricula, 'FAP329');
+t('«R E G F A P 3 2 9» casillas → FAP329', FPLScan.extraerMatricula('18: R E G F A P 3 2 9 SEL/ABCD').matricula, 'FAP329');
+t('«REGFAP329» pegado → FAP329', FPLScan.extraerMatricula('REGFAP329 SEL/ABCD DOF/261113').matricula, 'FAP329');
+t('«REG FAP 3 2 9» dígitos en casillas → FAP329', FPLScan.extraerMatricula('18. OTROS DATOS REG FAP 3 2 9 SEL/ABCD').matricula, 'FAP329');
+// la sigla + número en el casillero 7 sigue siendo Nº DE VUELO, no matrícula
+t('FAP001 sigue sin ser matrícula (es nº de vuelo)', FPLScan.esMatricula('FAP001'), false);
+t('PNP042 tampoco (designador policial + nº)', FPLScan.esMatricula('PNP042'), false);
+t('EP828 tampoco (Ejército + nº)', FPLScan.esMatricula('EP828'), false);
+t('INP255 tampoco (Instituto Naval + nº)', FPLScan.esMatricula('INP255'), false);
+t('FAP001 sin REG → nº de vuelo como identificación', FPLScan.extraerMatricula('(FPL-FAP001-IS -B737/M-SD').matricula, 'FAP001');
+// sin barra NO cuela cualquier palabra tras REG (solo matrícula/sigla+nº)
+t('«REG ANTERIOR» (remark) no se cuela', FPLScan.extraerMatricula('RMK/ENTRENAMIENTO REG ANTERIOR AUTORIZADO'), null);
+t('«REGISTRO DE MATRICULA» no se cuela', FPLScan.extraerMatricula('CONSTANCIA REGISTRO DE MATRICULA AERONAUTICA 2026'), null);
+t('«REG 2026» (solo número) no pasa', FPLScan.extraerMatricula('RENOVACION REG 2026 VIGENTE'), null);
+t('«REG HABILITADO 2026» no cuela «HABILITA»', FPLScan.extraerMatricula('RMK/PILOTO REG HABILITADO 2026 SPJC'), null);
+
+console.log('══ 16. v2.9.22 — GEOMETRÍA: formulario FAP (casillero 7 = FAP001, 18 = REG FAP 329) ══');
+var IT_FAP = [
+  { str: 'PLAN DE VUELO', x: 262.1, y: 810.3 },
+  { str: '7.', x: 148.7, y: 698.1 },
+  { str: 'IDENTIFICACION DE AERONAVE', x: 164.2, y: 698.0 },
+  { str: '8.', x: 292.0, y: 698.4 },
+  { str: 'REGLAS DE VUELO', x: 297.8, y: 698.1 },
+  { str: 'Aircraft Identification', x: 191.8, y: 688.5 },
+  { str: 'Flight Rules', x: 310.9, y: 688.5 },
+  { str: 'Type of Flight', x: 368.3, y: 688.5 },
+  { str: 'FPL', x: 62.5, y: 678.2 },
+  { str: 'F', x: 153.1, y: 678.2 },
+  { str: '0', x: 218.8, y: 676.9 },
+  { str: '0', x: 232.7, y: 676.9 },
+  { str: '1', x: 249.5, y: 676.9 },
+  { str: 'A', x: 169.8, y: 678.2 },
+  { str: 'P', x: 187.3, y: 678.2 },
+  { str: 'I', x: 316.4, y: 678.2 },
+  { str: 'S', x: 393.9, y: 678.2 },
+  { str: '9.', x: 33.4, y: 668.6 },
+  { str: 'NÚMERO', x: 61.0, y: 668.7 },
+  { str: '1', x: 224.1, y: 666.7 },
+  { str: '0', x: 236.6, y: 666.7 },
+  { str: '6', x: 247.0, y: 666.7 },
+  { str: 'REG FAP 329 DOF/261113 RMK/VUELO INSTRUCCION', x: 100.0, y: 500.0 }
+];
+var TXT_FAP = 'PLAN DE VUELO Aircraft Identification Flight Rules Type of Flight F A P 0 0 1 I S FPL 9. NÚMERO 18. OTROS DATOS REG FAP 329 DOF/261113';
+t('geometría: casillero 7 del formulario FAP → FAP001 (nº de vuelo)', FPLScan.identDeFormulario(IT_FAP), 'FAP001');
+t('geometría + texto: FAP001 + «REG FAP 329» → matrícula FAP329', FPLScan.extraerFPL(TXT_FAP, IT_FAP).matricula, 'FAP329');
+t('…ident = FAP001 (nº de vuelo, casillero 7)', FPLScan.extraerFPL(TXT_FAP, IT_FAP).ident, 'FAP001');
+t('…origen: casillero 18 (REG sin «/») · vuelo FAP001', FPLScan.extraerFPL(TXT_FAP, IT_FAP).origen, 'casillero 18 (REG sin «/») · vuelo FAP001');
+t('solo texto (OCR del formulario FAP) → FAP329', FPLScan.extraerFPL(TXT_FAP, null).matricula, 'FAP329');
+
+console.log('══ 17. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
 (async function () {
   const pdfReal = '/home/z/my-project/upload/ATC CM468  11NOV.pdf';
   if (!fs.existsSync(pdfReal)) {

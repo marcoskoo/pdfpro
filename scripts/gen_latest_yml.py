@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
-"""Genera dist/latest.yml para la auto-actualización (electron-updater)
-del release v2.9.21, con el sha512 real del instalador NSIS."""
-import base64, hashlib, datetime, os
+"""Genera dist/latest.yml para la auto-actualización (electron-updater),
+con el sha512 real del instalador NSIS. La versión se lee de package.json."""
+import base64, hashlib, datetime, json, os, re
 
+PKG = '/home/z/my-project/pdfpro-desktop/package.json'
 DIST = '/home/z/my-project/pdfpro-desktop/dist'
-exe = os.path.join(DIST, 'PDFPro-Setup-2.9.21.exe')
+ver = json.load(open(PKG))['version']
+exe = os.path.join(DIST, f'PDFPro-Setup-{ver}.exe')
+assert os.path.exists(exe), 'falta ' + exe
+assert re.match(r'^\d+\.\d+\.\d+$', ver), 'versión rara: ' + ver
+
 data = open(exe, 'rb').read()
 sha = base64.b64encode(hashlib.sha512(data).digest()).decode()
 size = len(data)
 now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
-yml = (f"version: 2.9.21\n"
+yml = (f"version: {ver}\n"
        f"files:\n"
-       f"  - url: PDFPro-Setup-2.9.21.exe\n"
+       f"  - url: PDFPro-Setup-{ver}.exe\n"
        f"    sha512: {sha}\n"
        f"    size: {size}\n"
-       f"path: PDFPro-Setup-2.9.21.exe\n"
+       f"path: PDFPro-Setup-{ver}.exe\n"
        f"sha512: {sha}\n"
        f"releaseDate: '{now}'\n")
 out = os.path.join(DIST, 'latest.yml')

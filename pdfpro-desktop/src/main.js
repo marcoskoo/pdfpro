@@ -682,12 +682,19 @@ function attachSmoke(w) {
           // primero y el REG/ del 18 queda de respaldo; la etiqueta «Flight
           // Rules» ya no se cuela como matrícula (bug FLIGHT/FLIGT del
           // FlightPlan SPHI-SPST.pdf con OB1630 en el casillero 7)
+          // v2.9.22 — FALLA DEL PILOTO (FPL de operadores estatales): «REG
+          // FAP 329» sin barra y con dígitos separados → FAP329 (matrícula
+          // de la aeronave), mientras FAP001 del casillero 7 es el nº de vuelo
           c.fplScanOACI = !!(window.FPLScan && FPLScan.extraerFPL &&
             FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO Message Type Aircraft Identification Flight Rules Type of Flight O B 1 6 3 0 V G', null).matricula === 'OB1630' &&
             FPLScan.extraerFPL('(FPL-CMP468-IS -18/REG/HP1520 SEL/MPJR').matricula === 'HP1520' &&
             FPLScan.extraerFPL('(FPL-OB1630-IS -18/REG/OB1630 DOF/261114').origen === 'casillero 7 (mensaje FPL)' &&
+            FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').matricula === 'FAP329' &&
+            FPLScan.extraerFPL('(FPL-FAP001-IS -18/REG FAP 329 DOF/261113').ident === 'FAP001' &&
+            FPLScan.extraerFPL('RMK/ENTRENAMIENTO REG ANTERIOR AUTORIZADO') === null &&
             FPLScan.esMatricula('FLIGHT') === false &&
             FPLScan.esMatricula('CMP468') === false &&
+            FPLScan.esMatricula('FAP001') === false &&
             FPLScan.esMatricula('OB1630') === true);
           return c;
         })()`);

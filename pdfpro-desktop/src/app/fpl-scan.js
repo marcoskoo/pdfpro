@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.21)
+/* PDFPro — fpl-scan.js (v2.9.22)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -29,6 +29,17 @@
  *     izquierda→derecha (el orden del texto interno llega revuelto:
  *     «4 6 8 … C M P»).
  *
+ *   Además v2.9.22 corrige la FALLA DE PRESENTACIÓN del piloto en los FPL
+ *     de los operadores estatales del Perú (PDF «FAP 001 13-11.pdf»): el
+ *     ítem del casillero 18 se escribe SIN la barra y con los dígitos
+ *     separados — «REG FAP 329» en vez de «REG/FAP329». Siglas: FAP (Fuerza
+ *     Aérea del Perú), INP (Instituto Naval del Perú), PNP (Policía
+ *     Nacional del Perú), EP (Ejército del Perú); lo mismo ocurre en otros
+ *     países cambiando las siglas. La sigla + número tras REG es la
+ *     MATRÍCULA DE LA AERONAVE (FAP329/INP255/PNP042/EP828), aunque ese
+ *     mismo formato en el casillero 7 es designador + NÚMERO DE VUELO
+ *     (FAP001): el CONTEXTO del casillero decide qué es.
+ *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';
 
@@ -41,13 +52,19 @@ function _sinAcentos(s) {
 
 /** Normaliza una matrícula capturada:
  *  OB-1630 / OB 1630 / OB1630 → OB1630 (convención de la oficina);
- *  «0B…» (OCR que confunde la O con cero) → OB…; el resto se mantiene. */
+ *  «0B…» (OCR que confunde la O con cero) → OB…; «FAP-329» (operador
+ *  estatal con guion) → FAP329; «HC-COAS» (letras tras el guion) se
+ *  mantiene. El resto se mantiene. */
 function _norm(v) {
   var m = _limpia(v);
   if (!m) return '';
   if (/^0B/.test(m)) m = 'O' + m.slice(1); // OCR: 0B1630 → OB1630
   var ob = m.match(/^OB-?([0-9A-Z]{3,5})$/);
   if (ob) return 'OB' + ob[1];
+  // operador estatal / prefijo + número con guion: «FAP-329» → FAP329
+  // (solo si tras el guion viene DÍGITO: «HC-COAS»/«9V-OJK» se quedan igual)
+  var est = m.match(/^([A-Z]{1,3})-([0-9][0-9A-Z]{0,5})$/);
+  if (est) return est[1] + est[2];
   return m;
 }
 
@@ -65,9 +82,13 @@ function _compacta(t) {
 /* Designadores OACI de 3 letras (Doc 8585 / FAA JO 7340.2) que se prestan a
  * confusión con matrícula — los «OB…» (OBC, OBJ, OBK, OBS, OBT existen como
  * designadores) y los que chocan con prefijos vecinos (CCA Air China vs
- * Chile CC-ABC…). Se aplica solo cuando lo que sigue es TODO NÚMEROS:
+ * Chile CC-ABC…). Incluye los OPERADORES ESTATALES del Perú que aparecen en
+ * el casillero 7 como designador + nº de vuelo (FAP001, INP255, PNP042…):
+ * FAP Fuerza Aérea · INP Instituto Naval · PNP Policía Nacional (EP
+ * Ejército es de 2 letras y ya queda fuera de las matrículas por sí solo).
+ * Se aplica solo cuando lo que sigue es TODO NÚMEROS:
  * «CCA486» = designador + nº de vuelo; «CCABC» (CC-ABC, letras) = matrícula. */
-var _DESIGNADOR = /^(OBC|OBJ|OBK|OBS|OBT|CMP|LPE|LAN|SKU|AMP|ATC|AVA|TPU|JAP|SKX|VPE|AND|LCB|SRU|APU|CPR|KLM|NGA|NLA|JTR|TAE|BAW|AEA|IBE|AAL|UAL|DAL|CCA|ACA|AMX|GLO|AZU|ARG|FAB|FAP|FPR|INP)$/;
+var _DESIGNADOR = /^(OBC|OBJ|OBK|OBS|OBT|CMP|LPE|LAN|SKU|AMP|ATC|AVA|TPU|JAP|SKX|VPE|AND|LCB|SRU|APU|CPR|KLM|NGA|NLA|JTR|TAE|BAW|AEA|IBE|AAL|UAL|DAL|CCA|ACA|AMX|GLO|AZU|ARG|FAB|FAP|FPR|INP|PNP)$/;
 
 /* Palabras que NUNCA pueden ser matrícula ni identificación de vuelo:
  * etiquetas del formulario bilingüe («Flight Rules» → se colaba «FLIGHT»/
@@ -110,17 +131,43 @@ function _telex(t) {
 }
 
 /** Casillero 18 — ítem REG/: la matrícula explícita (Doc 4444: se usa
- *  cuando difiere de la del casillero 7). Devuelve el valor bruto o ''.
+ *  cuando difiere de la del casillero 7). Devuelve {v, conBarra} o null.
+ *  Formas aceptadas (v2.9.22):
+ *    · «REG/OB1630», «REG/ HP 1520», «R E G / H P 1 5 2 0» — formato Doc
+ *      4444 CON barra: el indicador es explícito y el valor, confiable;
+ *    · «REG FAP 329» — FALLA DE PRESENTACIÓN del piloto (FPL de operadores
+ *      estatales: FAP/INP/PNP/EP peruanos, siglas propias en otros países):
+ *      sin «/» y con los dígitos separados. «REG» debe ir como PALABRA
+ *      SUELTA y el valor debe parecer matrícula (Anexo 7 o SIGLA + NÚMERO
+ *      de aeronave: FAP329, INP255, PNP042, EP828 — ese mismo formato en el
+ *      casillero 7 sería designador + Nº DE VUELO; tras REG es matrícula);
+ *    · «REGFAP329» todo pegado (casillas compactadas) — con DÍGITO
+ *      obligatorio tras las siglas («REGISTRO»/«REGIMIENTO» no traen).
  *  Se valida: ≥4 caracteres, sin palabras de etiqueta (un «REG/» vacío
  *  seguido de otro indicador no puede colar «EET…»). */
-function _reg(t) {
-  var r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
-  if (!r) return '';
+function _regInfo(t) {
+  var r, conBarra = true;
+  // 1) formato Doc 4444 CON barra — indicador explícito: valor confiable
+  r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
+  // 2) SIN barra (fallo del piloto): «REG» como palabra suelta — «REG FAP 329»,
+  //    «REG OB 1630»; se tolera también «REG.»/«REG:» del OCR
+  if (!r) { conBarra = false; r = t.match(/\bREG\b[\s:.,\-\/]*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i); }
+  // 3) todo PEGADO (casillas compactadas: «R E G F A P 3 2 9» → «REGFAP329»):
+  //    primero con letras finales y frontera (N2567GA), luego solo dígitos
+  if (!r) { conBarra = false; r = t.match(/\bREG([A-Z]{1,3}[0-9]{2,5}[A-Z]{0,2})(?![0-9A-Z])/i); }
+  if (!r) { conBarra = false; r = t.match(/\bREG([A-Z]{1,3}[0-9]{2,5})/i); }
+  if (!r) return null;
   var v = _norm(r[1]);
-  if (!v || _PALABRA.test(v.replace(/[^A-Z]/g, ''))) return '';
-  if (esMatricula(v)) return v;
-  return /^[A-Z0-9-]{4,8}$/.test(v) ? v : '';
+  if (!v || _PALABRA.test(v.replace(/[^A-Z]/g, ''))) return null;
+  if (esMatricula(v)) return { v: v, conBarra: conBarra };
+  // «REG/» explícito (con barra): el valor es confiable — p.ej. FAP329,
+  // matrícula de aeronave de operador estatal (FAP/INP/PNP/EP…)
+  if (conBarra) return /^[A-Z0-9-]{4,8}$/.test(v) ? { v: v, conBarra: true } : null;
+  // sin «/»: solo si parece matrícula — SIGLA de operador + NÚMERO
+  // (FAP329, INP255, PNP042, EP828…); palabras sueltas no entran
+  return /^[A-Z]{1,3}[0-9][0-9A-Z]{0,4}$/.test(v) ? { v: v, conBarra: false } : null;
 }
+function _reg(t) { var i = _regInfo(t); return i ? i.v : ''; }
 
 /** Formulario impreso — valor del casillero 7 tras la etiqueta, en TEXTO
  *  (si no hay geometría: OCR, Excel). El valor capturado ya NO se acepta a
@@ -225,7 +272,7 @@ function identDeFormulario(items) {
   } catch (e) { return ''; }
 }
 
-/* ══ Extracción unificada (v2.9.21 — orden OACI) ══ */
+/* ══ Extracción unificada (v2.9.22 — orden OACI) ══ */
 
 /** Extrae {matricula, origen, ident} del FPL; null si no encuentra nada.
  *  texto — capa de texto (o texto OCR / celdas del Excel);
@@ -237,7 +284,10 @@ function identDeFormulario(items) {
  *      mensaje télex «(FPL-…-», o etiqueta impresa. Si ES la matrícula
  *      (Anexo 7 / RAP 45) → esa ES la matrícula; NO se mira el casillero 18.
  *   2. CASILLERO 18 — ítem REG/ (respaldo cuando el 7 trae designador de
- *      empresa + nº de vuelo: CMP468, LPE1234, FAP211…).
+ *      empresa + nº de vuelo: CMP468, LPE1234, FAP001…). v2.9.22: también
+ *      se acepta «REG FAP 329» — sin barra y con dígitos separados (fallo
+ *      de presentación del piloto, FPL de operadores estatales: la sigla +
+ *      número tras REG es la MATRÍCULA de la aeronave, p.ej. FAP329).
  *   3. PATRÓN SUELTO — matrícula OB#### / vecinos con guion en el texto.
  *  Si el casillero 7 trae un designador sin REG/, se devuelve esa
  *  identificación del vuelo (mejor eso que nada; el operador corrige). */
@@ -255,10 +305,14 @@ function extraerFPL(texto, items) {
   if (ident && esMatricula(ident))
     return { matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }; // el 7 YA trae la matrícula
 
-  // 2) casillero 18 — REG/ (matrícula «si difiere de la del casillero 7»)
-  var reg = _reg(t) || _reg(_compacta(t));
-  if (reg)
-    return { matricula: reg, origen: 'casillero 18 (REG/)' + (ident ? ' · vuelo ' + ident : ''), ident: ident };
+  // 2) casillero 18 — REG/ (matrícula «si difiere de la del casillero 7»);
+  //    v2.9.22: también «REG FAP 329» sin barra (fallo de presentación del
+  //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado
+  var ri = _regInfo(t) || _regInfo(_compacta(t));
+  if (ri)
+    return { matricula: ri.v,
+             origen: 'casillero 18 (REG' + (ri.conBarra ? '/' : ' sin «/»') + ')' + (ident ? ' · vuelo ' + ident : ''),
+             ident: ident };
 
   // 3) patrón suelto en el texto
   var su = _suelto(t) || _suelto(_compacta(t));

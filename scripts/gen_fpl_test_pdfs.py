@@ -94,8 +94,9 @@ def pdf_sin_matricula(path):
 # 8, luego las letras). El escáner debe reconstruir la fila por geometría. ══
 
 def _plantilla(c, casillero7, casillero8, reg18):
-    """casillero7 = dict {letra: x} en la fila y=678.2 (y=676.9 dígitos);
-    casillero8 = [(letra,x)]; reg18 = texto del 18 (con o sin REG/)."""
+    """casillero7 = dict {letra: x} o LISTA de (letra, x) en la fila y=678.2
+    (y=676.9 dígitos) — la lista permite caracteres REPETIDOS (FAP001 tiene
+    dos ceros); casillero8 = [(letra,x)]; reg18 = texto del 18 (con o sin REG/)."""
     c.setFont("Helvetica-Bold", 9)
     c.drawString(262.1, 810.3, "PLAN DE VUELO")
     c.setFont("Helvetica", 7.6)
@@ -122,8 +123,9 @@ def _plantilla(c, casillero7, casillero8, reg18):
     c.setFont("Helvetica", 7.6)
     c.drawString(62.5, 678.2, "FPL")
     c.setFont("Helvetica-Bold", 10)
-    digitos = [(x, ch) for ch, x in casillero7.items() if ch.isdigit()]
-    letras7 = [(x, ch) for ch, x in casillero7.items() if not ch.isdigit()]
+    items7 = casillero7.items() if isinstance(casillero7, dict) else casillero7
+    digitos = [(x, ch) for ch, x in items7 if ch.isdigit()]
+    letras7 = [(x, ch) for ch, x in items7 if not ch.isdigit()]
     for x, ch in digitos:                       # 1.º los dígitos (y=676.9)
         c.drawString(x, 676.9, ch)
     for ch, x in casillero8:                    # 2.º el casillero 8 (más a la derecha)
@@ -194,6 +196,23 @@ def pdf_form_casillas(path):
                reg18="PBN/A1B1C1D1L1O1S2T1 NAV/RNP2 DOF/261111 REG/HP1520 SEL/MPJR OPR/CMP PER/C RMK/TCAS")
 
 
+def pdf_fap_001(path):
+    """FPL real «FAP 001 13-11.pdf» (operador estatal — Fuerza Aérea del
+    Perú): casillero 7 = FAP001 (Nº DE VUELO del operador) y en el 18 la
+    FALLA DE PRESENTACIÓN del piloto — «REG FAP 329» SIN barra y con los
+    dígitos separados. v2.9.22 → matrícula FAP329 (la de la AERONAVE).
+    La lista de tuplas permite los DOS ceros de FAP001."""
+    c = canvas.Canvas(path, pagesize=A4)
+    _plantilla(c,
+               casillero7=[("F", 153.1), ("A", 169.8), ("P", 187.3),
+                           ("0", 218.8), ("0", 232.7), ("1", 249.5)],
+               casillero8=[("I", 316.4), ("S", 393.9)],
+               reg18="REG FAP 329 DOF/261113 RMK/VUELO DE INSTRUCCION")
+    # nombre de archivo del caso real
+    c.setFont("Helvetica", 6)
+    c.drawString(50, 30, "FAP 001 13-11.pdf")
+
+
 
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
@@ -202,6 +221,7 @@ for name, fn in [
     ("tmp_e2e_fpl_sin_matricula.pdf", pdf_sin_matricula),
     ("tmp_e2e_fpl_sphi_spst.pdf", pdf_sphi_spst),
     ("tmp_e2e_fpl_form_casillas.pdf", pdf_form_casillas),
+    ("tmp_e2e_fpl_fap001.pdf", pdf_fap_001),
 ]:
     p = os.path.join(BASE, name)
     fn(p)
