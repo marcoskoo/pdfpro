@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.23)
+/* PDFPro — fpl-scan.js (v2.9.24)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -281,7 +281,7 @@ function identDeFormulario(items) {
   } catch (e) { return ''; }
 }
 
-/* ══ Extracción unificada (v2.9.23 — orden OACI + JEFE DE ESTADO) ══ */
+/* ══ Extracción unificada (v2.9.24 — orden OACI + JEFE DE ESTADO + OCR) ══ */
 
 /* Vuelos del JEFE DE ESTADO (v2.9.23, petición de la oficina): la sigla del
  * operador estatal + «001» en el casillero 7 (FAP001, EP001, PNP001, INP001)
@@ -289,6 +289,58 @@ function identDeFormulario(items) {
  * Solo el «001» exacto (FAP002 es un vuelo ordinario; LPE001/CMP001 son
  * vuelos comerciales y NO entran). Otros países: añadir la sigla aquí. */
 var _JEFEE = /^(FAP|INP|PNP|EP)001$/;
+
+/* v2.9.24 — FPL FOTOGRAFIADO/ESCANEADO (OCR): los FPL de operadores estatales
+ * llegan como FOTO (WhatsApp) o escaneo; el OCR lee el formulario casilla por
+ * casilla («F A P 0 0 1 I S») y la ETIQUETA del casillero 7 deja de servir de
+ * ancla: entre «IDENTIFICACION DE AERONAVE» y las casillas están las demás
+ * etiquetas de la fila («REGLAS DE VUELO»/«FLIGHT RULES»). El vuelo del Jefe
+ * de Estado es SIEMPRE sigla estatal + «001»: si el texto (directo o
+ * compactado) trae un (FAP|INP|PNP|EP)001 con bordes limpios — no pegado a
+ * otra palabra ni al ítem REG («REGFAP329» no lo dispara) — ese es el vuelo.
+ * Tras «001» se toleran hasta 2 letras (las casillas 8/9 de la misma fila:
+ * «FAP001IS») pero nunca dígitos («FAP0012» no es el vuelo). */
+var _PRESI = /(?:^|[^A-Z0-9])(FAP|INP|PNP|EP)001([A-Z]{0,2})(?![A-Z0-9])/;
+
+/** Une las corridas de caracteres sueltos (una casilla por carácter, como
+ *  lee el OCR los formularios fotografiados): «F A P 0 0 1 I S» →
+ *  «FAP001IS», SIN pegarlas a las palabras vecinas — a diferencia de
+ *  _compacta, que produce «RULESFAP001IS» y rompe los bordes del patrón.
+ *  v2: los RECUADROS del formulario los lee el OCR como «|», «[», «-»…
+ *  entre carácter y carácter («F|A|P|0|0|1»), así que la corrida se corta
+ *  por cualquier separador NO alfanumérico, no solo espacios. LÍNEA A
+ *  LÍNEA: las casillas son de una fila visual y un suelto de la línea
+ *  siguiente («9. NUMERO») no debe pegarse al ident. */
+function _casillas(t) {
+  return String(t || '').toUpperCase().split(/\n+/).map(function (ln) {
+    var out = [], cur = '';
+    ln.split(/[^0-9A-Z]+/).forEach(function (w) {
+      if (!w) return;
+      if (w.length === 1) { cur += w; return; }
+      if (cur) { out.push(cur); cur = ''; }
+      out.push(w);
+    });
+    if (cur) out.push(cur);
+    return out.join(' ');
+  }).join('\n');
+}
+
+/** Vuelo presidencial presente en el texto (OCR/foto) aunque la etiqueta del
+ *  casillero 7 no sirviera de ancla. Devuelve «FAP001» o ''. */
+function _vueloPresidencial(t) {
+  var s = String(t || '').toUpperCase();
+  var m = s.match(_PRESI) || _casillas(s).match(_PRESI);
+  return m ? m[1] + '001' : '';
+}
+
+/** ¿El ident capturado ES el vuelo presidencial con las casillas 8/9 pegadas
+ *  («EP001IG» = vuelo EP001 + reglas I + tipo G)? Devuelve el vuelo limpio
+ *  («EP001») o ''. Solo para la sigla estatal + «001»: un vuelo ordinario
+ *  con casillas pegadas (CMP468IS) se deja tal cual. */
+function _presi(ident) {
+  var m = String(ident || '').toUpperCase().match(/^(FAP|INP|PNP|EP)001([A-Z]{0,2})$/);
+  return m ? m[1] + '001' : '';
+}
 
 /** Post-proceso el resultado de extraerFPL: si la identificación del
  *  casillero 7 es un vuelo del Jefe de Estado (sigla estatal + 001) y hay
@@ -322,7 +374,10 @@ function _final(r) {
  *  Si el casillero 7 trae un designador sin REG/, se devuelve esa
  *  identificación del vuelo (mejor eso que nada; el operador corrige).
  *  v2.9.23: vuelo del JEFE DE ESTADO (sigla estatal + 001) → el campo
- *  lleva «EP001 - EP246» (vuelo - matrícula). */
+ *  lleva «EP001 - EP246» (vuelo - matrícula).
+ *  v2.9.24: FPL FOTOGRAFIADO/ESCANEADO — el OCR lee casilla por casilla y
+ *  la etiqueta del 7 no ancla; el vuelo presidencial (sigla + «001») se
+ *  rescata del texto directo/compactado. */
 function extraerFPL(texto, items) {
   var t = String(texto || '');
   if (!t.trim() && !(items && items.length)) return null;
@@ -334,6 +389,19 @@ function extraerFPL(texto, items) {
   var tx = _telex(t);
   if (!ident && tx) { ident = tx.ident; origenIdent = 'casillero 7 (mensaje ' + tx.tipo + ')'; }
   if (!ident) { var e1 = _etiqueta(t) || _etiqueta(_compacta(t)); if (e1) ident = e1; }
+  // v2.9.24 — OCR/casillas: si al ident se le pegaron las casillas 8/9 de la
+  // misma fila («EP001IG»), se recorta al vuelo cuando el núcleo es el
+  // presidencial (sigla estatal + «001»)
+  var pp = _presi(ident);
+  if (pp) ident = pp;
+  // v2.9.24 — FPL FOTOGRAFIADO/ESCANEADO (OCR): la etiqueta del casillero 7
+  // no sirve de ancla en el texto leído casilla por casilla; el vuelo del
+  // Jefe de Estado (sigla estatal + «001») se rescata del texto directo o
+  // de las casillas compactadas («F A P 0 0 1 I S» → FAP001)
+  if (!ident) {
+    var vp = _vueloPresidencial(t);
+    if (vp) { ident = vp; origenIdent = 'casillero 7 (casillas del formulario)'; }
+  }
   if (ident && esMatricula(ident))
     return _final({ matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }); // el 7 YA trae la matrícula
 
@@ -484,7 +552,8 @@ function pareceFPL(texto) {
 var API = {
   extraerMatricula: extraerMatricula, extraerFPL: extraerFPL,
   identDeFormulario: identDeFormulario, esMatricula: esMatricula,
-  inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta
+  inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta,
+  _casillas: _casillas, _vueloPresidencial: _vueloPresidencial, _presi: _presi
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 if (typeof window !== 'undefined') window.FPLScan = API;

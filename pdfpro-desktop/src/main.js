@@ -75,7 +75,10 @@ function handleAppProtocol(request) {
     fs.promises.readFile(filePath)
       .then((buf) => {
         const mime = MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
-        resolve(new Response(buf, { headers: { 'Content-Type': mime } }));
+        // v2.9.24 — sin caché: tras una auto-actualización el asar cambia y
+        // Chromium no debe servir un JS/HTML viejo cacheado (mezcla de
+        // versiones). Son archivos locales: revalidar es instantáneo.
+        resolve(new Response(buf, { headers: { 'Content-Type': mime, 'Cache-Control': 'no-cache' } }));
       })
       .catch(() => resolve(new Response('No encontrado', { status: 404 })));
   });
@@ -688,6 +691,10 @@ function attachSmoke(w) {
           // v2.9.23 — VUELO DEL JEFE DE ESTADO: sigla estatal + «001»
           // (FAP001/EP001/PNP001/INP001) → el campo lleva «EP001 - EP246»
           // (vuelo - matrícula); FAP002 y los comerciales NO combinan
+          // v2.9.24 — FPL FOTOGRAFIADO/ESCANEADO (OCR): las casillas se leen
+          // sueltas («F A P 0 0 1 I S» o «F|A|P|0|0|1» con recuadros) y la
+          // etiqueta del 7 no sirve de ancla → el vuelo presidencial se
+          // rescata del texto; «EP001IG» (casillas 8/9 pegadas) se recorta
           c.fplScanOACI = !!(window.FPLScan && FPLScan.extraerFPL &&
             FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO Message Type Aircraft Identification Flight Rules Type of Flight O B 1 6 3 0 V G', null).matricula === 'OB1630' &&
             FPLScan.extraerFPL('(FPL-CMP468-IS -18/REG/HP1520 SEL/MPJR').matricula === 'HP1520' &&
@@ -698,6 +705,15 @@ function attachSmoke(w) {
             FPLScan.extraerFPL('(FPL-EP001-IS -18/REG/EP246 SEL/ABCD').origen === 'casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO' &&
             FPLScan.extraerFPL('(FPL-FAP002-IS -18/REG FAP 329').matricula === 'FAP329' &&
             FPLScan.extraerFPL('(FPL-LPE001-IS -18/REG/OB2201').matricula === 'OB2201' &&
+            // v2.9.24 — foto/OCR: rescate de las casillas + recuadros
+            // (los saltos de línea de estos textos van escapados, porque
+            //  el script viaja dentro de un template literal)
+            FPLScan.extraerFPL('AIRCRAFT IDENT FLIGHT RULES\\nF A P 0 0 1 I S\\n18. OTROS DATOS REG FAP 329 DOF/261113', null).matricula === 'FAP001 - FAP329' &&
+            FPLScan.extraerFPL('AIRCRAFT IDENT\\nF|A|P|0|0|1|I|S\\n18. OTROS DATOS\\nREG FAP 329', null).matricula === 'FAP001 - FAP329' &&
+            FPLScan._presi('EP001IG') === 'EP001' &&
+            FPLScan._presi('CMP468IS') === '' &&
+            FPLScan._vueloPresidencial('18 OTROS DATOS REGFAP329 SEL/ABCD') === '' &&
+            FPLScan.extraerFPL('AIRCRAFT IDENT\\nF A P 0 0 2 I S\\nREG FAP 329', null).matricula === 'FAP329' &&
             FPLScan.extraerFPL('RMK/ENTRENAMIENTO REG ANTERIOR AUTORIZADO') === null &&
             FPLScan.esMatricula('FLIGHT') === false &&
             FPLScan.esMatricula('CMP468') === false &&
@@ -720,6 +736,11 @@ function attachSmoke(w) {
         app.exit(results.consoleErrors.length ? 2 : 0);
       } catch (e) {
         console.log('SMOKE_ERROR ' + String(e));
+        // v2.9.24 — los errores de consola del renderer recogidos hasta el
+        // fallo: sin esto el «Script failed to execute» no dice nada
+        if (results.consoleErrors && results.consoleErrors.length) {
+          console.log('SMOKE_CONSOLE_ERRORS ' + JSON.stringify(results.consoleErrors));
+        }
         app.exit(4);
       }
     }, 6000);

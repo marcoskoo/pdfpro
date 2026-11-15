@@ -291,11 +291,10 @@ t('geometría: casillero 7 del formulario FAP → FAP001 (nº de vuelo)', FPLSca
 t('geometría + texto: FAP001 + «REG FAP 329» → «FAP001 - FAP329»', FPLScan.extraerFPL(TXT_FAP, IT_FAP).matricula, 'FAP001 - FAP329');
 t('…ident = FAP001 (nº de vuelo, casillero 7)', FPLScan.extraerFPL(TXT_FAP, IT_FAP).ident, 'FAP001');
 t('…origen: casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO', FPLScan.extraerFPL(TXT_FAP, IT_FAP).origen, 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO');
-t('solo texto (OCR del formulario FAP) → FAP329 — sin geometría no hay vuelo', FPLScan.extraerFPL(TXT_FAP, null).matricula, 'FAP329');
-// (el OCR no ve las casillas del casillero 7: la etiqueta «Flight Rules»
-//  bloquea la captura por texto — protección v2.9.21 contra «FLIGHT» —
-//  así que solo queda la matrícula del REG; el PDF real con geometría
-//  sí entrega «FAP001 - FAP329»)
+t('solo texto (OCR/foto del formulario FAP) → «FAP001 - FAP329»', FPLScan.extraerFPL(TXT_FAP, null).matricula, 'FAP001 - FAP329');
+// (v2.9.24: el FPL FAP real llega como FOTO/escaneo — el OCR lee casilla por
+//  casilla y la etiqueta «Flight Rules» rompe el ancla; el vuelo presidencial
+//  se rescata de las casillas compactadas «F A P 0 0 1 I S» → FAP001)
 
 console.log('══ 17. v2.9.23 — VUELO DEL JEFE DE ESTADO: sigla estatal + «001» → «EP001 - EP246» ══');
 // Petición de la oficina: FAP001/EP001/PNP001/INP001 transportan al JEFE DE
@@ -323,7 +322,52 @@ t('…con la marca en el aviso', FPLScan.extraerMatricula('(FPL-EP001-IS -B737/M
 t('REG/EP246 solo (sin casillero 7) → EP246', FPLScan.extraerMatricula('18. OTROS DATOS REG/EP246 SEL/ABCD').matricula, 'EP246');
 t('esMatricula: EP001 no es matrícula (es nº de vuelo)', FPLScan.esMatricula('EP001'), false);
 
-console.log('══ 18. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
+console.log('══ 18. v2.9.24 — FPL FOTOGRAFIADO/ESCANEADO (OCR): el vuelo presidencial se rescata de las casillas ══');
+// El caso REAL reportado: «cargué el FPL FAP001, matrícula FAP329, en el
+// casillero solo se observa FAP329». El PDF es una FOTO/escaneo del
+// formulario (estilo WhatsApp): el OCR de Tesseract lee casilla por casilla
+// («F A P 0 0 1 I S») y la etiqueta del casillero 7 ya no sirve de ancla
+// porque entre ella y las casillas están las etiquetas «FLIGHT RULES» /
+// «REGLAS DE VUELO» de la misma fila. v2.9.24: el vuelo del Jefe de Estado
+// (sigla estatal + «001») se rescata del texto con bordes limpios.
+var OCR_FAP = 'FLIGHT PLAN PLAN DE VUELO\nMESSAGE TYPE (FPL)\nAIRCRAFT IDENT / IDENTIFICACION DE AERONAVE FLIGHT RULES REGLAS DE VUELO TYPE OF FLIGHT TIPO DE VUELO\nF A P 0 0 1 I S\nNUMBER TIPO DE AERONAVE B 7 3 7/M\nDEPARTURE AERODROME AERODROMO DE SALIDA S P J C 0 7 3 0\nOTHER INFORMATION OTROS DATOS\nREG FAP 329 DOF/261113 RMK/VUELO PRESIDENCIAL';
+t('FOTO FAP real: «F A P 0 0 1 I S» + «REG FAP 329» → «FAP001 - FAP329»', FPLScan.extraerFPL(OCR_FAP, null).matricula, 'FAP001 - FAP329');
+t('…origen: casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO', FPLScan.extraerFPL(OCR_FAP, null).origen, 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO');
+t('…ident = FAP001 (rescatado de las casillas)', FPLScan.extraerFPL(OCR_FAP, null).ident, 'FAP001');
+t('FOTO EP001 con REG/EP246 → «EP001 - EP246» (ejemplo del usuario)', FPLScan.extraerFPL('FLIGHT PLAN MESSAGE TYPE (FPL)\nAIRCRAFT IDENT / IDENTIFICACION DE AERONAVE\nE P 0 0 1 I G\nOTHER INFORMATION\nREG/EP246 SEL/ABCD', null).matricula, 'EP001 - EP246');
+t('FOTO INP001 + «REG INP 255» → «INP001 - INP255»', FPLScan.extraerFPL('AIRCRAFT IDENTIFICATION IDENTIFICACION DE AERONAVE\nI N P 0 0 1 V\n18 OTROS DATOS REG INP 255', null).matricula, 'INP001 - INP255');
+t('FOTO PNP001 + REG/PNP042 → «PNP001 - PNP042»', FPLScan.extraerFPL('AIRCRAFT IDENT\nP N P 0 0 1 I S\nREG/PNP042', null).matricula, 'PNP001 - PNP042');
+// la etiqueta SÍ ancla pero con las casillas 8/9 PEGADAS al ident («EP001IG»
+// = vuelo EP001 + reglas I + tipo G) → se recorta al vuelo presidencial
+t('«EP001IG» (casillas 8/9 pegadas) se recorta → «EP001 - EP246»', FPLScan.extraerFPL('IDENTIFICACION DE AERONAVE\nE P 0 0 1 I G\n18. OTROS DATOS REG/EP246', null).matricula, 'EP001 - EP246');
+t('_presi: «FAP001IS» → FAP001', FPLScan._presi('FAP001IS'), 'FAP001');
+t('_presi: «CMP468IS» (ordinario) NO se recorta', FPLScan._presi('CMP468IS'), '');
+// negativos: el rescate NO dispara con vuelos ordinarios ni sin vuelo
+t('FOTO FAP002 (ordinario) + REG → FAP329 solo', FPLScan.extraerFPL('AIRCRAFT IDENT\nF A P 0 0 2 I S\nREG FAP 329', null).matricula, 'FAP329');
+t('FOTO sin FAP001: solo REG FAP 329 → FAP329', FPLScan.extraerFPL('RMK/VUELO DE INSTRUCCION REG FAP 329', null).matricula, 'FAP329');
+t('«REGFAP329» (REG pegado) NO dispara el rescate', FPLScan._vueloPresidencial('18 OTROS DATOS REGFAP329 SEL/ABCD'), '');
+t('FAP001 escrito pegado (texto nativo) → «FAP001 - FAP329»', FPLScan.extraerFPL('FPL FOTOGRAFIADO: la casilla trae FAP001 junto\nIdent: FAP001 REG/FAP329', null).matricula, 'FAP001 - FAP329');
+t('FOTO FAP001 sin REG → campo FAP001 + marca', FPLScan.extraerFPL('AIRCRAFT IDENT\nF A P 0 0 1 I S', null).matricula, 'FAP001');
+t('…origen: casillas del formulario · JEFE DE ESTADO', FPLScan.extraerFPL('AIRCRAFT IDENT\nF A P 0 0 1 I S', null).origen, 'casillero 7 (casillas del formulario) · identificación de vuelo · JEFE DE ESTADO');
+// _casillas: une las corridas de casillas SIN pegarlas a las palabras vecinas
+// (v2: corta por cualquier separador NO alfanumérico — el OCR lee los
+//  recuadros del formulario como «|», «[», «-»… entre carácter y carácter)
+t('_casillas: «F A P 0 0 1 I S» → «FAP001IS» (token propio)', FPLScan._casillas('FLIGHT RULES\nF A P 0 0 1 I S\nNUMBER'), 'FLIGHT RULES\nFAP001IS\nNUMBER');
+t('_casillas: «F|A|P|0|0|1» (recuadros) → «FAP001IS»', FPLScan._casillas('7. IDENTIFICACION\nF|A|P|0|0|1|I|S\n9. NUMERO'), '7 IDENTIFICACION\nFAP001IS\n9 NUMERO');
+t('_casillas: «F]A]P-0.0.1» (ruido mixto) → «FAP001»', FPLScan._casillas('AIRCRAFT IDENT\nF]A]P-0.0.1\nNUMBER'), 'AIRCRAFT IDENT\nFAP001\nNUMBER');
+t('_casillas: «N]3]8]3]A]A» (foto real N383AA) → «N383AA»', FPLScan._casillas('IDENTIFICATION\nN]3]8]3]A]A\nEQUIPMENT'), 'IDENTIFICATION\nN383AA\nEQUIPMENT');
+t('_casillas: el «9» de la línea siguiente NO se pega al ident', FPLScan._casillas('F|A|P|0|0|1|I|S\n9. NUMERO').indexOf('FAP001IS9'), -1);
+t('_casillas: palabras normales intactas (la puntuación se normaliza)', FPLScan._casillas('PLAN DE VUELO 18. OTROS DATOS'), 'PLAN DE VUELO 18 OTROS DATOS');
+// FOTO con casillas encajonadas: el OCR las lee con separadores de recuadro
+t('FOTO casillas encajonadas «F|A|P|0|0|1|I|S» + REG → «FAP001 - FAP329»', FPLScan.extraerFPL('FLIGHT PLAN\nAIRCRAFT IDENTIFICATION FLIGHT RULES TYPE OF FLIGHT\nF|A|P|0|0|1|I|S\n18. OTROS DATOS\nREG FAP 329 DOF/261113', null).matricula, 'FAP001 - FAP329');
+// vuelo ordinario con casillas pegadas NO se toca (solo el presidencial se recorta)
+t('CMP468IS con casillas pegadas → HP1520 (ident sin recortar)', FPLScan.extraerFPL('FLIGHT PLAN\nC M P 4 6 8 I S\nREG/HP1520', null).matricula, 'HP1520');
+// GA fotografiada sin REG ni etiqueta utilizable → vacío (comportamiento
+// previo: el operador escribe la matrícula a mano; el rescate es SOLO
+// para el vuelo presidencial, que tiene firma única sigla+«001»)
+t('FOTO GA «O B 1 6 3 0 V G» sin REG → null (sin cambios)', FPLScan.extraerFPL('FLIGHT PLAN\nAIRCRAFT IDENT\nO B 1 6 3 0 V G', null), null);
+
+console.log('══ 19. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
 (async function () {
   const pdfReal = '/home/z/my-project/upload/ATC CM468  11NOV.pdf';
   if (!fs.existsSync(pdfReal)) {

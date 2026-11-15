@@ -1,0 +1,53 @@
+PDFPro 2.9.24 — FPL FOTOGRAFIADO/ESCANEADO: el caso FAP001 real, resuelto
+
+LO REPORTADO
+«Cargué el FPL FAP001, matrícula FAP329; en el casillero de la app solo se
+observa FAP329 y al guardar se guarda como FAP329 MK.pdf».
+
+LA CAUSA
+El «FAP 001 13-11.pdf» es una FOTO/escaneo del formulario (sin capa de
+texto): la app lo lee con el OCR (Tesseract), que entiende la línea
+«REG FAP 329» pero NO las casillas encajonadas del casillero 7
+(«F A P 0 0 1») — los recuadros lo confunden y el nº de vuelo se pierde.
+Sin vuelo no hay combinación «FAP001 - FAP329» (la regla del Jefe de
+Estado de la 2.9.23 quedaba sin materia prima).
+
+LO CORREGIDO (tres vías, en orden)
+1. TEXTO OCR LEGIBLE — si el OCR sí lee las casillas, con espacios
+   («F A P 0 0 1 I S») o con el ruido de los recuadros («F|A|P|0|0|1»,
+   «F]A]P-0.0.1»), el vuelo presidencial (sigla estatal + «001») se
+   rescata del texto aunque la etiqueta del casillero 7 no sirva de ancla.
+2. CASILLAS 8/9 PEGADAS — «EP001IG» (vuelo EP001 + reglas I + tipo G) se
+   recorta al vuelo. Los vuelos ordinarios («CMP468IS») no se tocan.
+3. NOMBRE DEL ARCHIVO — la oficina nombra los FPL con el vuelo: si el OCR
+   no pudo leer el vuelo y el REG entregó la matrícula estatal (FAP329),
+   el vuelo se toma del nombre del archivo («FAP 001 13-11.pdf») cuando
+   trae la sigla + «001» y la sigla coincide. Resultado: campo
+   «FAP001 - FAP329», aviso «casillero 18 (REG sin «/») · vuelo FAP001
+   (nombre del archivo) · JEFE DE ESTADO» y archivo «FAP001 - FAP329 MK.pdf».
+
+ADEMÁS
+· Protocolo app:// SIN caché: tras una auto-actualización Chromium podía
+  servir un JavaScript viejo cacheado mezclado con el HTML nuevo; ahora
+  cada recurso se revalida (archivos locales, carga instantánea).
+
+VERIFICADO
+· 195 pruebas unitarias (antes 171): foto/OCR con casillas espaciadas y
+  encajonadas, las 4 siglas, «EP001IG» recortado, negativos (FAP002, EP01,
+  LPE001/CMP001, «REGFAP329» no dispara, GA fotografiada sin REG vacía)
+· 8/8 PDFs con el mismo pdf.js de la app
+· E2E en la app real (10/10) CON OCR TESSERACT DE VERDAD: una FOTO del
+  formulario FAP001 (PDF de solo imagen) cargada en la app → OCR → campo
+  «FAP001 - FAP329» con aviso «· JEFE DE ESTADO» y registro
+  «FAP001 - FAP329 EV.pdf»
+· Regresiones intactas: FAP001/EP001 nativos → combinados · CM468 →
+  HP1520 sin marca · SPHI-SPST → OB1630 · télex FAP211 → OB1630 ·
+  oficio → campo limpio
+· Smoke de la app de escritorio (Electron real): appVersion 2.9.24,
+  escáner OACI con los casos FAP/EP y foto/OCR, archivado real con fecha UTC
+
+DESCARGA
+· PDFPro-Setup-2.9.24.exe — instalador (la app instalada se auto-actualiza)
+· PDFPro-Portable-2.9.24.exe — portable (reemplaza al anterior)
+· Los equipos con 2.9.14+ instalada recibirán el aviso de actualización
+  automáticamente al abrir la app.
