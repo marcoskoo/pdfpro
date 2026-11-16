@@ -254,6 +254,24 @@ def pdf_formacion(path):
     c.drawString(50, 30, "AVISPA + 1 - vuelo en formacion.pdf")
 
 
+def pdf_designador(path):
+    """VUELO CON DESIGNADOR (v2.9.27, ejemplo de la oficina): la
+    IDENTIFICACIÓN DEL VUELO (casillero 7) NO es la matrícula — designador
+    Doc 8585 + nº de vuelo «LPE2273» (LATAM Perú 2273) — y el casillero 18
+    trae el ítem REG/ con la matrícula real «CCBJE». El campo «Matrícula
+    (Aeronave / Espacio)» debe llevar ID DE VUELO + MATRÍCULA + INICIALES
+    DEL OPERADOR: «LPE2273 CCBJE MK» (con las iniciales del sello activo)."""
+    c = canvas.Canvas(path, pagesize=A4)
+    _plantilla(c,
+               casillero7=[("L", 153.1), ("P", 169.8), ("E", 187.3),
+                           ("2", 210.0), ("2", 226.5), ("7", 243.0), ("3", 259.5)],
+               casillero8=[("I", 316.4), ("S", 393.9)],
+               casillero9="01",
+               reg18="PBN/A1B1C1D1L1O1S2T1 NAV/RNP2 DOF/261116 REG/CCBJE SEL/MPJR OPR/LPE PER/C RMK/TCAS")
+    c.setFont("Helvetica", 6)
+    c.drawString(50, 30, "LPE2273 SPHI-SPJC.pdf")
+
+
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
     ("tmp_e2e_fpl_form.pdf", pdf_form),
@@ -261,6 +279,7 @@ for name, fn in [
     ("tmp_e2e_fpl_sin_matricula.pdf", pdf_sin_matricula),
     ("tmp_e2e_fpl_sphi_spst.pdf", pdf_sphi_spst),
     ("tmp_e2e_fpl_form_casillas.pdf", pdf_form_casillas),
+    ("tmp_e2e_fpl_designador.pdf", pdf_designador),
     ("tmp_e2e_fpl_fap001.pdf", pdf_fap_001),
     ("tmp_e2e_fpl_ep001.pdf", pdf_ep001),
     ("tmp_e2e_fpl_formacion.pdf", pdf_formacion),

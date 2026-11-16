@@ -1,0 +1,38 @@
+PDFPro 2.9.27 — VUELO CON DESIGNADOR: el campo lleva ID de vuelo + matrícula + iniciales («LPE2273 CCBJE MK»)
+
+LO PEDIDO POR LA OFICINA
+«Que cuando la identificación del vuelo no sea la matrícula, entonces
+tomar identificación del vuelo y matrícula, por ejemplo CASILLERO 7
+(LPE2273), CASILLERO 18 (REG/CCBJE); entonces en "Matrícula (Aeronave /
+Espacio)" de la app debe ser LPE2273 CCBJE MK (identificación del
+vuelo / espacio en blanco / matrícula de la aeronave / espacio en
+blanco / iniciales del operador)».
+
+LO IMPLEMENTADO
+1. VUELO CON DESIGNADOR — cuando la IDENTIFICACIÓN DEL VUELO del
+   casillero 7 NO es la matrícula (designador OACI de la empresa Doc
+   8585 + nº de vuelo: «LPE2273» = LATAM Perú 2273) y el casillero 18
+   trae el ítem REG/ con la matrícula real («CCBJE»), el campo
+   «Matrícula (Aeronave / Espacio)» se arma solo: «LPE2273 CCBJE MK» —
+   ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR (las 2 letras del
+   dueño del sello activo). Vale para cualquier designador: CMP468 +
+   REG/HP1520 → «CMP468 HP1520 MK»; FAP211 + REG/OB1630 → «FAP211
+   OB1630 MK». Funciona igual en el formulario con casillas por
+   carácter, en el mensaje télex, en el Excel de la aerolínea y en el
+   OCR de la foto.
+2. EL ARCHIVO DEL REGISTRO SE NOMBRA IGUAL — «LPE2273 CCBJE MK.pdf». El
+   nombre ya agregaba las iniciales al final; ahora, si el campo ya las
+   trae, NO las duplica; y si quedaron iniciales de otro sello (porque
+   se cambió de sello después del escaneo), pone las vigentes.
+3. DOCTRINA OACI INTACTA — si el casillero 7 YA trae la matrícula
+   (OB1630), el campo sigue saliendo solo «OB1630» y no se busca el
+   casillero 18; el vuelo del JEFE DE ESTADO conserva su formato «EP001
+   - EP246»; y el VUELO EN FORMACIÓN sigue llevando SOLO las matrículas
+   («FAP123 FAP124»).
+
+VERIFICADO
+· E2E en la app real (13 pasos): LPE2273 + REG/CCBJE (casillas y télex)
+  → «LPE2273 CCBJE EV»; nombre «LPE2273 CCBJE EV.pdf» sin duplicar
+  iniciales; iniciales viejas autocorregidas; OB1630, EP001 - EP246,
+  FAP123 FAP124, FAP211 OB1630 EV, CMP468 HP1520 EV, FOTO FAP001 (OCR
+  real) → FAP001 - FAP329 y oficio limpio ✓

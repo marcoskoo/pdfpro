@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.25)
+/* PDFPro — fpl-scan.js (v2.9.27)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -66,6 +66,16 @@
  *     matrículas leídas, el aviso lo dice para completarlas a mano (el
  *     OCR de las FOTOS tiene ese límite y el campo admite 100 caracteres
  *     justamente para el ingreso manual).
+ *
+ *   Además v2.9.27 — VUELO CON DESIGNADOR (petición de la oficina): el
+ *     módulo entrega {matricula, ident} por separado; la APP (fplEscanea)
+ *     compone el campo cuando la identificación del vuelo (casillero 7)
+ *     NO es la matrícula — designador Doc 8585 + nº de vuelo («LPE2273»)
+ *     con «REG/CCBJE» en el casillero 18: el campo «Matrícula (Aeronave /
+ *     Espacio)» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR
+ *     («LPE2273 CCBJE MK») y así se nombra el archivo del registro. Aquí
+ *     no cambia la doctrina: el casillero 7 sigue siendo matrícula
+ *     primera y el REG/ respaldo de los vuelos con designador.
  *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';

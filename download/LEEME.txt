@@ -1,8 +1,53 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.26 — Versión de escritorio para Windows
+  PDFPro 2.9.27 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 2.9.27 (VUELO CON DESIGNADOR: ID DE VUELO + MATRÍCULA + INICIALES)
+────────────────────────────────────────────────────────────────────
+  LO PEDIDO POR LA OFICINA: «que cuando la identificación del vuelo no
+  sea la matrícula, entonces tomar identificación del vuelo y matrícula,
+  por ejemplo CASILLERO 7 (LPE2273), CASILLERO 18 (REG/CCBJE); entonces
+  en "Matrícula (Aeronave / Espacio)" de la app debe ser LPE2273 CCBJE
+  MK (identificación del vuelo / espacio en blanco / matrícula de la
+  aeronave / espacio en blanco / iniciales del operador)».
+
+  LO IMPLEMENTADO:
+  · VUELO CON DESIGNADOR: cuando la IDENTIFICACIÓN DEL VUELO del
+    casillero 7 NO es la matrícula — designador OACI de la empresa
+    (Doc 8585) + nº de vuelo: «LPE2273» (LATAM Perú 2273) — y el
+    casillero 18 trae el ítem REG/ con la matrícula real («CCBJE»), el
+    campo «Matrícula (Aeronave / Espacio)» sale armado solo:
+    «LPE2273 CCBJE MK» — ID DE VUELO + MATRÍCULA + INICIALES DEL
+    OPERADOR (las 2 letras del dueño del sello activo, las mismas de
+    siempre). Vale para cualquier designador: CMP468 + REG/HP1520 →
+    «CMP468 HP1520 MK» · FAP211 + REG/OB1630 → «FAP211 OB1630 MK».
+  · EL ARCHIVO DEL REGISTRO SE NOMBRA IGUAL: «LPE2273 CCBJE MK.pdf».
+    El nombre ya agregaba las iniciales al final; ahora, si el campo ya
+    las trae, NO las duplica — y si quedaron iniciales de OTRO sello
+    (porque se cambió de sello después del escaneo), pone las vigentes
+    del sello activo.
+  · DOCTRINA INTACTA: si el casillero 7 YA trae la matrícula (OB1630),
+    el campo sigue saliendo solo «OB1630»; el vuelo del JEFE DE ESTADO
+    conserva su formato «EP001 - EP246»; y el VUELO EN FORMACIÓN sigue
+    llevando SOLO las matrículas («FAP123 FAP124»).
+
+VERIFICADO PUNTO A PUNTO (2.9.27):
+  · E2E en la app real (13 pasos): FPL de línea aérea con casillas por
+    carácter (LPE2273 + REG/CCBJE) → «LPE2273 CCBJE EV»; mensaje télex
+    (FPL-LPE2273 … -18/REG/CCBJE) → «LPE2273 CCBJE EV»; nombre del
+    registro «LPE2273 CCBJE EV.pdf» SIN duplicar las iniciales;
+    iniciales viejas dejadas en el campo autocorregidas a las del
+    sello activo ✓
+  · Regresiones intactas: OB1630 del casillero 7 → «OB1630» · JEFE DE
+    ESTADO → «EP001 - EP246» · formación «AVISPA + 1» → «FAP123
+    FAP124» · télex FAP211 → «FAP211 OB1630 EV» (misma regla nueva) ·
+    CM468 + REG/HP1520 → «CMP468 HP1520 EV» (misma regla nueva) · FOTO
+    FAP001 con OCR Tesseract real → «FAP001 - FAP329» · oficio → campo
+    limpio ✓
+
+  HISTORIAL — versión 2.9.26 (ARCHIVO AUTOMÁTICO AL SELLAR + VUELO EN FORMACIÓN)
+────────────────────────────────────────────────────────────────────
 NOVEDADES DE LA VERSIÓN 2.9.26 (ARCHIVO AUTOMÁTICO AL SELLAR)
 ────────────────────────────────────────────────────────────────────
   LO PEDIDO POR LA OFICINA: «guardar los archivos ya sellados de manera
@@ -895,7 +940,7 @@ CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
   PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
   PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.26.zip     Proyecto completo para recompilar
+  pdfpro-fuentes-v2.9.27.zip     Proyecto completo para recompilar
   PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
                                 Muestra real: ábrela en Word y verás
                                 el sello de recepción (con firma) y el
@@ -950,7 +995,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.26.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.27.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -969,4 +1014,4 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.26.zip)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-PDFPro 2.9.26 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.27 · © 2026 CORPAC AIS/ARO SPHI
