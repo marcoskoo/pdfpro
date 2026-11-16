@@ -759,7 +759,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.28 · AYUDA DEL CAMPO MATRÍCULA OCULTA (petición de la oficina: los botones del sello quedan A LA VISTA; un clic en «ⓘ Cómo se rellena este campo…» la despliega y otro la oculta) · VUELO CON DESIGNADOR (identificación del vuelo ≠ matrícula): el casillero 7 trae el designador de la empresa + nº de vuelo (LPE2273) y el ítem REG/ del casillero 18 la matrícula (CCBJE) — el campo «Matrícula» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR («LPE2273 CCBJE MK») y el archivo del registro se nombra igual (LPE2273 CCBJE MK.pdf, sin duplicar las iniciales) · ARCHIVO AUTOMÁTICO AL SELLAR: colocado el sello de la ficha (recepción + personal), el documento YA SELLADO se guarda solo en REGISTROS FPL NOTAM\FPL\año\mes\día (fecha UTC) — la carpeta del nuevo día se crea sola, en el escritorio local C:\Users\&lt;usuario&gt; · VUELO EN FORMACIÓN («GUÍA + 1»: casillero 7 con el callsign y nº que sigue, casillero 9 con el total de aeronaves, casillero 18 con TODAS las matrículas — «FAP123 FAP124» — el campo las recibe completas y admite 100 caracteres para el ingreso manual cuando la foto no se deja leer) · matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto: FAP/INP/PNP/EP) — vuelo del JEFE DE ESTADO (FAP001/EP001/PNP001/INP001): el campo lleva «EP001 - EP246» (vuelo - matrícula), también en FPL FOTOGRAFIADO/ESCANEADO (OCR) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.29 · AYUDAS DE LA FICHA DEL SELLO OCULTAS (petición de la oficina: recepción, iniciales y matrícula — un clic en cada «ⓘ» la despliega y otro la oculta; los botones del sello quedan A LA VISTA) · VUELO CON DESIGNADOR (identificación del vuelo ≠ matrícula): el casillero 7 trae el designador de la empresa + nº de vuelo (LPE2273) y el ítem REG/ del casillero 18 la matrícula (CCBJE) — el campo «Matrícula» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR («LPE2273 CCBJE MK») y el archivo del registro se nombra igual (LPE2273 CCBJE MK.pdf, sin duplicar las iniciales) · ARCHIVO AUTOMÁTICO AL SELLAR: colocado el sello de la ficha (recepción + personal), el documento YA SELLADO se guarda solo en REGISTROS FPL NOTAM\FPL\año\mes\día (fecha UTC) — la carpeta del nuevo día se crea sola, en el escritorio local C:\Users\&lt;usuario&gt; · VUELO EN FORMACIÓN («GUÍA + 1»: casillero 7 con el callsign y nº que sigue, casillero 9 con el total de aeronaves, casillero 18 con TODAS las matrículas — «FAP123 FAP124» — el campo las recibe completas y admite 100 caracteres para el ingreso manual cuando la foto no se deja leer) · matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto: FAP/INP/PNP/EP) — vuelo del JEFE DE ESTADO (FAP001/EP001/PNP001/INP001): el campo lleva «EP001 - EP246» (vuelo - matrícula), también en FPL FOTOGRAFIADO/ESCANEADO (OCR) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1271,7 +1271,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <input class="f-input" id="selloRxTime" inputmode="numeric" maxlength="4" placeholder="ahora" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);updateSelloPreview()">
             </div>
           </div>
-          <div style="font-size:9.5px;color:var(--t3);margin:-2px 0 8px">Recepción: vacío = fecha/hora actuales. El sello colocado es este mismo: recepción + tu sello personal activo. Doble clic sobre un sello colocado edita su hora.</div>
+          <!-- v2.9.29 — petición de la oficina: ayuda de la recepción OCULTA
+               (contraída) tras un enlace ⓘ, como la del campo matrícula -->
+          <a href="#" onclick="var d=this.nextElementSibling;d.style.display=(d.style.display==='none')?'block':'none';return false" style="font-size:9.5px;color:var(--t3);text-decoration:underline;display:block;margin:-2px 0 6px">ⓘ Recepción: vacío = ahora · doble clic edita la hora del sello</a>
+          <div id="selloRecepcionAyuda" style="display:none;font-size:9.5px;color:var(--t3);margin:-2px 0 8px">Recepción: vacío = fecha/hora actuales. El sello colocado es este mismo: recepción + tu sello personal activo. Doble clic sobre un sello colocado edita su hora.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Hora Transmisión (UTC)</label>
@@ -1281,7 +1284,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Iniciales del Operador</label>
               <input class="f-input" id="selloTxInitials" maxlength="2" placeholder="EJ: MK" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');updateSelloPreview()">
               <!-- v2.9.16 — solo 2 letras: inicial del primer nombre + inicial del apellido paterno -->
-              <div style="font-size:9.5px;color:var(--t3);margin-top:3px">2 letras: inicial del primer nombre + inicial del apellido paterno (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo. Acepta «Nombres y Apellidos» y también «Apellidos, Nombres».</div>
+              <!-- v2.9.29 — petición de la oficina: ayuda de las iniciales OCULTA
+                   (contraída) tras un enlace ⓘ, como la del campo matrícula -->
+              <a href="#" onclick="var d=this.nextElementSibling;d.style.display=(d.style.display==='none')?'block':'none';return false" style="font-size:9.5px;color:var(--t3);text-decoration:underline;display:block;margin-top:3px">ⓘ Iniciales: 2 letras (primer nombre + apellido paterno)</a>
+              <div id="selloInicialesAyuda" style="display:none;font-size:9.5px;color:var(--t3);margin-top:3px">2 letras: inicial del primer nombre + inicial del apellido paterno (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo. Acepta «Nombres y Apellidos» y también «Apellidos, Nombres».</div>
             </div>
           </div>
           <!-- v2.9.13 — matrícula: nombra el archivo al guardar/exportar (ej. OB2147 MK) -->
@@ -4519,7 +4525,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.28',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.29',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────

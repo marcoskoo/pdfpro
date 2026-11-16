@@ -1,8 +1,43 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.28 — Versión de escritorio para Windows
+  PDFPro 2.9.29 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 2.9.29 (AYUDAS DE LA FICHA DEL SELLO OCULTAS: RECEPCIÓN + INICIALES)
+────────────────────────────────────────────────────────────────────
+  LO PEDIDO POR LA OFICINA: ocultar también dos textos de ayuda más de
+  la ficha del sello — «Recepción: vacío = fecha/hora actuales. El
+  sello colocado es este mismo: recepción + tu sello personal activo.
+  Doble clic sobre un sello colocado edita su hora.» y «2 letras:
+  inicial del primer nombre + inicial del apellido paterno (ej. Marcos
+  Koo → MK). Se rellena sola con el dueño del sello activo. Acepta
+  «Nombres y Apellidos» y también «Apellidos, Nombres».» — para dejar
+  la ficha compacta y los botones del sello a la vista.
+
+  LO IMPLEMENTADO:
+  · Las TRES ayudas de la ficha quedan CONTRAÍDAS tras enlaces «ⓘ»:
+    recepción («ⓘ Recepción: vacío = ahora · doble clic edita la hora
+    del sello»), iniciales («ⓘ Iniciales: 2 letras (primer nombre +
+    apellido paterno)») y, desde 2.9.28, matrícula («ⓘ Cómo se rellena
+    este campo y cómo se nombra el archivo…»).
+  · Ocultas por defecto (ocupan 0px: los botones del sello quedan a la
+    vista); un clic despliega cada una y otro clic la vuelve a ocultar.
+    La esencia queda a la vista en el propio enlace, sin abrir nada.
+  · NO SE ELIMINÓ NADA: toda la doctrina sigue disponible con ese clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.29):
+  · E2E en la app real (9 pasos), con la pestaña de sellos ABIERTA
+    (layout real): las 3 ayudas ocultas por defecto (recepción 0px ·
+    iniciales 0px · matrícula 0px); botón «Colocar Sello de Recepción»
+    renderizado a 171px bajo el campo (antes las 3 ayudas empujaban
+    ~300px más abajo); cada «ⓘ» despliega SU ayuda (recepción 44px ·
+    iniciales 99px · matrícula 264px) y un segundo clic la oculta ✓
+  · Regresiones del escaneo intactas: designador LPE2273 + REG/CCBJE →
+    «LPE2273 CCBJE EV» · nombre «LPE2273 CCBJE EV.pdf» sin duplicar
+    iniciales · SPHI-SPST (casillero 7 = matrícula) → «OB1630» ✓
+
+  HISTORIAL — versión 2.9.28 (AYUDA DEL CAMPO MATRÍCULA OCULTA: BOTONES DEL SELLO A LA VISTA)
+────────────────────────────────────────────────────────────────────
 NOVEDADES DE LA VERSIÓN 2.9.28 (AYUDA DEL CAMPO MATRÍCULA OCULTA — BOTONES A LA VISTA)
 ────────────────────────────────────────────────────────────────────
   LO PEDIDO POR LA OFICINA: «ocultar el texto "Al cargar el archivo, la
@@ -974,7 +1009,7 @@ CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
   PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
   PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.28.zip     Proyecto completo para recompilar
+  pdfpro-fuentes-v2.9.29.zip     Proyecto completo para recompilar
   PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
                                 Muestra real: ábrela en Word y verás
                                 el sello de recepción (con firma) y el
@@ -1029,7 +1064,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.28.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.29.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -1048,4 +1083,4 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.28.zip)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-PDFPro 2.9.28 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.29 · © 2026 CORPAC AIS/ARO SPHI

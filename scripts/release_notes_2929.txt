@@ -1,0 +1,31 @@
+PDFPro 2.9.29 — AYUDAS DE LA FICHA DEL SELLO OCULTAS: recepción + iniciales (además de la matrícula)
+
+LO PEDIDO POR LA OFICINA
+Ocultar dos textos de ayuda más de la ficha del sello:
+1. «Recepción: vacío = fecha/hora actuales. El sello colocado es este
+   mismo: recepción + tu sello personal activo. Doble clic sobre un
+   sello colocado edita su hora.»
+2. «2 letras: inicial del primer nombre + inicial del apellido paterno
+   (ej. Marcos Koo → MK). Se rellena sola con el dueño del sello activo.
+   Acepta «Nombres y Apellidos» y también «Apellidos, Nombres».»
+Objetivo: ficha compacta, botones del sello a la vista (continuación de
+la petición de 2.9.28 para la matrícula).
+
+LO IMPLEMENTADO
+1. LAS TRES AYUDAS CONTRAÍDAS TRAS ENLACES «ⓘ» —
+   · «ⓘ Recepción: vacío = ahora · doble clic edita la hora del sello»
+   · «ⓘ Iniciales: 2 letras (primer nombre + apellido paterno)»
+   · «ⓘ Cómo se rellena este campo y cómo se nombra el archivo…» (matrícula, desde 2.9.28)
+2. Ocultas por defecto (ocupan 0px): los botones del sello quedan a la
+   vista; un clic despliega cada una y otro clic la vuelve a ocultar.
+   La esencia de cada campo queda a la vista en el propio enlace.
+3. NO SE ELIMINÓ NADA — toda la doctrina sigue disponible con ese clic.
+
+VERIFICADO
+· E2E en la app real (9 pasos) con la pestaña de sellos abierta: las
+  3 ayudas ocultas por defecto (0px cada una); botón «Colocar Sello de
+  Recepción» renderizado a 171px bajo el campo (antes las 3 ayudas lo
+  empujaban ~300px más abajo); cada «ⓘ» despliega SU ayuda (recepción
+  44px · iniciales 99px · matrícula 264px) y un segundo clic la oculta;
+  designador LPE2273 → «LPE2273 CCBJE EV» con nombre «LPE2273 CCBJE
+  EV.pdf» y OB1630 del casillero 7 → «OB1630» ✓
