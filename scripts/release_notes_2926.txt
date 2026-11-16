@@ -1,0 +1,63 @@
+PDFPro 2.9.26 — ARCHIVO AUTOMÁTICO AL SELLAR: el documento YA SELLADO se guarda solo en el registro del día
+
+LO PEDIDO POR LA OFICINA
+«Guardar los archivos ya sellados de manera automática en
+C:\Users\aissphi\Desktop\REGISTROS FPL NOTAM\FPL — en la carpeta FPL están
+las carpetas por meses y dentro de cada mes los días; el archivo YA CON EL
+SELLO (recepción + personal) debe guardarse en el día/mes/año que le
+corresponda y, al iniciar un nuevo día, el sistema debe crear la nueva
+carpeta».
+
+LO IMPLEMENTADO
+1. ARCHIVO AUTOMÁTICO AL SELLAR — colocado el sello de la ficha
+   (recepción + personal) con un clic sobre el documento, este YA SELLADO
+   se guarda SOLO en el registro del día, sin tocar «Guardar»: el PDF se
+   exporta con el sello vectorial, el Word/Excel con el sello incrustado
+   en su formato original y la imagen como hoja A4. Corregir la hora del
+   sello (doble clic) re-archiva con la hora corregida. El guardado manual
+   sigue existiendo (crea «(2)», «(3)»… si se repite).
+2. RUTA EXACTA — C:\Users\<usuario>\Desktop\REGISTROS FPL NOTAM\FPL\<año>\
+   <MM Mes>\<DD>, con la fecha UTC (hora zulú). Antes se usaba el
+   «escritorio» de Windows, que en muchos equipos viene redirigido a
+   OneDrive y el registro quedaba en otra carpeta; ahora se usa el
+   escritorio REAL del perfil, con respaldo en el del sistema si falla.
+3. CARPETA DEL NUEVO DÍA — se crea al arrancar la app, al archivar cada
+   archivo y — nuevo — al cambiar la fecha zulú con la app abierta: un
+   temporizador crea la carpeta del día nuevo en cuanto cambia la fecha,
+   aunque no se guarde nada en ese momento.
+4. NUEVA DIRECCIÓN WEB — la versión web se publicará en
+   https://firma-aissphi.vercel.app (requiere renombrar el proyecto de
+   Vercel a «firma-aissphi»: Settings → General → Change Project Name).
+
+ADEMÁS — INCORPORA TODO LO DE LA 2.9.25 (VUELO EN FORMACIÓN «GUÍA + 1»)
+El casillero 7 trae el CALLSIGN con el nº que sigue («AVISPA + 1»,
+«BAZUCA+2», «NORTON+3»), el casillero 9 el total de aeronaves y el
+casillero 18 las MATRÍCULAS DE TODAS: «REG/FAP123 FAP124» → el campo sale
+«FAP123 FAP124». También sin barra, con guion, con matrículas civiles,
+con las casillas del OCR PEGADAS y con las fallas propias del OCR de las
+fotos (la barra leída como «I» — «REGIFAP123» — y el 0 como «O»); sin
+ítem REG/, el 18 directo también sirve. El campo admite 100 caracteres
+para el ingreso manual y, si faltan matrículas, el aviso lo dice:
+«⚠ leídas 1 de 2 — complétalas a mano». Además se corrigió la geometría
+del casillero 7 cuando pdf.js fusiona «8.»+«REGLAS…» en un solo ítem.
+
+VERIFICADO
+· 240 pruebas unitarias (antes 205): doctrina OACI completa + formación
+  en todas sus presentaciones, OCR real de foto, negativos (etiqueta
+  «NÚMERO 18.», «REGISTRO», «REGLAS», duplicados, palabra tras matrícula)
+· 9/9 PDFs con el mismo pdf.js de la app
+· E2E en la app real CON OCR TESSERACT DE VERDAD: FOTO del formulario de
+  formación → «FAP123 FAP124» con aviso «VUELO EN FORMACIÓN «AVISPA + 1»
+  · 02 aeronaves»; sello de la ficha colocado con un clic; ingreso manual
+  de 90 caracteres (13 matrículas)
+· Smoke de la app de escritorio (Electron real): appVersion 2.9.26,
+  fplScanFormacion ✓, fplAutoArchivo ✓, archivado real con fecha UTC
+· Regresiones intactas: FAP001 foto (OCR) → «FAP001 - FAP329» ·
+  EP001/FAP001 nativos · CM468 → HP1520 · SPHI-SPST → OB1630 · télex ·
+  oficio → campo limpio
+
+DESCARGA
+· PDFPro-Setup-2.9.26.exe — instalador (la app instalada se auto-actualiza)
+· PDFPro-Portable-2.9.26.exe — portable (reemplaza al anterior)
+· Los equipos con 2.9.14+ instalada recibirán el aviso de actualización
+  automáticamente al abrir la app.

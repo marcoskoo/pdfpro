@@ -355,22 +355,42 @@ function maybeOfferDefaultApps() {
   }).catch(() => {});
 }
 
-/* ── Registro FPL (v2.9.13 · fecha UTC desde v2.9.14) ──
-   Las exportaciones se archivan con nombre «MATRÍCULA INICIALES» (lo compone
-   el renderer con la matrícula y las iniciales del operador) en
-   <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD> con la fecha
-   UTC (hora zulú de aviación, la misma del sello de recepción). Las
-   carpetas se crean solas: al archivar y también al arrancar la app
-   (carpeta del día), de modo que el nuevo día/mes/año existe desde el
-   primer momento. Se desactiva con la casilla del menú. */
+/* ── Registro FPL (v2.9.13 · fecha UTC desde v2.9.14 · auto-archivo al
+   sellar y escritorio local en v2.9.26) ──
+   Las exportaciones — y desde v2.9.26 también el documento YA SELLADO al
+   colocar el sello de la ficha (recepción + personal) — se archivan con
+   nombre «MATRÍCULA INICIALES» (lo compone el renderer con la matrícula y
+   las iniciales del operador) en
+   C:\Users\<usuario>\Desktop\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<DD>
+   con la fecha UTC (hora zulú de aviación, la misma del sello de
+   recepción). El escritorio LOCAL del perfil (%USERPROFILE%\Desktop) es el
+   que usa la oficina: app.getPath('desktop') puede venir redirigido a
+   OneDrive y el registro debe quedar en el escritorio real; si el local
+   falla (permisos, perfil raro), se cae al escritorio del sistema. Las
+   carpetas se crean solas: al archivar, al arrancar la app (carpeta del
+   día) y AL INICIAR UN NUEVO DÍA con la app abierta (un temporizador crea
+   la carpeta del día nuevo en cuanto cambia la fecha UTC). Se desactiva
+   con la casilla del menú. */
+function baseRegistroFPL() {
+  if (process.platform === 'win32' && process.env.USERPROFILE)
+    return path.join(process.env.USERPROFILE, 'Desktop', 'REGISTROS FPL NOTAM', 'FPL');
+  return path.join(app.getPath('desktop'), 'REGISTROS FPL NOTAM', 'FPL');
+}
 function carpetaRegistroFPL() {
-  return fpl.carpetaDia(path.join(app.getPath('desktop'), 'REGISTROS FPL NOTAM', 'FPL'));
+  return fpl.carpetaDia(baseRegistroFPL());
 }
 ipcMain.handle('fpl:guardar', (_e, nombre, buffer) => {
   try {
     if (readSetting('guardarEnFPL') === false) return { ok: false, omitido: true };
-    const dir = carpetaRegistroFPL();
-    fs.mkdirSync(dir, { recursive: true });
+    let dir;
+    try {
+      dir = carpetaRegistroFPL();
+      fs.mkdirSync(dir, { recursive: true });
+    } catch (e1) {
+      // respaldo: escritorio del sistema (perfil redirigido o sin permisos)
+      dir = fpl.carpetaDia(path.join(app.getPath('desktop'), 'REGISTROS FPL NOTAM', 'FPL'));
+      fs.mkdirSync(dir, { recursive: true });
+    }
     const ruta = fpl.rutaUnica(dir, fpl.saneaNombre(nombre));
     fs.writeFileSync(ruta, Buffer.from(buffer || new Uint8Array()));
     return { ok: true, ruta };
@@ -597,6 +617,18 @@ if (!gotLock) {
     // v2.9.13 — crear ya la carpeta del registro FPL de hoy (nuevo día/mes/año)
     try { fs.mkdirSync(carpetaRegistroFPL(), { recursive: true }); } catch (e) { /* sin permisos */ }
 
+    // v2.9.26 — al INICIAR UN NUEVO DÍA (UTC, hora zulú) la carpeta del día
+    // nuevo se crea sola, con la app abierta: cada minuto se mira si la
+    // fecha zulú cambió y se crea la carpeta año\mes\día que corresponda
+    let _diaFPL = '';
+    try { _diaFPL = carpetaRegistroFPL(); } catch (e) { /* noop */ }
+    setInterval(() => {
+      try {
+        const d = carpetaRegistroFPL();
+        if (d !== _diaFPL) { fs.mkdirSync(d, { recursive: true }); _diaFPL = d; }
+      } catch (e) { /* sin permisos */ }
+    }, 60000).unref();
+
     // v2.9.14 — auto-actualización (versión instalada)
     iniciarAutoActualizacion();
 
@@ -719,6 +751,33 @@ function attachSmoke(w) {
             FPLScan.esMatricula('CMP468') === false &&
             FPLScan.esMatricula('FAP001') === false &&
             FPLScan.esMatricula('OB1630') === true);
+          // v2.9.25 — VUELO EN FORMACIÓN («GUÍA + 1»): TODAS las matrículas
+          // del casillero 18, el nº de aeronaves del casillero 9 y el
+          // callsign del 7; el aviso marca la formación y pide completar a
+          // mano las matrículas que falten (el OCR de las fotos tiene límites)
+          c.fplScanFormacion = !!(window.FPLScan && FPLScan.formacionDe &&
+            FPLScan.extraerFPL('(FPL-AVISPA+1-IS -18/REG/FAP123 FAP124 DOF/261115', null).matricula === 'FAP123 FAP124' &&
+            FPLScan.extraerFPL('(FPL-BAZUCA+2-IS -18/REG FAP 123 FAP 124 FAP 125 DOF/261115', null).matricula === 'FAP123 FAP124 FAP125' &&
+            FPLScan.extraerFPL('(FPL-NORTON+3-IS -18/REG/OB1630 OB2147 DOF/261115', null).origen.indexOf('VUELO EN FORMACIÓN «NORTON + 3»') >= 0 &&
+            // OCR de la foto: matrículas PEGADAS y nº del casillero 9 en casillas
+            FPLScan.extraerFPL('FLIGHT PLAN\\nAIRCRAFT IDENT\\nF A P 1 2 3 F A P 1 2 4\\n9. NUMERO 0 2\\n18 OTROS DATOS REG FAP123FAP124 DOF/261115', null).matricula === 'FAP123 FAP124' &&
+            // OCR real: barra del REG/ leída como «I» y 0 como «O»
+            FPLScan.extraerFPL('9. NUMERO / NUMBER\\no 2 TIPO\\nREGIFAP123 FAP124 DOF/261115', null).matricula === 'FAP123 FAP124' &&
+            // casillero 18 directo, sin ítem REG/
+            FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE: AVISPA + 1 9. NÚMERO: 02 18. OTROS DATOS: FAP123 FAP124 DOF/261115', null).matricula === 'FAP123 FAP124' &&
+            // faltan matrículas → el aviso lo dice (1 de 2)
+            FPLScan.extraerFPL('(FPL-AVISPA+1-IS -18/REG/FAP123 DOF/261115', null).origen.indexOf('leídas 1 de 2 matrículas') >= 0 &&
+            // formación sin matrículas → null (el callsign NO va en el campo)
+            FPLScan.extraerFPL('PLAN DE VUELO 7. IDENTIFICACION DE AERONAVE: AVISPA + 1 9. NÚMERO: 02 18. OTROS DATOS: DOF/261115', null) === null &&
+            FPLScan.formacionDe('PLAN DE VUELO 9. NÚMERO 02 18. OTROS DATOS') !== null);
+          // v2.9.26 — ARCHIVO AUTOMÁTICO AL SELLAR: colocado el sello de la
+          // ficha (recepción + personal), el documento YA SELLADO se guarda
+          // solo en el registro del día; y el campo admite 100 caracteres
+          c.fplAutoArchivo = !!(
+            typeof window.fplAutoArchivoAlSellar === 'function' &&
+            typeof window.nativeSaveOriginal === 'function' &&
+            typeof window.exportPDF === 'function' &&
+            (function(){var e=document.getElementById('selloMatricula');return !!e && e.getAttribute('maxlength')==='100';})());
           return c;
         })()`);
         if (results.checks.fplRuta) {

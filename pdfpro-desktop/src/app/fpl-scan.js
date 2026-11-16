@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.24)
+/* PDFPro — fpl-scan.js (v2.9.25)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -48,6 +48,24 @@
  *     lo marca con «· JEFE DE ESTADO». Solo el «001»: FAP002 etc. son vuelos
  *     ordinarios y el campo lleva solo la matrícula. Otros países: añadir su
  *     sigla a _JEFEE.
+ *
+ *   Además v2.9.25 — VUELO EN FORMACIÓN (petición de la oficina): la
+ *     presentación es «GUÍA + 1» — el casillero 7 trae el CALLSIGN de la
+ *     formación con el número de aeronaves que la siguen («AVISPA + 1»,
+ *     «BAZUCA+2», «NORTON + 3»; el callsign varía en nombre y número), el
+ *     CASILLERO 9 «NÚMERO» trae el total de aeronaves (02) y el CASILLERO
+ *     18 trae las MATRÍCULAS DE TODAS las aeronaves de la formación —
+ *     «REG/FAP123 FAP124» (Doc 4444: REG/ lista las matrículas cuando
+ *     difieren de la identificación del casillero 7). El campo «Matrícula
+ *     (Aeronave / Espacio)» de la app recibe TODAS las matrículas
+ *     separadas por espacio («FAP123 FAP124»), también cuando el ítem REG
+ *     viene sin barra («REG FAP123 FAP124») o con las casillas del OCR
+ *     pegadas («FAP123FAP124»). Se aceptan igual las matrículas del 18
+ *     SIN ítem REG en los vuelos en formación («18: FAP123 FAP124»), y
+ *     si el nº de aeronaves (casillero 9 o «+N» del 7) es mayor que las
+ *     matrículas leídas, el aviso lo dice para completarlas a mano (el
+ *     OCR de las FOTOS tiene ese límite y el campo admite 100 caracteres
+ *     justamente para el ingreso manual).
  *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';
@@ -133,14 +151,43 @@ function esMatricula(id) {
 /* ══ Fuentes de datos ══ */
 
 /** Mensaje télex OACI — casillero 7: «(FPL-<ident>-…» (también CHG, DLA,
- *  DEP, ARR, CNL). Devuelve {ident, tipo} o null. */
+ *  DEP, ARR, CNL). Devuelve {ident, tipo} o null. v2.9.25: admite el
+ *  CALLSIGN DE FORMACIÓN con su «+N» — «(FPL-AVISPA+1-IS…». */
 function _telex(t) {
-  var r = t.match(/\(?\s*(FPL|CHG|DLA|DEP|ARR|CNL)\s*[-\u2013]([A-Z0-9]{2,7})\s*[-\u2013]/i);
-  return r ? { ident: _norm(_limpia(r[2]).replace(/[^A-Z0-9]/g, '')), tipo: r[1].toUpperCase() } : null;
+  var r = t.match(/\(?\s*(FPL|CHG|DLA|DEP|ARR|CNL)\s*[-\u2013]([A-Z0-9]{2,7}(?:\+[0-9]{1,2})?)\s*[-\u2013]/i);
+  return r ? { ident: _norm(_limpia(r[2]).replace(/[^A-Z0-9+]/g, '')), tipo: r[1].toUpperCase() } : null;
 }
 
-/** Casillero 18 — ítem REG/: la matrícula explícita (Doc 4444: se usa
- *  cuando difiere de la del casillero 7). Devuelve {v, conBarra} o null.
+/** ¿Sigla de OPERADOR ESTATAL + número (matrícula de aeronave FAP329,
+ *  INP255, PNP042, EP828…)? Se usa para validar las matrículas EXTRA del
+ *  casillero 18 en los vuelos en formación (v2.9.25). Las siglas de las
+ *  aerolíneas (Doc 8585: CMP, LPE…) quedan fuera: tras un REG/ un
+ *  «CMP1234» no es matrícula; las siglas estatales peruanas (FAP, INP,
+ *  PNP, EP) y las siglas extranjeras que NO son designador sí entran. */
+function _siglaEstatal(v) {
+  var m = String(v || '').toUpperCase().match(/^([A-Z]{1,3})[0-9][0-9A-Z]{0,4}$/);
+  if (!m) return false;
+  if (/^(FAP|INP|PNP|EP)$/.test(m[1])) return true;        // Perú (la oficina)
+  return m[1].length < 3 || !_DESIGNADOR.test(m[1]);       // otra sigla que no sea aerolínea
+}
+
+/** Parte una corrida PEGADA de matrículas — el OCR de los formularios
+ *  FOTOGRAFIADOS lee las casillas del casillero 18 una por una y al
+ *  compactar quedan todas pegadas: «F A P 1 2 3 F A P 1 2 4» →
+ *  «FAP123FAP124» → [«FAP123», «FAP124»]. Solo corridas de DOS o más
+ *  unidades SIGLA(2-3)+NÚMERO(3-4); una corrida de una unidad va tal
+ *  cual (así «OB1234P» provisional o «N2567GA» no se tocan). */
+function _splitUnidades(s) {
+  var u = String(s || '').toUpperCase();
+  if (!/^((?:[A-Z]{2,3}[0-9]{3,4}){2,})$/.test(u)) return [u];
+  return u.match(/[A-Z]{2,3}[0-9]{3,4}/g) || [u];
+}
+
+/** Casillero 18 — ítem REG/: la(s) matrícula(s) explícita(s) (Doc 4444:
+ *  se usa(n) cuando difiere(n) de la(s) del casillero 7; en un VUELO EN
+ *  FORMACIÓN lista las matrículas de TODAS las aeronaves). Devuelve
+ *  {v, conBarra, todas} o null — v es la PRIMERA (compatibilidad) y
+ *  todas el arreglo completo (formación: [«FAP123», «FAP124»]).
  *  Formas aceptadas (v2.9.22):
  *    · «REG/OB1630», «REG/ HP 1520», «R E G / H P 1 5 2 0» — formato Doc
  *      4444 CON barra: el indicador es explícito y el valor, confiable;
@@ -152,15 +199,45 @@ function _telex(t) {
  *      casillero 7 sería designador + Nº DE VUELO; tras REG es matrícula);
  *    · «REGFAP329» todo pegado (casillas compactadas) — con DÍGITO
  *      obligatorio tras las siglas («REGISTRO»/«REGIMIENTO» no traen).
+ *  v2.9.25 — FORMACIÓN: tras la primera matrícula se siguen recogiendo
+ *  las demás mientras parezcan matrículas (separadas por espacio, coma o
+ *  guion; también PEGADAS del OCR: «REG/FAP123FAP124»): «REG/FAP123
+ *  FAP124», «REG FAP 329 FAP 330», «REG/OB1630-OB2147»…
  *  Se valida: ≥4 caracteres, sin palabras de etiqueta (un «REG/» vacío
  *  seguido de otro indicador no puede colar «EET…»). */
 function _regInfo(t) {
   var r, conBarra = true;
+  // 0) v2.9.25 — FORMACIÓN PEGADA del OCR: «REG FAP123FAP124» /
+  //    «REGFAP329FAP330»: dos o más unidades SIGLA+NÚMERO seguidas. Va
+  //    PRIMERO porque el patrón suelto (2) cortaría «FAP123FAP124» a la
+  //    mitad («FAP123FA») al comerse caracteres de la segunda matrícula.
+  //    Se tolera también la barra leída como «I»/«l»/«1»/«|» por el OCR
+  //    de la FOTO («REG/FAP123FAP124» → «REGIFAP123FAP124»)
+  r = t.match(/\bREG[Il1|]?\s*\/?\s*((?:[A-Z]{2,3}[0-9]{3,4}){2,})(?![0-9A-Z])/i);
+  if (r) {
+    var unidades = _splitUnidades(r[1]).map(_norm).filter(Boolean);
+    if (unidades.length >= 2 && unidades.every(_regValida))
+      return { v: unidades[0], conBarra: /\//.test(r[0].slice(0, r[0].length - r[1].length)), todas: unidades };
+  }
   // 1) formato Doc 4444 CON barra — indicador explícito: valor confiable
   r = t.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i);
   // 2) SIN barra (fallo del piloto): «REG» como palabra suelta — «REG FAP 329»,
   //    «REG OB 1630»; se tolera también «REG.»/«REG:» del OCR
   if (!r) { conBarra = false; r = t.match(/\bREG\b[\s:.,\-\/]*([0-9A-Z]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})/i); }
+  // 2b) v2.9.25 — OCR de la FOTO: la barra del «REG/» la lee Tesseract como
+  //     «I»/«l»/«1»/«|» («REG/FAP123 FAP124» → «REGIFAP123 FAP124»); se
+  //     acepta ESE carácter suelto pegado a REG. La captura exige estructura
+  //     SIGLA+DÍGITO para que «REGLAS»/«REGISTRO» (la «L» mayúscula también
+  //     cae en [Il1|] con /i) no hagan sombra al REGI de más abajo, y el
+  //     valor se valida como matrícula conocida (civil o SIGLA estatal)
+  if (!r) {
+    var r2b = t.match(/\bREG[Il1|][\s:.,\-\/]*([A-Z]{1,3}[-\u00AD\s]?[0-9][0-9A-Z]{0,5})(?![0-9A-Z])/i);
+    if (r2b) {
+      var v2b = _norm(r2b[1]);
+      if (v2b && !_PALABRA.test(v2b.replace(/[^A-Z]/g, '')) && _regValida(v2b))
+        return { v: v2b, conBarra: false, todas: _regTodas(t, r2b, v2b) };
+    }
+  }
   // 3) todo PEGADO (casillas compactadas: «R E G F A P 3 2 9» → «REGFAP329»):
   //    primero con letras finales y frontera (N2567GA), luego solo dígitos
   if (!r) { conBarra = false; r = t.match(/\bREG([A-Z]{1,3}[0-9]{2,5}[A-Z]{0,2})(?![0-9A-Z])/i); }
@@ -168,13 +245,43 @@ function _regInfo(t) {
   if (!r) return null;
   var v = _norm(r[1]);
   if (!v || _PALABRA.test(v.replace(/[^A-Z]/g, ''))) return null;
-  if (esMatricula(v)) return { v: v, conBarra: conBarra };
+  if (esMatricula(v)) return { v: v, conBarra: conBarra, todas: _regTodas(t, r, v) };
   // «REG/» explícito (con barra): el valor es confiable — p.ej. FAP329,
   // matrícula de aeronave de operador estatal (FAP/INP/PNP/EP…)
-  if (conBarra) return /^[A-Z0-9-]{4,8}$/.test(v) ? { v: v, conBarra: true } : null;
+  if (conBarra) return /^[A-Z0-9-]{4,8}$/.test(v) ? { v: v, conBarra: true, todas: _regTodas(t, r, v) } : null;
   // sin «/»: solo si parece matrícula — SIGLA de operador + NÚMERO
   // (FAP329, INP255, PNP042, EP828…); palabras sueltas no entran
-  return /^[A-Z]{1,3}[0-9][0-9A-Z]{0,4}$/.test(v) ? { v: v, conBarra: false } : null;
+  return /^[A-Z]{1,3}[0-9][0-9A-Z]{0,4}$/.test(v) ? { v: v, conBarra: false, todas: _regTodas(t, r, v) } : null;
+}
+
+/** ¿El valor capturado tras REG/ puede ser matrícula? (para las unidades
+ *  EXTRA de la formación: civil del Anexo 7 / RAP 45 o SIGLA estatal +
+ *  nº). Más estricto que la primera captura — que hereda la confianza
+ *  del «REG/» explícito — para que una palabra suelta tras la matrícula
+ *  («REG/HP1520 LIMA…») no se cuele como segunda aeronave. */
+function _regValida(v) {
+  if (!v || _PALABRA.test(String(v).replace(/[^A-Z]/g, ''))) return false;
+  if (!/[A-Z]/.test(v)) return false;                       // puro número no es matrícula
+  return esMatricula(v) || _siglaEstatal(v);               // civil (Anexo 7) o estatal (FAP329…)
+}
+
+/** Matrículas EXTRA tras la primera (v2.9.25 — vuelo en formación):
+ *  «REG/FAP123 FAP124», «REG FAP 329 FAP 330», «REG/OB1630-OB2147».
+ *  Se avanza mientras el siguiente token parezca matrícula; los
+ *  indicadores del 18 (SEL/, DOF/, EET/…, ya filtrados por _PALABRA) y
+ *  cualquier palabra cortan la corrida. Devuelve [v, …] (mín. 1). */
+function _regTodas(t, r, v) {
+  var todas = [v];
+  var resto = String(t).slice(r.index + r[0].length);
+  for (var i = 0; i < 12; i++) {                            // tope: 12 aeronaves
+    var r2 = resto.match(/^\s*[-,\u00AD]?\s*([A-Z0-9]{1,3}[-\u00AD\s]?[0-9A-Z]{2,5})(?![0-9A-Z])/i);
+    if (!r2) break;
+    var v2 = _norm(r2[1]);
+    if (!_regValida(v2)) break;
+    if (todas.indexOf(v2) === -1) todas.push(v2);           // sin duplicados
+    resto = resto.slice(r2[0].length);
+  }
+  return todas;
 }
 function _reg(t) { var i = _regInfo(t); return i ? i.v : ''; }
 
@@ -247,13 +354,17 @@ function identDeFormulario(items) {
     // «7.» queda 2 filas por encima de las casillas; la etiqueta inglesa, 1)
     var x1 = (num8 && Math.abs(num8.y - cap.y) < 12) ? num8.x : cap.x + 200;
     if (!(num8 && Math.abs(num8.y - cap.y) < 12)) {
-      // límite derecho: «REGLAS/FLIGHT RULES/TIPO…» en la fila de la etiqueta
+      // límite derecho: «REGLAS/FLIGHT RULES/TIPO…» en la fila de la etiqueta.
+      // v2.9.25: pdf.js FUSIONA a veces «8.»+«REGLAS…»+«TIPO…» en un solo
+      // ítem («8.REGLAS DE VUELOTIPO DE VUELO») — el «8.» con que inicia
+      // no puede esconder la etiqueta (sin esto, las casillas del 8 se
+      // pegan al ident del 7: «AVISPA1I»)
       var minX = x1;
       for (i = 0; i < items.length; i++) {
         var it2 = items[i];
         if (it2 === cap || it2.x <= cap.x) continue;
         var s2 = _sinAcentos(String(it2.str || '')).replace(/\s+/g, ' ').trim();
-        if (Math.abs(it2.y - fila) < 6 && /^(REGLAS|FLIGHT|RULES|TIPO|TYPE)\b/.test(s2) && it2.x < minX) minX = it2.x;
+        if (Math.abs(it2.y - fila) < 6 && /^(?:[0-9]{1,2}\.?\s*)?(REGLAS|FLIGHT|RULES|TIPO|TYPE)\b/.test(s2) && it2.x < minX) minX = it2.x;
       }
       x1 = minX;
     }
@@ -281,7 +392,100 @@ function identDeFormulario(items) {
   } catch (e) { return ''; }
 }
 
-/* ══ Extracción unificada (v2.9.24 — orden OACI + JEFE DE ESTADO + OCR) ══ */
+/* ══ v2.9.25 — VUELO EN FORMACIÓN: «GUÍA + 1» ══
+ * Doc 4444 Ap. 2: en los vuelos en formación el CASILLERO 7 lleva el
+ * CALLSIGN de la formación con el número de aeronaves que la siguen
+ * («AVISPA + 1», «BAZUCA+2», «NORTON + 3» — el callsign varía en nombre
+ * y número), el CASILLERO 9 «NÚMERO» el total de aeronaves (02) y el
+ * CASILLERO 18 las MATRÍCULAS DE TODAS (REG/FAP123 FAP124). */
+
+/** ¿El texto trae un vuelo en formación? Busca en el texto tal cual, en
+ *  el compactado y en las casillas del OCR (la formación se anuncia como
+ *  «CALLSIGN + N» — «AVISPA + 1», «BAZUCA+2»… — y el casillero 9 trae el
+ *  «NÚMERO» de aeronaves). Devuelve {llamada, n} o null. */
+function formacionDe(t) {
+  var s = String(t || '').toUpperCase();
+  var variantes = [s, _compacta(s), _casillas(s)];
+  var llamada = '', n = 0, i, m;
+  for (i = 0; i < variantes.length; i++) {
+    m = variantes[i].match(/(?:^|[^A-Z0-9])([A-Z][A-Z0-9]{1,9})\s*\+\s*([0-9]{1,2})(?![0-9])/);
+    if (m && !llamada && parseInt(m[2], 10) >= 1 && !_PALABRA.test(m[1]) && !/^(HORA|TIME|FECHA|DATE|AERONAVE|AIRCRAFT)$/.test(m[1])) {
+      llamada = m[1];
+      n = Math.max(n, parseInt(m[2], 10) + 1);
+    }
+    // v2.9.25 — el OCR de la foto lee el 0 del casillero 9 como «O»
+    // («02» → «o 2»); se acepta [0O] y se normaliza. Los números de
+    // ETIQUETA («NÚMERO 18.» del casillero 18) quedan fuera por el punto.
+    m = variantes[i].match(/(?:^|[^A-Z0-9])(?:N[UÚ]MERO|NUMBER)\s*[:.\-]?\s*([0O][0-9O]|[0-9])(?![0-9A-Z])(?!\s*\.)/);
+    if (m) { var nn = parseInt(m[1].replace(/O/g, '0'), 10); if (nn >= 2 && nn <= 20) n = Math.max(n, nn); }
+  }
+  if (!llamada && !(n >= 2)) return null;
+  return { llamada: llamada, n: n };
+}
+
+/** Formulario impreso — el «+N» del casillero 7 por GEOMETRÍA: en los PDF
+ *  con capa de texto el content stream llega revuelto y el «AVISPA + 1»
+ *  no aparece junto en el texto; con las coordenadas se lee la fila del
+ *  «+»: letras a la izquierda (callsign) y dígitos a la derecha (los que
+ *  siguen a la guía). Devuelve {llamada, n} o null. */
+function formacionDeFormulario(items) {
+  try {
+    if (!items || !items.length) return null;
+    var i, it, plus = null;
+    for (i = 0; i < items.length; i++) {
+      var s = String(items[i].str || '').trim();
+      if (!plus && /^\+[\s.]?[0-9]{0,2}$/.test(s)) plus = items[i];   // «+», «+1», «+ 1»
+    }
+    if (!plus) return null;
+    var mPlus = String(plus.str).match(/^\+[\s.]?([0-9]{1,2})$/);
+    var extra = mPlus ? parseInt(mPlus[1], 10) : 0;
+    var letras = [];
+    for (i = 0; i < items.length; i++) {
+      it = items[i];
+      var c = String(it.str || '').trim();
+      if (it === plus || !/^[A-Z0-9]{1,3}$/i.test(c)) continue;
+      if (Math.abs(it.y - plus.y) > 8) continue;            // misma fila visual
+      if (it.x < plus.x) { if (/^[A-Z]$/i.test(c)) letras.push(it); }
+      else if (/^[0-9]{1,2}$/.test(c)) extra = Math.max(extra, parseInt(c, 10));
+    }
+    letras.sort(function (a, b) { return a.x - b.x; });
+    var llamada = letras.map(function (o) { return String(o.str).trim(); }).join('').toUpperCase();
+    if (!/^[A-Z]{2,10}$/.test(llamada)) return null;        // sin callsign no hay formación
+    return { llamada: llamada, n: extra + 1 };
+  } catch (e) { return null; }
+}
+
+/** Matrículas DIRECTAS del casillero 18 SIN ítem REG/ (vuelo en
+ *  formación): «18. OTROS DATOS: FAP123 FAP124 DOF/…». Se llama SOLO con
+ *  la formación ya confirmada (casillero 7 «+N» o casillero 9 con nº de
+ *  aeronaves) para no cazar matrículas sueltas de cualquier texto.
+ *  Acepta las matrículas separadas por espacio/coma/guion y también
+ *  PEGADAS (el OCR de la foto las lee casilla por casilla). */
+function _matriculasDirectas(t) {
+  var m = String(t || '').toUpperCase().match(/(?:^|[^A-Z0-9])((?:(?:FAP|INP|PNP|EP|OB)[0-9]{2,4}[\s,\-]*){2,})(?![0-9A-Z])/);
+  if (!m) return [];
+  var out = [];
+  (m[1].match(/(?:FAP|INP|PNP|EP|OB)[0-9]{2,4}/g) || []).forEach(function (x) {
+    var n = _norm(x);
+    if (_regValida(n) && out.indexOf(n) === -1) out.push(n);
+  });
+  return out;
+}
+
+/** Nota del aviso para los vuelos en formación: « · VUELO EN FORMACIÓN
+ *  «AVISPA + 1» · 02 aeronaves» y, si el nº de aeronaves supera las
+ *  matrículas leídas (el OCR de las fotos tiene ese límite), el aviso
+ *  pide completarlas a mano en el campo (100 caracteres para ello). */
+function _notaFormacion(form, nLeidas) {
+  var s = ' · VUELO EN FORMACIÓN';
+  if (form && form.llamada) s += ' «' + form.llamada + (form.n >= 2 ? ' + ' + (form.n - 1) : '') + '»';
+  var n = form && form.n >= 2 ? form.n : 0;
+  if (n) s += ' · ' + (n < 10 ? '0' + n : n) + ' aeronaves';
+  if (n && nLeidas < n) s += ' · ⚠ leídas ' + nLeidas + ' de ' + n + ' matrículas — complétalas a mano';
+  return s;
+}
+
+/* ══ Extracción unificada (v2.9.25 — orden OACI + JEFE DE ESTADO + OCR + FORMACIÓN) ══ */
 
 /* Vuelos del JEFE DE ESTADO (v2.9.23, petición de la oficina): la sigla del
  * operador estatal + «001» en el casillero 7 (FAP001, EP001, PNP001, INP001)
@@ -377,7 +581,13 @@ function _final(r) {
  *  lleva «EP001 - EP246» (vuelo - matrícula).
  *  v2.9.24: FPL FOTOGRAFIADO/ESCANEADO — el OCR lee casilla por casilla y
  *  la etiqueta del 7 no ancla; el vuelo presidencial (sigla + «001») se
- *  rescata del texto directo/compactado. */
+ *  rescata del texto directo/compactado.
+ *  v2.9.25: VUELO EN FORMACIÓN — casillero 7 «AVISPA + 1» (texto o
+ *  geometría del «+»), casillero 9 con el nº de aeronaves y casillero 18
+ *  con TODAS las matrículas (REG/ multi, pegadas del OCR o directas sin
+ *  REG/): el campo lleva «FAP123 FAP124» y el aviso marca la formación;
+ *  si faltan matrículas (nº de aeronaves > leídas) el aviso pide
+ *  completarlas a mano. */
 function extraerFPL(texto, items) {
   var t = String(texto || '');
   if (!t.trim() && !(items && items.length)) return null;
@@ -405,22 +615,63 @@ function extraerFPL(texto, items) {
   if (ident && esMatricula(ident))
     return _final({ matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }); // el 7 YA trae la matrícula
 
+  // v2.9.25 — VUELO EN FORMACIÓN: «GUÍA + 1» en el casillero 7 (texto tal
+  // cual o geometría del «+») y/o nº de aeronaves en el casillero 9; las
+  // matrículas de TODAS las aeronaves están en el casillero 18. El texto
+  // aporta el nº del casillero 9 y la geometría el callsign completo (el
+  // content stream llega revuelto y el «AVISPA + 1» no sale junto).
+  var formT = formacionDe(t), formG = formacionDeFormulario(items);
+  var form = formT || formG;
+  if (formT && formG) form = { llamada: formT.llamada || formG.llamada, n: Math.max(formT.n, formG.n) };
+
   // 2) casillero 18 — REG/ (matrícula «si difiere de la del casillero 7»);
   //    v2.9.22: también «REG FAP 329» sin barra (fallo de presentación del
-  //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado
+  //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado;
+  //    v2.9.25: formación — recoge TODAS las matrículas del ítem
   var ri = _regInfo(t) || _regInfo(_compacta(t));
-  if (ri)
+  if (ri) {
+    var todas = (ri.todas && ri.todas.length ? ri.todas : [ri.v]).slice(0, 12);
+    if (todas.length >= 2 || form)
+      return _final({ matricula: todas.join(' '),
+               origen: 'casillero 18 (REG' + (ri.conBarra ? '/' : ' sin «/»') + ')' + _notaFormacion(form, todas.length),
+               ident: ident, formacion: form || { llamada: '', n: todas.length }, todas: todas });
     return _final({ matricula: ri.v,
              origen: 'casillero 18 (REG' + (ri.conBarra ? '/' : ' sin «/»') + ')' + (ident ? ' · vuelo ' + ident : ''),
              ident: ident });
+  }
+
+  // v2.9.25 — formación SIN ítem REG/: el casillero 18 trae las matrículas
+  // directas («18. OTROS DATOS: FAP123 FAP124»); solo con la formación ya
+  // confirmada, para no cazar matrículas sueltas de cualquier texto
+  if (form) {
+    var dir = _matriculasDirectas(t);
+    if (dir.length < 2) {
+      var dirCas = _matriculasDirectas(_casillas(t));       // pegadas del OCR de la foto
+      if (dirCas.length >= 2) dir = dirCas;
+    }
+    if (dir.length >= 2)
+      return _final({ matricula: dir.join(' '),
+               origen: 'casillero 18 (matrículas de la formación)' + _notaFormacion(form, dir.length),
+               ident: ident, formacion: form, todas: dir });
+  }
 
   // 3) patrón suelto en el texto
   var su = _suelto(t) || _suelto(_compacta(t));
-  if (su) return _final({ matricula: su, origen: 'texto del FPL', ident: ident });
+  if (su) {
+    if (form)
+      return _final({ matricula: su, origen: 'texto del FPL' + _notaFormacion(form, 1),
+               ident: ident, formacion: form, todas: [su] });
+    return _final({ matricula: su, origen: 'texto del FPL', ident: ident });
+  }
 
-  // casillero 7 con designador y sin REG/ → identificación del vuelo
-  if (ident && /^[A-Z0-9]{2,7}$/.test(ident) && !_PALABRA.test(ident))
+  // casillero 7 con designador y sin REG/ → identificación del vuelo;
+  // v2.9.25: en un VUELO EN FORMACIÓN el callsign («AVISPA+1») NO va en el
+  // campo — el casillero pide las MATRÍCULAS (se escriben a mano si el OCR
+  // de la foto no las leyó) → null para que la app avise específicamente
+  if (ident && /^[A-Z0-9]{2,7}$/.test(ident) && !_PALABRA.test(ident)) {
+    if (form) return null;
     return _final({ matricula: ident, origen: origenIdent + ' · identificación de vuelo', ident: ident });
+  }
 
   return null;
 }
@@ -553,7 +804,10 @@ var API = {
   extraerMatricula: extraerMatricula, extraerFPL: extraerFPL,
   identDeFormulario: identDeFormulario, esMatricula: esMatricula,
   inicialesDe: inicialesDe, pareceFPL: pareceFPL, _norm: _norm, _compacta: _compacta,
-  _casillas: _casillas, _vueloPresidencial: _vueloPresidencial, _presi: _presi
+  _casillas: _casillas, _vueloPresidencial: _vueloPresidencial, _presi: _presi,
+  // v2.9.25 — vuelo en formación
+  formacionDe: formacionDe, formacionDeFormulario: formacionDeFormulario,
+  _splitUnidades: _splitUnidades, _matriculasDirectas: _matriculasDirectas
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 if (typeof window !== 'undefined') window.FPLScan = API;

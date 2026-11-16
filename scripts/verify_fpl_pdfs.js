@@ -12,6 +12,9 @@ const fs = require('fs');
 // falla del piloto «REG FAP 329» (sin barra, dígitos separados).
 // v2.9.23 — vuelos del JEFE DE ESTADO (sigla estatal + 001): el campo lleva
 // «FAP001 - FAP329» / «EP001 - EP246» (vuelo - matrícula).
+// v2.9.25 — VUELO EN FORMACIÓN («GUÍA + 1»): casillero 7 con el callsign y
+// el nº que sigue, casillero 9 con el total de aeronaves y el 18 con TODAS
+// las matrículas (REG/FAP123 FAP124) → el campo las recibe completas.
 // Nota SPHI: el fixture replica el ORDEN REVUELTO del content-stream real
 // («1 6 3 0 … O B»); eso lo resuelve la GEOMETRÍA (como hace la app con los
 // PDF). El modo «solo texto» es para OCR, que lee orden VISUAL — cubierto en
@@ -26,6 +29,7 @@ const CASOS = [
   ['tmp_e2e_fpl_form_casillas.pdf',  'HP1520', 'casillero 18 (REG/)',                              'CMP468', 'HP1520'],
   ['tmp_e2e_fpl_fap001.pdf',         'FAP001 - FAP329', 'casillero 18 (REG sin «/») · vuelo FAP001 · JEFE DE ESTADO', 'FAP001', 'FAP329'],
   ['tmp_e2e_fpl_ep001.pdf',          'EP001 - EP246', 'casillero 18 (REG/) · vuelo EP001 · JEFE DE ESTADO',       'EP001', 'EP246'],
+  ['tmp_e2e_fpl_formacion.pdf',      'FAP123 FAP124', 'VUELO EN FORMACIÓN «AVISPA + 1» · 02 aeronaves',  'AVISPA1', 'FAP123 FAP124'],
   ['tmp_e2e_oficio.pdf',             null,     null,                                                null,     null],
 ];
 

@@ -367,7 +367,101 @@ t('CMP468IS con casillas pegadas → HP1520 (ident sin recortar)', FPLScan.extra
 // para el vuelo presidencial, que tiene firma única sigla+«001»)
 t('FOTO GA «O B 1 6 3 0 V G» sin REG → null (sin cambios)', FPLScan.extraerFPL('FLIGHT PLAN\nAIRCRAFT IDENT\nO B 1 6 3 0 V G', null), null);
 
-console.log('══ 19. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
+console.log('══ 19. v2.9.25 — VUELO EN FORMACIÓN: «GUÍA + 1» → TODAS las matrículas del casillero 18 ══');
+// Petición de la oficina: los vuelos en formación se presentan como
+// «GUÍA + 1» — el casillero 7 trae el CALLSIGN con el número de aeronaves
+// que la siguen (AVISPA+1, BAZUCA+2, NORTON+3 — el callsign varía en nombre
+// y número), el CASILLERO 9 «NÚMERO» el total de aeronaves (02) y el
+// CASILLERO 18 las MATRÍCULAS DE TODAS (FAP123 FAP124). El campo
+// «Matrícula (Aeronave / Espacio)» las recibe completas.
+t('télex «AVISPA+1» + REG/FAP123 FAP124 → «FAP123 FAP124» (ejemplo de la oficina)', FPLScan.extraerFPL('(FPL-AVISPA+1-IS -02 B738/M-S -SPHI0730 -18/REG/FAP123 FAP124 DOF/261115').matricula, 'FAP123 FAP124');
+t('…origen con llamada y nº de aeronaves', FPLScan.extraerFPL('(FPL-AVISPA+1-IS -18/REG/FAP123 FAP124 DOF/261115').origen, 'casillero 18 (REG/) · VUELO EN FORMACIÓN «AVISPA + 1» · 02 aeronaves');
+t('…ident conserva el callsign con su «+1»', FPLScan.extraerFPL('(FPL-AVISPA+1-IS -18/REG/FAP123 FAP124').ident, 'AVISPA+1');
+t('formulario impreso «AVISPA + 1» + NÚMERO 02 → ambas matrículas', FPLScan.extraerFPL('PLAN DE VUELO 7. IDENTIFICACION DE AERONAVE: AVISPA + 1 9. NÚMERO: 02 18. OTROS DATOS: REG/FAP123 FAP124 DOF/261115').matricula, 'FAP123 FAP124');
+t('«BAZUCA+2» sin barra y 3 matrículas separadas → las 3', FPLScan.extraerFPL('(FPL-BAZUCA+2-IS -18/REG FAP 123 FAP 124 FAP 125 DOF/261115').matricula, 'FAP123 FAP124 FAP125');
+t('…nota «BAZUCA + 2» · 03 aeronaves', FPLScan.extraerFPL('(FPL-BAZUCA+2-IS -18/REG FAP 123 FAP 124 FAP 125').origen, 'casillero 18 (REG sin «/») · VUELO EN FORMACIÓN «BAZUCA + 2» · 03 aeronaves');
+t('«NORTON+3»: casillero 18 directo, SIN ítem REG/ → las 4 matrículas', FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE: NORTON + 3 9. NÚMERO: 04 18. OTROS DATOS: FAP123 FAP124 FAP125 FAP126 DOF/261115').matricula, 'FAP123 FAP124 FAP125 FAP126');
+t('…origen: matrículas de la formación (sin REG/)', FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE: NORTON + 3 9. NÚMERO: 04 18. OTROS DATOS: FAP123 FAP124 FAP125 FAP126').origen, 'casillero 18 (matrículas de la formación) · VUELO EN FORMACIÓN «NORTON + 3» · 04 aeronaves');
+t('«GUIA + 1» (presentación literal del manual) → formación', FPLScan.extraerFPL('(FPL-GUIA+1-IS -18/REG/FAP123 FAP124 DOF/261115').origen, 'casillero 18 (REG/) · VUELO EN FORMACIÓN «GUIA + 1» · 02 aeronaves');
+// OCR de la FOTO: matrículas PEGADAS (casillas compactadas) y nº del 9 en casillas
+t('OCR foto: «REG FAP123FAP124» pegadas + «NUMERO 0 2» → ambas', FPLScan.extraerFPL('FLIGHT PLAN\nAIRCRAFT IDENT\nF A P 1 2 3 F A P 1 2 4\n9. NUMERO 0 2\n18 OTROS DATOS REG FAP123FAP124 DOF/261115', null).matricula, 'FAP123 FAP124');
+t('OCR foto: …con el nº de aeronaves del casillero 9', FPLScan.extraerFPL('FLIGHT PLAN\nAIRCRAFT IDENT\nF A P 1 2 3 F A P 1 2 4\n9. NUMERO 0 2\n18 OTROS DATOS REG FAP123FAP124 DOF/261115', null).origen, 'casillero 18 (REG sin «/») · VUELO EN FORMACIÓN · 02 aeronaves');
+t('OCR foto: «R E G / F A P 1 2 3 F A P 1 2 4» extremo → ambas', FPLScan.extraerFPL('18: R E G / F A P 1 2 3 F A P 1 2 4 SEL/ABCD', null).matricula, 'FAP123 FAP124');
+t('con guion «REG/OB1630-OB2147» (formación civil) → ambas', FPLScan.extraerMatricula('-18/REG/OB1630-OB2147 DOF/261115').matricula, 'OB1630 OB2147');
+t('REG/ con DOS matrículas civiles (Doc 4444: formación) → ambas', FPLScan.extraerMatricula('(FPL-CMP468-IS -18/REG/HP1520 HP1521 DOF/261111').matricula, 'HP1520 HP1521');
+t('…y el aviso la marca (sin llamada: el 7 trae designador)', FPLScan.extraerMatricula('(FPL-CMP468-IS -18/REG/HP1520 HP1521 DOF/261111').origen, 'casillero 18 (REG/) · VUELO EN FORMACIÓN');
+t('matrículas DUPLICADAS no duplican', FPLScan.extraerMatricula('-18/REG/FAP123 FAP123 DOF/261115').matricula, 'FAP123');
+// la palabra tras la matrícula NO se cuela como segunda aeronave
+t('«REG/HP1520 LIMA…» → solo HP1520 (LIMA no es aeronave)', FPLScan.extraerMatricula('18. OTROS DATOS REG/HP1520 LIMA DOF/261111').matricula, 'HP1520');
+t('aerolínea normal SIN formación no cambia (CMP468 → HP1520)', FPLScan.extraerMatricula('(FPL-CMP468-IS -18/REG/HP1520 SEL/MPJR DOF/261111').origen, 'casillero 18 (REG/) · vuelo CMP468');
+// faltan matrículas (el OCR de la foto tiene límites) → el aviso pide completarlas a mano
+t('«AVISPA+1» pero solo lee FAP123 → avisa «leídas 1 de 2»', FPLScan.extraerFPL('(FPL-AVISPA+1-IS -18/REG/FAP123 DOF/261115').origen, 'casillero 18 (REG/) · VUELO EN FORMACIÓN «AVISPA + 1» · 02 aeronaves · ⚠ leídas 1 de 2 matrículas — complétalas a mano');
+t('formación SIN matrículas → null (el callsign NO va en el campo)', FPLScan.extraerFPL('PLAN DE VUELO 7. IDENTIFICACION DE AERONAVE: AVISPA + 1 9. NÚMERO: 02 18. OTROS DATOS: DOF/261115', null), null);
+t('formacionDe: la app puede avisar específicamente', JSON.stringify(FPLScan.formacionDe('PLAN DE VUELO 7. IDENTIFICACION DE AERONAVE: AVISPA + 1 9. NÚMERO: 02 18. OTROS DATOS: DOF/261115')), JSON.stringify({ llamada: 'AVISPA', n: 2 }));
+t('formacionDe: solo el casillero 9 (sin «+N»)', JSON.stringify(FPLScan.formacionDe('PLAN DE VUELO 9. NÚMERO 02 18. OTROS DATOS')), JSON.stringify({ llamada: '', n: 2 }));
+t('formacionDe: «NÚMERO 18.» es la ETIQUETA del casillero, no el nº', FPLScan.formacionDe('PLAN DE VUELO 9. NÚMERO 18. OTROS DATOS REG FAP 329'), null);
+t('formacionDe: «NÚMERO TIPO DE AERONAVE B737» (sin nº) → null', FPLScan.formacionDe('9. NÚMERO TIPO DE AERONAVE B 7 3 7/M'), null);
+t('_splitUnidades: «FAP123FAP124» → «FAP123 FAP124»', JSON.stringify(FPLScan._splitUnidades('FAP123FAP124')), JSON.stringify(['FAP123', 'FAP124']));
+t('_splitUnidades: «OB1630OB2147» → ambas', JSON.stringify(FPLScan._splitUnidades('OB1630OB2147')), JSON.stringify(['OB1630', 'OB2147']));
+t('_splitUnidades: una sola unidad no se parte («OB1234P» provisional)', JSON.stringify(FPLScan._splitUnidades('OB1234P')), JSON.stringify(['OB1234P']));
+t('_matriculasDirectas: «FAP123 FAP124» del 18', JSON.stringify(FPLScan._matriculasDirectas('18. OTROS DATOS FAP123 FAP124 DOF/261115')), JSON.stringify(['FAP123', 'FAP124']));
+t('_matriculasDirectas: texto administrativo → vacío', JSON.stringify(FPLScan._matriculasDirectas('OFICIO MULTIPLE N. 214-2026 CUADRO DE PERSONAL')), JSON.stringify([]));
+// v2.9.25 — OCR REAL de la FOTO de formación (Tesseract): la barra del
+// «REG/» se lee como «I» («REGIFAP123»), el 0 del casillero 9 como «O»
+// («o 2») y las casillas del 7 ni se leen — las matrículas salen igual
+var OCR_FORM = 'PLAN DE VUELOGHT PLAN\n3. TIPO DE MENSAJE / MESSAGE TYPE\n7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO TIPO DE VUELO\nAIRCRAFT IDENT FLIGHT RULES TYPE OF FLIGHT\n9. NUMERO / NUMBER\no 2 TIPO DE AERONAVE / TYPE OF AIRCRAFT\nB738/M\n13. AERODROMO DE SALIDA / DEPARTURE AERODROME\n18. OTROS DATOS / OTHER INFORMATION\nREGIFAP123 FAP124 DOF/261115 RMK/IVUELO EN FORMACION\n19. AUTONOMIA / ENDURANCE\nAVISPA + 1 - vuelo en formacion.pdf (foto)';
+t('FOTO formación (OCR real): «REGIFAP123 FAP124» → ambas matrículas', FPLScan.extraerFPL(OCR_FORM, null).matricula, 'FAP123 FAP124');
+t('FOTO formación: …nota con la llamada (del pie «AVISPA + 1») y el nº', FPLScan.extraerFPL(OCR_FORM, null).origen, 'casillero 18 (REG sin «/») · VUELO EN FORMACIÓN «AVISPA + 1» · 02 aeronaves');
+t('OCR civil: «REGIOB1630» (barra→I, matrícula civil) → OB1630', FPLScan.extraerFPL('FOTO 18 OTROS DATOS REGIOB1630 DOF/261115', null).matricula, 'OB1630');
+t('OCR pegado con barra→I: «REGIFAP123FAP124» → ambas', FPLScan.extraerFPL('18 OTROS DATOS REGIFAP123FAP124 DOF/261115', null).matricula, 'FAP123 FAP124');
+t('«REGLAS» (la L mayúscula cae en [Il1|] con /i) NO hace sombra al REGI', FPLScan.extraerFPL('7. IDENTIFICACION DE AERONAVE 8. REGLAS DE VUELO\nREG FAP 329 DOF/261113', null).matricula, 'FAP329');
+t('«REGISTRO DE MATRICULA» sigue sin colar (con la L del OCR)', FPLScan.extraerFPL('CONSTANCIA REGISTRO DE MATRICULA AERONAUTICA 2026', null), null);
+t('«REGIMIENTO» tampoco', FPLScan.extraerFPL('REGIMIENTO DE CABALLERIA NUMERO 2026', null), null);
+t('casillero 9 «o 2» (0→O del OCR, vía casillas) → n=2', JSON.stringify(FPLScan.formacionDe('9. NUMERO / NUMBER\no 2 TIPO DE AERONAVE')), JSON.stringify({ llamada: '', n: 2 }));
+
+console.log('══ 20. v2.9.25 — GEOMETRÍA: formulario impreso con «AVISPA + 1» en el casillero 7 ══');
+// El formulario trae el «+» como ítem de texto en la fila del casillero 7;
+// el content stream llega revuelto (dígitos primero, letras al final) y la
+// geometría reconstruye la llamada completa.
+var IT_FORM = [
+  { str: 'PLAN DE VUELO', x: 262.1, y: 810.3 },
+  { str: '7.', x: 148.7, y: 698.1 },
+  { str: 'IDENTIFICACION DE AERONAVE', x: 164.2, y: 698.0 },
+  { str: '8.', x: 292.0, y: 698.4 },
+  { str: 'REGLAS DE VUELO', x: 297.8, y: 698.1 },
+  { str: 'Aircraft Identification', x: 191.8, y: 688.5 },
+  { str: 'FPL', x: 62.5, y: 678.2 },
+  { str: '1', x: 272.0, y: 676.9 },
+  { str: 'I', x: 316.4, y: 678.2 },
+  { str: 'S', x: 393.9, y: 678.2 },
+  { str: 'A', x: 153.1, y: 678.2 },
+  { str: 'V', x: 169.8, y: 678.2 },
+  { str: 'I', x: 187.3, y: 678.2 },
+  { str: 'S', x: 204.8, y: 678.2 },
+  { str: 'P', x: 221.3, y: 678.2 },
+  { str: 'A', x: 238.7, y: 678.2 },
+  { str: '+', x: 256.2, y: 678.2 },
+  { str: '9.', x: 33.4, y: 668.6 },
+  { str: 'NÚMERO', x: 61.0, y: 668.7 },
+  { str: '0', x: 224.1, y: 666.7 },
+  { str: '2', x: 236.6, y: 666.7 },
+  { str: 'REG/FAP123 FAP124 DOF/261115 RMK/VUELO EN FORMACION', x: 100.0, y: 500.0 }
+];
+var TXT_FORM = IT_FORM.map(function (o) { return o.str; }).join(' ');
+t('geometría: la llamada del «+» → {AVISPA, 2}', JSON.stringify(FPLScan.formacionDeFormulario(IT_FORM)), JSON.stringify({ llamada: 'AVISPA', n: 2 }));
+t('geometría: el casillero 7 queda «AVISPA1» (llamada + los que siguen)', FPLScan.identDeFormulario(IT_FORM), 'AVISPA1');
+// pdf.js FUSIONA a veces «8.»+«REGLAS…»+«TIPO…» en un solo ítem (real en el
+// fixture): el «8.» inicial no puede esconder la etiqueta del límite derecho
+// — sin la corrección, la casilla «I» del 8 se pega: «AVISPA1I» (8 car.)
+var IT_FORM_MERGE = IT_FORM.filter(function (o) { return o.str !== '8.' && o.str !== 'REGLAS DE VUELO' && o.str !== 'TIPO DE VUELO'; });
+IT_FORM_MERGE.push({ str: '8.REGLAS DE VUELOTIPO DE VUELO', x: 292.0, y: 698.4 });
+t('geometría con «8.REGLAS…» FUSIONADO (pdf.js): ident sigue «AVISPA1»', FPLScan.identDeFormulario(IT_FORM_MERGE), 'AVISPA1');
+t('geometría + texto: «FAP123 FAP124» con la llamada completa', FPLScan.extraerFPL(TXT_FORM, IT_FORM).matricula, 'FAP123 FAP124');
+t('…nota: «AVISPA + 1» · 02 aeronaves (llamada de la geometría)', FPLScan.extraerFPL(TXT_FORM, IT_FORM).origen, 'casillero 18 (REG/) · VUELO EN FORMACIÓN «AVISPA + 1» · 02 aeronaves');
+t('geometría sin «+» (CM468) → no hay formación', FPLScan.formacionDeFormulario(IT_CM468), null);
+t('solo texto (OCR del formulario): «+» revuelto no da llamada falsa', FPLScan.extraerFPL(TXT_FORM, null).matricula, 'FAP123 FAP124');
+
+console.log('══ 21. INTEGRACIÓN — FPL real del usuario (ATC CM468 11NOV.pdf) ══');
 (async function () {
   const pdfReal = '/home/z/my-project/upload/ATC CM468  11NOV.pdf';
   if (!fs.existsSync(pdfReal)) {

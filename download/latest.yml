@@ -1,8 +1,8 @@
-version: 2.9.24
+version: 2.9.26
 files:
-  - url: PDFPro-Setup-2.9.24.exe
-    sha512: XlsZM1ou7WUCO8lGeKifHUGfuILGwL1UKterV1pFRoF9/4haFBos/ZPjVgh4v7eSwuaC0OJTfIXgWWWMCY1SNw==
-    size: 141865337
-path: PDFPro-Setup-2.9.24.exe
-sha512: XlsZM1ou7WUCO8lGeKifHUGfuILGwL1UKterV1pFRoF9/4haFBos/ZPjVgh4v7eSwuaC0OJTfIXgWWWMCY1SNw==
-releaseDate: '2026-11-15T00:24:00.000Z'
+  - url: PDFPro-Setup-2.9.26.exe
+    sha512: hp0OQIz3yuPkGqqXk0R4yr4w9Yago5bTvzpKeiNNPxTbL7jVyhzwx9ObBLRMy00mAmkcGwcByEsOTs29RVtAKA==
+    size: 141870637
+path: PDFPro-Setup-2.9.26.exe
+sha512: hp0OQIz3yuPkGqqXk0R4yr4w9Yago5bTvzpKeiNNPxTbL7jVyhzwx9ObBLRMy00mAmkcGwcByEsOTs29RVtAKA==
+releaseDate: '2026-11-16T18:05:09.000Z'

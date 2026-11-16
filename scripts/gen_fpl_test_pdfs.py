@@ -93,10 +93,11 @@ def pdf_sin_matricula(path):
 # content stream (dígitos del identificador primero, luego las casillas del
 # 8, luego las letras). El escáner debe reconstruir la fila por geometría. ══
 
-def _plantilla(c, casillero7, casillero8, reg18):
+def _plantilla(c, casillero7, casillero8, reg18, casillero9="106"):
     """casillero7 = dict {letra: x} o LISTA de (letra, x) en la fila y=678.2
     (y=676.9 dígitos) — la lista permite caracteres REPETIDOS (FAP001 tiene
-    dos ceros); casillero8 = [(letra,x)]; reg18 = texto del 18 (con o sin REG/)."""
+    dos ceros); casillero8 = [(letra,x)]; reg18 = texto del 18 (con o sin REG/);
+    casillero9 = dígitos del NÚMERO (v2.9.25: «02» en los vuelos en formación)."""
     c.setFont("Helvetica-Bold", 9)
     c.drawString(262.1, 810.3, "PLAN DE VUELO")
     c.setFont("Helvetica", 7.6)
@@ -140,9 +141,12 @@ def _plantilla(c, casillero7, casillero8, reg18):
     c.drawString(205.8, 669.7, "CAT. DE ESTELA TURBULENTA")
     c.drawString(320.3, 669.5, "10.")
     c.drawString(326.9, 668.7, "EQUIPO")
-    c.drawString(224.1, 666.7, "1")
-    c.drawString(236.6, 666.7, "0")
-    c.drawString(247.0, 666.7, "6")
+    # dígitos del casillero 9 (NÚMERO): «106» por defecto (tipo del CM468
+    # real); «02» en el vuelo en formación de v2.9.25 — en las posiciones
+    # exactas del fixture original
+    _xs9 = [224.1, 236.6, 247.0]
+    for i, ch in enumerate(casillero9):
+        c.drawString(_xs9[i], 666.7, ch)
     c.drawString(134.2, 660.9, "Type of Aircraft")
     # ── sección 13 ──
     c.drawString(50.0, 620.0, "HORA 13. AERODROMO DE SALIDA")
@@ -231,6 +235,24 @@ def pdf_ep001(path):
     c.drawString(50, 30, "EP001 - ejemplo jefe de estado.pdf")
 
 
+def pdf_formacion(path):
+    """VUELO EN FORMACIÓN (v2.9.25, ejemplo de la oficina): casillero 7 con
+    el CALLSIGN y el nº que sigue («AVISPA + 1»), casillero 9 «NÚMERO» con
+    el total de aeronaves (02) y casillero 18 con las MATRÍCULAS DE TODAS
+    (REG/FAP123 FAP124). El campo «Matrícula (Aeronave / Espacio)» debe
+    recibir TODAS: «FAP123 FAP124» (el «+» del formulario llega como ítem
+    de texto y la GEOMETRÍA reconstruye la llamada)."""
+    c = canvas.Canvas(path, pagesize=A4)
+    _plantilla(c,
+               casillero7=[("A", 153.1), ("V", 169.8), ("I", 187.3),
+                           ("S", 204.8), ("P", 221.3), ("A", 238.7),
+                           ("+", 256.2), ("1", 272.0)],
+               casillero8=[("I", 316.4), ("S", 393.9)],
+               casillero9="02",
+               reg18="REG/FAP123 FAP124 DOF/261115 RMK/VUELO EN FORMACION")
+    c.setFont("Helvetica", 6)
+    c.drawString(50, 30, "AVISPA + 1 - vuelo en formacion.pdf")
+
 
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
@@ -241,6 +263,7 @@ for name, fn in [
     ("tmp_e2e_fpl_form_casillas.pdf", pdf_form_casillas),
     ("tmp_e2e_fpl_fap001.pdf", pdf_fap_001),
     ("tmp_e2e_fpl_ep001.pdf", pdf_ep001),
+    ("tmp_e2e_fpl_formacion.pdf", pdf_formacion),
 ]:
     p = os.path.join(BASE, name)
     fn(p)
