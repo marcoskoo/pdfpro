@@ -1,8 +1,42 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.27 — Versión de escritorio para Windows
+  PDFPro 2.9.28 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 2.9.28 (AYUDA DEL CAMPO MATRÍCULA OCULTA — BOTONES A LA VISTA)
+────────────────────────────────────────────────────────────────────
+  LO PEDIDO POR LA OFICINA: «ocultar el texto "Al cargar el archivo, la
+  matrícula se detecta sola (casillero 7 o ítem REG/ del 18)… en la web
+  se descarga con ese nombre" — DE ESTA MANERA TENEMOS LOS BOTONES A LA
+  VISTA». El bloque de ayuda bajo el campo «Matrícula (Aeronave /
+  Espacio)» era tan largo que empujaba los botones del sello (Colocar
+  Sello de Recepción, sellos personales) muy abajo en la pestaña.
+
+  LO IMPLEMENTADO:
+  · AYUDA CONTRAÍDA TRAS UN ENLACE: el texto largo ya NO se ve; en su
+    lugar queda una línea discreta «ⓘ Cómo se rellena este campo y cómo
+    se nombra el archivo (designador, formación, archivo automático)».
+    Oculta por defecto (ocupa 0px: el botón «Colocar Sello de Recepción»
+    queda a la vista, justo bajo la vista previa del sello); un clic la
+    despliega y otro clic la vuelve a ocultar.
+  · NO SE ELIMINÓ NADA: toda la doctrina sigue disponible con ese clic —
+    detección de matrícula (casillero 7 o REG/ del 18), vuelo con
+    designador «LPE2273 CCBJE MK», vuelo en formación «FAP123 FAP124»,
+    campo de 100 caracteres, archivo automático al sellar y nombre
+    MATRÍCULA INICIALES.
+
+VERIFICADO PUNTO A PUNTO (2.9.28):
+  · E2E en la app real (9 pasos), con la pestaña de sellos ABIERTA
+    (layout real): ayuda oculta por defecto (display:none · 0px de
+    alto); botón «Colocar Sello de Recepción» renderizado a 171px bajo
+    el campo (antes la ayuda lo empujaba ~200px más abajo); el enlace ⓘ
+    despliega la ayuda (264px) y un segundo clic la oculta de nuevo ✓
+  · Regresiones del escaneo intactas: designador LPE2273 + REG/CCBJE →
+    «LPE2273 CCBJE EV» · nombre «LPE2273 CCBJE EV.pdf» sin duplicar
+    iniciales · SPHI-SPST (casillero 7 = matrícula) → «OB1630» ✓
+
+  HISTORIAL — versión 2.9.27 (VUELO CON DESIGNADOR: ID DE VUELO + MATRÍCULA + INICIALES)
+────────────────────────────────────────────────────────────────────
 NOVEDADES DE LA VERSIÓN 2.9.27 (VUELO CON DESIGNADOR: ID DE VUELO + MATRÍCULA + INICIALES)
 ────────────────────────────────────────────────────────────────────
   LO PEDIDO POR LA OFICINA: «que cuando la identificación del vuelo no
@@ -940,7 +974,7 @@ CONTENIDO DE ESTE PAQUETE
 ─────────────────────────
   PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
   PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.27.zip     Proyecto completo para recompilar
+  pdfpro-fuentes-v2.9.28.zip     Proyecto completo para recompilar
   PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
                                 Muestra real: ábrela en Word y verás
                                 el sello de recepción (con firma) y el
@@ -995,7 +1029,7 @@ QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
     · Google Drive (conexión OAuth y subida de archivos)
     · Mapas AIRAC (teselas de OpenStreetMap)
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.27.zip)
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.28.zip)
 ──────────────────────────────────────────────────
   1. Descomprime el ZIP en cualquier carpeta.
   2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
@@ -1014,4 +1048,4 @@ RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.27.zip)
     build/icon.ico          Icono de la aplicación
     build/installer.nsi     Script NSIS del instalador
 
-PDFPro 2.9.27 · © 2026 CORPAC AIS/ARO SPHI
+PDFPro 2.9.28 · © 2026 CORPAC AIS/ARO SPHI
