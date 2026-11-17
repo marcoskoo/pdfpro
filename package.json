@@ -1,0 +1,99 @@
+{
+  "name": "pdfpro",
+  "productName": "PDFPro",
+  "version": "3.1.2",
+  "description": "PDFPro Suite — PDF Editor Pro + Licencias Pilotos (CORPAC AIS/ARO SPHI), versión de escritorio para Windows",
+  "author": "CORPAC AIS/ARO SPHI",
+  "license": "Propietario",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "dist": "electron-builder --win nsis portable --x64"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "pe.gob.corpac.pdfpro",
+    "productName": "PDFPro",
+    "copyright": "Copyright © 2026 CORPAC AIS/ARO SPHI",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "compression": "maximum",
+    "electronLanguages": [
+      "es",
+      "en-US"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "PDFPro-Portable-${version}.${ext}",
+      "unicode": true
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PDFPro",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "PDFPro-Setup-${version}.${ext}",
+      "script": "installer.nsi"
+    },
+    "fileAssociations": [
+      {
+        "ext": "pdf",
+        "name": "PDFPro.Document.PDF",
+        "description": "Documento PDF",
+        "role": "Editor",
+        "icon": "build/pdfdoc.ico"
+      },
+      {
+        "ext": ["docx", "doc"],
+        "name": "PDFPro.Document.Word",
+        "description": "Documento de Word",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      },
+      {
+        "ext": ["xlsx", "xlsm", "xls", "csv"],
+        "name": "PDFPro.Document.Excel",
+        "description": "Hoja de cálculo de Excel",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      },
+      {
+        "ext": ["jpg", "jpeg", "jfif", "png", "gif", "bmp", "webp", "avif", "ico", "svg"],
+        "name": "PDFPro.Image",
+        "description": "Imagen",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      }
+    ]
+  }
+}

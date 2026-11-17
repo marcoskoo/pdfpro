@@ -1,0 +1,94 @@
+════════════════════════════════════════════════════════════════════
+  PDFPro Suite 3.0.0 — Versión de escritorio para Windows
+  PDF Editor Pro · CORPAC AIS/ARO SPHI
+════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.0.0
+────────────────────────────────────────────────────────────────────
+  1. INICIALES DEL OPERADOR — REGLA DE 2 LETRAS (AUTOMÁTICAS)
+     Las iniciales ahora se calculan solas al iniciar sesión y siguen
+     exactamente la regla pedida: 2 letras, la primera es la inicial
+     del PRIMER NOMBRE y la segunda es la inicial del PRIMER APELLIDO
+     (apellido paterno).
+       Ejemplo: el operador es Marcos Roberto Koo Paz → iniciales: MK
+     (Antes salían mal: tomaba las iniciales de las dos primeras
+     palabras, «MR», y hasta 4 letras.)
+     · Se muestran en la CABECERA del editor junto al nombre.
+     · En «Mi Cuenta» (con la regla explicada).
+     · Se precargan en la ficha del SELLO (pestaña SELLO) y en el
+       panel móvil; el campo admite máximo 2 letras.
+     · Se usan al nombrar el archivo guardado: «MATRÍCULA INICIALES»
+       (ej. OB2147 MK.pdf).
+     · Nombres con «de/del/la/las/los» se tratan bien: Pedro de la
+       Cruz Villa → PC.
+
+  2. MATRÍCULA (AERONAVE / ESPACIO) — DETECCIÓN AUTOMÁTICA POR OCR
+     Al cargar un documento (PDF, imagen escaneada o foto), PDFPro
+     analiza el contenido y rellena solo el campo «Matrícula
+     (Aeronave / Espacio)» de la ficha del sello:
+     · PDF con texto: se lee el texto embebido (instantáneo).
+     · PDF escaneado o imagen: OCR local (Tesseract, español, sin
+       internet) sobre la primera página/foto.
+     Reconoce los rótulos de plan de vuelo (REG/, AIRCRAFT
+     IDENTIFICATION, IDENTIFICACIÓN DE AERONAVE, MATRÍCULA), las
+     matrículas peruanas OB/EP/HP (con o sin guion, incluso con
+     letras espaciadas «O B - 2 1 4 7») y corrige errores típicos del
+     OCR (0B2147 → OB2147). También toma la matrícula del nombre del
+     archivo si lo trae (ej. «FPL OB2147.pdf»).
+     El botón «▶ Ejecutar OCR» de la pestaña EXPORTAR sigue
+     disponible para escanear cualquier página manualmente.
+
+  3. MONITOREO GMAIL — sphiaisaro@gmail.com (HORA DE RECEPCIÓN)
+     Nueva sección «📧 Monitoreo Gmail» en la pestaña SELLO:
+     · «Conectar Gmail» abre el consentimiento de Google (OAuth con
+       las credenciales del cliente Gmail creadas para PDFPro).
+       Autoriza el acceso a sphiaisaro@gmail.com una sola vez.
+     · Cada 5 minutos (o con «Barrer ahora») revisa la bandeja y
+       lista los correos CON ARCHIVO ADJUNTO de los últimos 7 días
+       con su HORA DE RECEPCIÓN exacta (la que registra Gmail).
+     · Si el archivo adjunto coincide con el documento cargado, el
+       correo se resalta («coincide con el archivo cargado»).
+     · Botón «Usar hora en el sello»: copia la fecha y hora de
+       recepción del correo a los campos «Fecha/Hora Recepción» del
+       sello de recepción.
+     · Cada correo se archiva en Supabase (tabla correos_gmail) si
+       ejecutas el script supabase_setup_v3.sql (incluido).
+     Nota: Google solo permite el redirect autorizado; si la ventana
+     nativa no cierra sola tras autorizar, la página
+     licencias-firmas.vercel.app muestra un código para pegar en el
+     cuadro «Pega el código» del panel Gmail.
+
+  Además se conservan TODAS las funciones de la serie 2.9:
+  Word y Excel editables en su formato original, fotos con la hoja
+  como foto completa, sello de recepción + sello personal, guardado
+  en REGISTROS FPL NOTAM\FPL\año\mes\día con nombre
+  «MATRÍCULA INICIALES», Google Drive, OCR, comparador de PDFs,
+  METAR/TAF, apertura con doble clic desde Windows, etc.
+
+INSTALACIÓN
+────────────────────────────────────────────────────────────────────
+  PDFPro-Setup-3.0.0.exe    Instalador de un clic (recomendado)
+                            Crea acceso directo y asocia .pdf, .docx,
+                            .xlsx e imágenes con PDFPro.
+  PDFPro-Portable-3.0.0.exe Versión portable sin instalación.
+
+  La app funciona 100% offline para edición, sello, OCR y guardado.
+  Solo necesita internet para: iniciar sesión (Supabase), conectar
+  Gmail/Drive y guardar en la nube.
+
+SUPABASE (OPCIONAL, PARA EL REGISTRO DE CORREOS)
+────────────────────────────────────────────────────────────────────
+  1. Entra a https://supabase.com → tu proyecto → SQL Editor.
+  2. Pega el contenido de supabase_setup_v3.sql y ejecútalo (Run).
+  3. Crea la tabla correos_gmail con la hora de recepción de cada
+     correo con adjunto; la app la llena sola al barrer Gmail.
+
+COMPILAR DESDE EL CÓDIGO FUENTE
+────────────────────────────────────────────────────────────────────
+  Requiere Node.js LTS. En la carpeta del proyecto:
+     npm install
+     npm run dist          (genera dist\PDFPro-Setup-3.0.0.exe y
+                            dist\PDFPro-Portable-3.0.0.exe)
+  En Windows también puedes usar build-windows.bat.
+
+  © 2026 CORPAC AIS/ARO SPHI · PDFPro Suite 3.0.0
