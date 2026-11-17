@@ -24,7 +24,8 @@
       "buildResources": "build"
     },
     "files": [
-      "src/**/*"
+      "src/**/*",
+      "!src/gmail-credentials.json"
     ],
     "compression": "maximum",
     "electronLanguages": [
@@ -74,25 +75,50 @@
         "icon": "build/pdfdoc.ico"
       },
       {
-        "ext": ["docx", "doc"],
+        "ext": [
+          "docx",
+          "doc"
+        ],
         "name": "PDFPro.Document.Word",
         "description": "Documento de Word",
         "role": "Editor",
         "icon": "build/icon.ico"
       },
       {
-        "ext": ["xlsx", "xlsm", "xls", "csv"],
+        "ext": [
+          "xlsx",
+          "xlsm",
+          "xls",
+          "csv"
+        ],
         "name": "PDFPro.Document.Excel",
         "description": "Hoja de cálculo de Excel",
         "role": "Editor",
         "icon": "build/icon.ico"
       },
       {
-        "ext": ["jpg", "jpeg", "jfif", "png", "gif", "bmp", "webp", "avif", "ico", "svg"],
+        "ext": [
+          "jpg",
+          "jpeg",
+          "jfif",
+          "png",
+          "gif",
+          "bmp",
+          "webp",
+          "avif",
+          "ico",
+          "svg"
+        ],
         "name": "PDFPro.Image",
         "description": "Imagen",
         "role": "Editor",
         "icon": "build/icon.ico"
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "src/gmail-credentials.json",
+        "to": "gmail-credentials.json"
       }
     ]
   }

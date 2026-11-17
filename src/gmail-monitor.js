@@ -22,9 +22,17 @@ const path = require('path');
    "clientSecret": "...", "account": "...", "redirectUri": "..."}), que NO se
    sube al repositorio (.gitignore). Así el repo no contiene secretos. */
 function loadCreds() {
-  const fallbackPath = path.join(__dirname, 'gmail-credentials.json');
+  // v3.1.2 — orden de resolución:
+  //   1. variables de entorno (GMAIL_CLIENT_ID / …)
+  //   2. src/gmail-credentials.json (desarrollo; NO se sube al repo)
+  //   3. resources/gmail-credentials.json (empaquetado: extraResources,
+  //      fuera del asar — electron-builder lo coloca junto al exe)
+  const pathEnv = path.join(process.resourcesPath || '', 'gmail-credentials.json');
   let fileCreds = {};
-  try { fileCreds = JSON.parse(fs.readFileSync(fallbackPath, 'utf8')); } catch (e) { /* opcional */ }
+  try { fileCreds = JSON.parse(fs.readFileSync(path.join(__dirname, 'gmail-credentials.json'), 'utf8')); }
+  catch (e) {
+    try { fileCreds = JSON.parse(fs.readFileSync(pathEnv, 'utf8')); } catch (e2) { /* opcional */ }
+  }
   return {
     clientId: process.env.GMAIL_CLIENT_ID || fileCreds.clientId || '',
     clientSecret: process.env.GMAIL_CLIENT_SECRET || fileCreds.clientSecret || '',
