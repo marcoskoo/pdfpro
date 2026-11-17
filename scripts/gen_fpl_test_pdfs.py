@@ -272,6 +272,23 @@ def pdf_designador(path):
     c.drawString(50, 30, "LPE2273 SPHI-SPJC.pdf")
 
 
+def pdf_reg18(path):
+    """v2.9.30 — petición de la oficina: SIEMPRE que el casillero 7 no traiga
+    la matrícula (aquí el ID de vuelo «JAP7261») y la matrícula venga en el
+    casillero 18 como ítem REG/ («REG/CCDII»), la casilla «Matrícula
+    (Aeronave / Espacio)» debe mostrar ID DE VUELO + MATRÍCULA:
+    «JAP7261 CCDII» (+ iniciales del operador del sello activo)."""
+    c = canvas.Canvas(path, pagesize=A4)
+    _plantilla(c,
+               casillero7=[("J", 153.1), ("A", 169.8), ("P", 187.3),
+                           ("7", 210.0), ("2", 226.5), ("6", 243.0), ("1", 259.5)],
+               casillero8=[("I", 316.4), ("S", 393.9)],
+               casillero9="01",
+               reg18="PBN/A1B1C1D1L1O1S2T1 NAV/RNP2 DOF/261117 REG/CCDII SEL/MPJR OPR/JAP PER/C RMK/TCAS")
+    c.setFont("Helvetica", 6)
+    c.drawString(50, 30, "JAP7261 SPHI-SPZO.pdf")
+
+
 for name, fn in [
     ("tmp_e2e_fpl_telex.pdf", pdf_telex),
     ("tmp_e2e_fpl_form.pdf", pdf_form),
@@ -280,6 +297,7 @@ for name, fn in [
     ("tmp_e2e_fpl_sphi_spst.pdf", pdf_sphi_spst),
     ("tmp_e2e_fpl_form_casillas.pdf", pdf_form_casillas),
     ("tmp_e2e_fpl_designador.pdf", pdf_designador),
+    ("tmp_e2e_fpl_reg18.pdf", pdf_reg18),
     ("tmp_e2e_fpl_fap001.pdf", pdf_fap_001),
     ("tmp_e2e_fpl_ep001.pdf", pdf_ep001),
     ("tmp_e2e_fpl_formacion.pdf", pdf_formacion),

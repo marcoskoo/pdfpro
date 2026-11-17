@@ -1,0 +1,46 @@
+PDFPro 2.9.30 — (1) MATRÍCULA «SIEMPRE»: ID de vuelo del 7 + REG/ del 18 · (2) ENVÍO POR GMAIL: OAuth con el cliente nuevo
+
+1) MATRÍCULA — SIEMPRE QUE EL CASILLERO 7 NO TRAIGA LA MATRÍCULA
+Petición de la oficina. Ejemplo: casillero 7 «JAP7261», casillero 18
+«REG/CCDII» → la casilla «Matrícula (Aeronave / Espacio)» lleva
+ID DE VUELO + MATRÍCULA (+ iniciales del operador): «JAP7261 CCDII EV»,
+y el registro se nombra igual (JAP7261 CCDII EV.pdf).
+El marcador Doc 4444 de que el 7 no trae la matrícula es el ítem REG/
+del 18 con un valor DISTINTO: el escáner ahora lo consulta ANTES de
+aceptar el 7. Antes, un callsign que solo SE PARECÍA a una matrícula
+(prefijo de 2 letras: HC…, PT…, XA…, LV…) pasaba por matrícula y el
+REG/ quedaba ignorado. Se mantiene todo lo anterior: matrícula del 7
+sin REG/ (OB1630) · designadores (LPE2273 CCBJE · CMP468 HP1520) ·
+REG/ redundante · Jefe de Estado (FAP001 - FAP329) · formación ·
+«REG FAP 329» sin barra.
+
+2) ENVÍO POR GMAIL — OAuth CON EL CLIENTE NUEVO DE LA OFICINA
+- Botón ✉️ Gmail (barra · lateral · pestaña de sellos · móvil): diálogo
+  con Para/Asunto/Mensaje pre-llenados que envía el PDF SELLADO adjunto,
+  nombrado como el registro (JAP7261 CCDII EV.pdf).
+- OAuth SIN secreto en el cliente (Google Identity Services, permiso
+  mail.google.com). El SECRETO queda solo en el .env local (repo
+  público; verificado: cero apariciones en código/asar/zip).
+- Envío por la API de Gmail (MIME RFC 2822: texto UTF-8 base64 + PDF
+  adjunto base64 → users/me/messages/send).
+- Tarjeta «Correo Gmail» en el panel admin; en el escritorio, aviso y
+  apertura de la versión web (Google bloquea su ventana de OAuth en
+  Electron). Refactor: buildAnnotatedPdfBlob() compartido por Drive y
+  Gmail.
+
+HAY QUE COMPLETAR EN GOOGLE CLOUD CONSOLE
+- Cliente OAuth → «Orígenes de JavaScript autorizados»: agregar
+  https://firma-aissphi.vercel.app (opcional pruebas: http://localhost:3000)
+- Pantalla de consentimiento → «Usuarios de prueba»: agregar las
+  cuentas @gmail.com autorizadas (p. ej. sphiaisaro@gmail.com). En modo
+  «Prueba» solo esas cuentas pueden conectar.
+
+VERIFICADO
+- Escáner (Node, 9 casos) + E2E en la app real (16 pasos): campo
+  «JAP7261 CCDII EV» · registro «JAP7261 CCDII EV.pdf» · GIS cargado ·
+  4 botones · diálogo pre-llenado · validación · MIME validado · envío
+  simulado (Bearer + {raw} de 499 138 chars) · blob PDF 273 110 bytes ·
+  regresiones (LPE2273 CCBJE EV · OB1630 · CMP468 HP1520 EV ·
+  formación · FAP001 - FAP329 · ayudas ocultas) ✓
+- El consentimiento real de Google no es automatizable: probarlo en la
+  web con una cuenta de prueba tras completar la consola.

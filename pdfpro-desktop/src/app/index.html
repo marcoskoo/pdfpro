@@ -12,6 +12,9 @@
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/docx-preview.min.js"></script>
 <script src="vendor/fontkit.umd.min.js"></script>
+<!-- v2.9.30 — Google Identity Services: OAuth de Gmail (cliente nuevo de la oficina;
+     el token se pide en el navegador, el SECRETO del cliente no se usa ni se publica) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css"/>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
@@ -759,7 +762,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.29 · AYUDAS DE LA FICHA DEL SELLO OCULTAS (petición de la oficina: recepción, iniciales y matrícula — un clic en cada «ⓘ» la despliega y otro la oculta; los botones del sello quedan A LA VISTA) · VUELO CON DESIGNADOR (identificación del vuelo ≠ matrícula): el casillero 7 trae el designador de la empresa + nº de vuelo (LPE2273) y el ítem REG/ del casillero 18 la matrícula (CCBJE) — el campo «Matrícula» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR («LPE2273 CCBJE MK») y el archivo del registro se nombra igual (LPE2273 CCBJE MK.pdf, sin duplicar las iniciales) · ARCHIVO AUTOMÁTICO AL SELLAR: colocado el sello de la ficha (recepción + personal), el documento YA SELLADO se guarda solo en REGISTROS FPL NOTAM\FPL\año\mes\día (fecha UTC) — la carpeta del nuevo día se crea sola, en el escritorio local C:\Users\&lt;usuario&gt; · VUELO EN FORMACIÓN («GUÍA + 1»: casillero 7 con el callsign y nº que sigue, casillero 9 con el total de aeronaves, casillero 18 con TODAS las matrículas — «FAP123 FAP124» — el campo las recibe completas y admite 100 caracteres para el ingreso manual cuando la foto no se deja leer) · matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto: FAP/INP/PNP/EP) — vuelo del JEFE DE ESTADO (FAP001/EP001/PNP001/INP001): el campo lleva «EP001 - EP246» (vuelo - matrícula), también en FPL FOTOGRAFIADO/ESCANEADO (OCR) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v2.9.30 · SIEMPRE QUE EL CASILLERO 7 NO TRAIGA LA MATRÍCULA (petición de la oficina): si el ítem REG/ del casillero 18 trae una matrícula DISTINTA — «JAP7261» + «REG/CCDII» — la casilla «Matrícula» lleva ID DE VUELO + MATRÍCULA + INICIALES («JAP7261 CCDII MK») · ENVÍO POR GMAIL (OAuth con el cliente nuevo: el botón ✉️ Gmail adjunta el PDF sellado con el nombre del registro; la primera vez Google pide autorizar a PDFPro — solo cuentas @gmail.com añadidas como usuarios de prueba) · AYUDAS DE LA FICHA DEL SELLO OCULTAS (un clic en cada «ⓘ» las despliega) · VUELO CON DESIGNADOR (identificación del vuelo ≠ matrícula): el casillero 7 trae el designador de la empresa + nº de vuelo (LPE2273) y el ítem REG/ del casillero 18 la matrícula (CCBJE) — el campo «Matrícula» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR («LPE2273 CCBJE MK») y el archivo del registro se nombra igual (LPE2273 CCBJE MK.pdf, sin duplicar las iniciales) · ARCHIVO AUTOMÁTICO AL SELLAR: colocado el sello de la ficha (recepción + personal), el documento YA SELLADO se guarda solo en REGISTROS FPL NOTAM\FPL\año\mes\día (fecha UTC) — la carpeta del nuevo día se crea sola, en el escritorio local C:\Users\&lt;usuario&gt; · VUELO EN FORMACIÓN («GUÍA + 1»: casillero 7 con el callsign y nº que sigue, casillero 9 con el total de aeronaves, casillero 18 con TODAS las matrículas — «FAP123 FAP124» — el campo las recibe completas y admite 100 caracteres para el ingreso manual cuando la foto no se deja leer) · matrícula del casillero 7 (Doc 4444) con REG/ del 18 como respaldo — tolera «REG FAP 329» sin barra (falla del piloto: FAP/INP/PNP/EP) — vuelo del JEFE DE ESTADO (FAP001/EP001/PNP001/INP001): el campo lleva «EP001 - EP246» (vuelo - matrícula), también en FPL FOTOGRAFIADO/ESCANEADO (OCR) · Word y Excel editables en su formato original · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -946,6 +949,22 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             <div id="driveStatusBox" style="margin-top:14px;display:none"></div>
           </div>
         </div>
+        <!-- v2.9.30 — GMAIL: envío del FPL sellado por correo (OAuth del cliente nuevo) -->
+        <div class="card" style="max-width:620px;margin-top:16px">
+          <div class="card-hd"><div class="card-title">✉️ Correo Gmail — envío del FPL sellado</div></div>
+          <div class="card-body">
+            <div style="background:rgba(234,67,53,.06);border:1px solid rgba(234,67,53,.25);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:var(--t2);line-height:1.6">
+              <strong style="color:#ea4335;display:block;margin-bottom:5px">Envío por Gmail (OAuth):</strong>
+              El botón <strong>✉️ Gmail</strong> (barra superior / pestaña de sellos / móvil) envía el PDF sellado por correo, adjunto y nombrado como el registro (ej. OB2147 MK.pdf). La autorización se pide la primera vez; el permiso configurado es de Gmail (<span style="font-family:JetBrains Mono,monospace;font-size:11px">mail.google.com</span>).
+            </div>
+            <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Estado: <strong id="gmailAdmStatus" style="color:var(--t3)">sin conectar</strong></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="gmailConnect()">🔗 Conectar Gmail</button>
+              <button class="btn btn-ghost btn-sm" onclick="gmailDisconnect()">Desconectar</button>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-top:12px;line-height:1.6">Google Cloud Console (pantalla de consentimiento): en <strong>Usuarios de prueba</strong> agrega las cuentas @gmail.com autorizadas; mientras la app esté en modo «Prueba», solo ellas podrán conectar.</div>
+          </div>
+        </div>
       </div>
       <!-- SETTINGS -->
       <div id="adm-settings" class="hidden">
@@ -1025,6 +1044,30 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="closeModal('userModal')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveUser()">💾 Guardar</button></div>
   </div>
 </div>
+<!-- v2.9.30 — MODAL: Enviar por Gmail (OAuth GIS + Gmail API; PDF sellado adjunto) -->
+<div class="modal-overlay" id="gmailModal">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px">
+    <div class="modal-hd"><div class="modal-hd-title">✉️ Enviar por Gmail</div><button class="modal-hd-x" onclick="closeModal('gmailModal')">✕</button></div>
+    <div class="modal-body">
+      <div id="gmailDesktopNotice" style="display:none;background:rgba(234,67,53,.08);border:1px solid rgba(234,67,53,.3);border-radius:var(--r);padding:12px 14px;font-size:12.5px;color:var(--t2);line-height:1.65">
+        Google no permite su ventana segura de autorización dentro de la app de escritorio.
+        Para enviar por Gmail usa la <strong style="color:var(--acc)">versión web</strong>:<br>
+        <a href="https://firma-aissphi.vercel.app/pdfpro/index.html" target="_blank" style="color:var(--acc);font-weight:700;font-size:12px">https://firma-aissphi.vercel.app/pdfpro/index.html</a><br>
+        <span style="font-size:11px;color:var(--t3)">El PDF se adjunta sellado, con el nombre del registro (ej. OB2147 MK.pdf).</span>
+      </div>
+      <div id="gmailFormBody">
+        <div id="gmailAcctBox" style="display:none;background:rgba(48,201,126,.08);border:1px solid rgba(48,201,126,.3);border-radius:var(--r);padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--t2)">
+          Gmail conectado: <strong id="gmailAcctLbl" style="color:var(--ok);font-family:JetBrains Mono,monospace"></strong>
+        </div>
+        <div class="f-group"><label class="f-label">Para (correo del destinatario)</label><input class="f-input" id="gmailTo" type="email" placeholder="destinatario@correo.com"></div>
+        <div class="f-group"><label class="f-label">Asunto</label><input class="f-input" id="gmailSubject" placeholder="FPL OB2147 MK"></div>
+        <div class="f-group"><label class="f-label">Mensaje</label><textarea class="f-input" id="gmailBody" rows="4" style="resize:vertical;font-family:inherit"></textarea></div>
+        <div style="font-size:10.5px;color:var(--t3);line-height:1.55">Se adjunta el PDF con el sello colocado, nombrado como el registro (ej. <strong>OB2147 MK.pdf</strong>). La primera vez Google pedirá autorizar a PDFPro para Gmail (solo cuentas @gmail.com registradas como usuarios de prueba).</div>
+      </div>
+    </div>
+    <div class="modal-foot" id="gmailModalFoot"><button class="btn btn-ghost btn-sm" onclick="closeModal('gmailModal')">Cancelar</button><button class="btn btn-primary btn-sm" id="gmailSendBtn" onclick="gmailEnviar()">✉️ Enviar correo</button></div>
+  </div>
+</div>
 <!-- Sede modal -->
 <div class="modal-overlay" id="sedeModal">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">
@@ -1073,6 +1116,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     <div class="etb-logo"><div class="etb-logo-ico">P</div><div class="etb-logo-txt">PDF<span>Pro</span></div></div>
     <button class="etb-btn" onclick="docTabSaveCurrent();document.getElementById('fInput').click()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Abrir</button>
     <button class="etb-btn acc" onclick="saveToDrive()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>Drive</button>
+    <button class="etb-btn acc" onclick="gmailSendDialog()" title="Enviar el PDF sellado por Gmail" style="color:#ea4335"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Gmail</button>
     <button class="etb-btn" onclick="exportPDF()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>Guardar PDF</button>
     <button class="etb-btn" onclick="doPrint()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Imprimir</button>
     <div class="etb-sep"></div>
@@ -1122,6 +1166,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     <div class="rv"></div>
     <div class="erg">
       <button class="rb" onclick="saveToDrive()" style="color:var(--ok)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg><span class="rb-lbl">Drive</span></button>
+      <button class="rb" onclick="gmailSendDialog()" style="color:#ea4335"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><span class="rb-lbl">Gmail</span></button>
       <button class="rb" onclick="exportWord()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="rb-lbl">Word</span></button>
       <button class="rb" onclick="exportExcel()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span class="rb-lbl">Excel</span></button>
     </div>
@@ -1298,7 +1343,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
                  OCULTA (contraída) para tener los botones del sello a la
                  vista; un clic en el enlace la despliega y otro la oculta -->
             <a href="#" onclick="var d=this.nextElementSibling;d.style.display=(d.style.display==='none')?'block':'none';return false" style="font-size:9.5px;color:var(--t3);text-decoration:underline;display:block;margin-top:3px">ⓘ Cómo se rellena este campo y cómo se nombra el archivo (designador, formación, archivo automático)</a>
-            <div id="selloMatriculaAyuda" style="display:none;font-size:9.5px;color:var(--t3);margin-top:3px">Al cargar el archivo, la matrícula se detecta sola (casillero 7 o ítem REG/ del 18) y las iniciales (2 letras: primer nombre + apellido paterno) se rellenan con las del dueño del sello activo. <strong style="color:var(--acc)">VUELO CON DESIGNADOR</strong> (la identificación del vuelo NO es la matrícula: casillero 7 «LPE2273» + ítem REG/ del casillero 18 «CCBJE»): el campo lleva <strong style="color:var(--acc)">ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR</strong> — «LPE2273 CCBJE MK» — y así se nombra el archivo del registro (LPE2273 CCBJE MK.pdf). <strong style="color:var(--acc)">VUELO EN FORMACIÓN</strong> («GUÍA + 1»): el casillero 9 trae el nº de aeronaves y el 18 las matrículas de TODAS («FAP123 FAP124») — el campo las recibe completas, separadas por espacio, y admite hasta <strong style="color:var(--acc)">100 caracteres</strong> para escribirlas a mano cuando la foto no se deja leer (si faltan, el aviso dice cuántas se leyeron). Al colocar el sello de la ficha (recepción + personal), el documento <strong style="color:var(--acc)">YA SELLADO se archiva solo</strong> en REGISTROS FPL NOTAM\FPL\año\mes\día con el nombre <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK.pdf; también al guardar o exportar). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
+            <div id="selloMatriculaAyuda" style="display:none;font-size:9.5px;color:var(--t3);margin-top:3px">Al cargar el archivo, la matrícula se detecta sola (casillero 7 o ítem REG/ del 18) y las iniciales (2 letras: primer nombre + apellido paterno) se rellenan con las del dueño del sello activo. <strong style="color:var(--acc)">VUELO CON DESIGNADOR</strong> (la identificación del vuelo NO es la matrícula): <strong style="color:var(--acc)">SIEMPRE</strong> que el casillero 7 no traiga la matrícula y el ítem REG/ del casillero 18 traiga una <strong style="color:var(--acc)">DISTINTA</strong> — «LPE2273» + «REG/CCBJE», «JAP7261» + «REG/CCDII» — el campo lleva <strong style="color:var(--acc)">ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR</strong> — «LPE2273 CCBJE MK», «JAP7261 CCDII MK» — y así se nombra el archivo del registro (JAP7261 CCDII MK.pdf). <strong style="color:var(--acc)">VUELO EN FORMACIÓN</strong> («GUÍA + 1»): el casillero 9 trae el nº de aeronaves y el 18 las matrículas de TODAS («FAP123 FAP124») — el campo las recibe completas, separadas por espacio, y admite hasta <strong style="color:var(--acc)">100 caracteres</strong> para escribirlas a mano cuando la foto no se deja leer (si faltan, el aviso dice cuántas se leyeron). Al colocar el sello de la ficha (recepción + personal), el documento <strong style="color:var(--acc)">YA SELLADO se archiva solo</strong> en REGISTROS FPL NOTAM\FPL\año\mes\día con el nombre <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK.pdf; también al guardar o exportar). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong> (fecha UTC, hora zulú); en la web se descarga con ese nombre.</div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -1328,6 +1373,12 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
             Guardar en Google Drive
             <span class="drive-path" id="drivePathLabel">FPL2026 / Junio</span>
+          </button>
+          <!-- v2.9.30 — envío del FPL sellado por Gmail (OAuth del cliente nuevo de la oficina) -->
+          <button class="drive-save-btn" onclick="gmailSendDialog()" style="border-color:rgba(234,67,53,.45);margin-top:6px">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:#ea4335"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Enviar por Gmail (PDF sellado adjunto)
+            <span class="drive-path" id="gmailStatusLbl">sin conectar</span>
           </button>
           <div class="ersec-title" style="margin-top:6px">Exportar</div>
           <button class="expbtn" onclick="exportPDF()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>PDF anotado<span class="expext">.pdf</span></button>
@@ -1626,6 +1677,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     <div class="mp-title">☰ Opciones</div>
     <button class="mob-action-btn sec" onclick="document.getElementById('fInput').click();closeMobPanel()">📂 Abrir PDF/Excel/Word/Imagen</button>
     <button class="mob-action-btn sec" onclick="saveToDrive();closeMobPanel()">☁️ Guardar en Drive</button>
+    <button class="mob-action-btn sec" onclick="gmailSendDialog();closeMobPanel()">✉️ Enviar por Gmail</button>
     <button class="mob-action-btn sec" onclick="exportPDF();closeMobPanel()">💾 Guardar PDF</button>
     <button class="mob-action-btn sec" onclick="doPrint();closeMobPanel()">🖨 Imprimir</button>
     <button class="mob-action-btn sec" onclick="doUndo();closeMobPanel()">↩ Deshacer</button>
@@ -4525,7 +4577,7 @@ function metarVisRender(){
   ctx.fillStyle=o.nosig?'#2ecc71':'#f39c12';ctx.font='bold 12px Inter,sans-serif';
   ctx.fillText(o.nosig?'NOSIG — sin cambios significativos':'Tendencia: ver TAF',wxX,by+140);
   ctx.fillStyle='rgba(154,163,184,.6)';ctx.font='10px Inter,sans-serif';
-  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.29',18,H-18);
+  ctx.fillText('Ref: ICAO Anexo 3 / Doc 8896 · PDF Editor Pro v2.9.30',18,H-18);
 }
 
 // ── OCR (Tesseract.js) ───────────────────────────────────────
@@ -9625,18 +9677,10 @@ function _paintSelloPdf(PDFLib,pdfPage,pw,ph,sX,sY,a,f,assets){
     }
   }catch(e){console.warn('sello export',e);}
 }
-async function saveToDrive(){
-  if(!pdfDoc&&!pageOrder.length){toast('Carga un PDF primero','err');return;}
-  if(!gdriveIsConnected()){
-    toast('Conectando con Google Drive…');
-    gdriveConnect(function(){saveToDrive();});
-    return;
-  }
-  try{
-    toast('Generando PDF real…');setProg(10);
-    // Reusar exportPDF pero capturando el blob en vez de descargar
-    var PDFLib=window.PDFLib;
-    if(!PDFLib||!rawPdfBytes||!rawPdfBytes.length){throw new Error('pdf-lib no disponible');}
+// v2.9.30 — PDF anotado como blob: lo reutilizan Drive (subir) y Gmail (adjuntar)
+async function buildAnnotatedPdfBlob(){
+  var PDFLib=window.PDFLib;
+  if(!PDFLib||!rawPdfBytes||!rawPdfBytes.length){throw new Error('pdf-lib no disponible');}
     var pdfLibDoc=await PDFLib.PDFDocument.load(rawPdfBytes,{ignoreEncryption:true});
     var libPages=pdfLibDoc.getPages();
     var helvetica=await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -9739,10 +9783,22 @@ async function saveToDrive(){
       });
       setProg(10+Math.round(slot/pageOrder.length*70));
     }
-    setProg(85);
-    var pdfBytes2=await pdfLibDoc.save();
-    var pdfBlob=new Blob([pdfBytes2],{type:'application/pdf'});
-    setProg(90);
+  setProg(85);
+  var pdfBytes2=await pdfLibDoc.save();
+  setProg(90);
+  return new Blob([pdfBytes2],{type:'application/pdf'});
+}
+
+async function saveToDrive(){
+  if(!pdfDoc&&!pageOrder.length){toast('Carga un PDF primero','err');return;}
+  if(!gdriveIsConnected()){
+    toast('Conectando con Google Drive…');
+    gdriveConnect(function(){saveToDrive();});
+    return;
+  }
+  try{
+    toast('Generando PDF real…');setProg(10);
+    var pdfBlob=await buildAnnotatedPdfBlob();
     var fname=fplNombreRegistro(fileName+'_editado.pdf');
     await gdriveUploadPDF(pdfBlob,fname);
     setProg(100);setTimeout(function(){setProg(0);},1200);
@@ -9755,6 +9811,178 @@ async function saveToDrive(){
 async function exportPDFandShowDriveInfo(folder,month,account){
   // Legacy fallback - now handled by saveToDrive directly
   await saveToDrive();
+}
+
+// ── GMAIL OAUTH + ENVÍO (v2.9.30 — Google Identity Services, sin secreto en el cliente) ──
+// Cliente nuevo de la oficina (Google Cloud Console, app «PDFPro», modo Prueba).
+// Permisos configurados: Gmail (https://mail.google.com/). El token se pide en el
+// navegador con GIS: el SECRETO del cliente NO se usa aquí ni se publica (queda
+// solo en el .env local). En el escritorio Google bloquea su ventana de OAuth:
+// se deriva a la versión web.
+var GMAIL_CLIENT_ID='797825005294-ossj4fbbo6bq9njind3aqjk7ausv62t0.apps.googleusercontent.com';
+var GMAIL_SCOPES='https://mail.google.com/';
+var GMAIL_WEBAPP_URL='https://firma-aissphi.vercel.app/pdfpro/index.html';
+var gmailToken=null;
+var gmailTokenExpiry=0;
+var gmailTokenClient=null;
+var gmailAccount='';
+function gmailIsConnected(){return !!(gmailToken&&Date.now()<gmailTokenExpiry);}
+function gmailIsDesktop(){return /electron\/\d/i.test(navigator.userAgent);}
+
+function gmailUpdateUI(){
+  var conectado=gmailIsConnected();
+  var lbl=document.getElementById('gmailStatusLbl');
+  if(lbl)lbl.textContent=conectado?(gmailAccount||'conectado'):'sin conectar';
+  var adm=document.getElementById('gmailAdmStatus');
+  if(adm){adm.textContent=conectado?('conectado'+(gmailAccount?' — '+gmailAccount:'')):'sin conectar';adm.style.color=conectado?'var(--ok)':'var(--t3)';}
+  var box=document.getElementById('gmailAcctBox');
+  if(box){box.style.display=conectado?'block':'none';var l=document.getElementById('gmailAcctLbl');if(l)l.textContent=gmailAccount||'cuenta conectada';}
+}
+
+function gmailDesktopNotice(){
+  toast('Gmail se conecta desde la versión web (Google no permite su ventana segura en el escritorio)','err');
+  window.open(GMAIL_WEBAPP_URL,'_blank');
+}
+
+function gmailConnect(callback){
+  if(gmailIsConnected()){if(callback)callback(true);return;}
+  if(gmailIsDesktop()){gmailDesktopNotice();if(callback)callback(false);return;}
+  if(!(window.google&&google.accounts&&google.accounts.oauth2)){
+    toast('No se pudo cargar Google Identity Services — revisa tu conexión','err');
+    if(callback)callback(false);
+    return;
+  }
+  if(!gmailTokenClient){
+    gmailTokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:GMAIL_CLIENT_ID,
+      scope:GMAIL_SCOPES,
+      callback:function(resp){
+        if(!resp||resp.error){
+          toast('Gmail: no se autorizó'+((resp&&resp.error)?(' ('+resp.error+')'):''),'err');
+          if(callback)callback(false);
+          return;
+        }
+        gmailToken=resp.access_token;
+        gmailTokenExpiry=Date.now()+((parseInt(resp.expires_in)||3600)-120)*1000;
+        gmailFetchAccount();
+        toast('✅ Gmail conectado','ok');
+        gmailUpdateUI();
+        if(callback)callback(true);
+      }
+    });
+  }
+  gmailTokenClient.requestAccessToken({prompt:gmailToken?'':'consent'});
+}
+
+function gmailDisconnect(){
+  if(window.google&&google.accounts&&google.accounts.oauth2&&gmailToken){
+    try{google.accounts.oauth2.revoke(gmailToken,function(){});}catch(e){}
+  }
+  gmailToken=null;gmailTokenExpiry=0;gmailAccount='';
+  gmailUpdateUI();
+  toast('Gmail desconectado','ok');
+}
+
+function gmailFetchAccount(){
+  if(!gmailIsConnected())return;
+  fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile',{headers:{Authorization:'Bearer '+gmailToken}})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d&&d.emailAddress){gmailAccount=d.emailAddress;gmailUpdateUI();}})
+    .catch(function(e){});
+}
+
+// MIME RFC 2822: texto UTF-8 (base64) + PDF adjunto (base64); el mensaje completo
+// va codificado base64url como exige la API de Gmail (users.messages.send → {raw})
+function gmailB64Utf8(s){return btoa(unescape(encodeURIComponent(s)));}
+function gmailRfc2047(s){return /^[\x20-\x7e]*$/.test(s)?s:'=?UTF-8?B?'+gmailB64Utf8(s)+'?=';}
+function gmailWrap76(s){return s.replace(/(.{1,76})/g,'$1\r\n');}
+function gmailBuildMime(to,subject,body,filename,pdfB64){
+  var b='pdfpro_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  var fn=String(filename||'registro.pdf').replace(/["\r\n]/g,'');
+  var mime='To: '+to+'\r\n'+
+    'Subject: '+gmailRfc2047(subject)+'\r\n'+
+    'MIME-Version: 1.0\r\n'+
+    'Content-Type: multipart/mixed; boundary="'+b+'"\r\n\r\n'+
+    '--'+b+'\r\n'+
+    'Content-Type: text/plain; charset="UTF-8"\r\n'+
+    'Content-Transfer-Encoding: base64\r\n\r\n'+
+    gmailWrap76(gmailB64Utf8(body||''))+'\r\n'+
+    '--'+b+'\r\n'+
+    'Content-Type: application/pdf; name="'+fn+'"\r\n'+
+    'Content-Disposition: attachment; filename="'+fn+'"\r\n'+
+    'Content-Transfer-Encoding: base64\r\n\r\n'+
+    gmailWrap76(pdfB64)+'\r\n'+
+    '--'+b+'--';
+  return gmailB64Utf8(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function gmailBlobToB64(blob){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){res(String(fr.result).split(',')[1]||'');};
+    fr.onerror=function(){rej(fr.error);};
+    fr.readAsDataURL(blob);
+  });
+}
+
+function gmailSendDialog(){
+  if(!pdfDoc&&!pageOrder.length){toast('Carga un PDF primero','err');return;}
+  var isDesk=gmailIsDesktop();
+  var notice=document.getElementById('gmailDesktopNotice');
+  var form=document.getElementById('gmailFormBody');
+  var foot=document.getElementById('gmailModalFoot');
+  if(notice)notice.style.display=isDesk?'block':'none';
+  if(form)form.style.display=isDesk?'none':'block';
+  if(foot)foot.style.display=isDesk?'none':'';
+  if(!isDesk){
+    var base=String((typeof fplNombreRegistro==='function')?fplNombreRegistro(fileName+'_editado.pdf'):(fileName||'registro')).replace(/\.pdf$/i,'');
+    var subjEl=document.getElementById('gmailSubject');
+    if(subjEl&&!subjEl.value.trim())subjEl.value='FPL '+base;
+    var bodyEl=document.getElementById('gmailBody');
+    if(bodyEl&&!bodyEl.value.trim())bodyEl.value='Buenas tardes,\n\nSe adjunta el FPL recepcionado y sellado ('+base+'.pdf).\n\nSaludos,\nAIS/ARO — CORPAC S.A.';
+    gmailUpdateUI();
+  }
+  document.getElementById('gmailModal').classList.add('show');
+}
+
+async function gmailEnviar(){
+  var to=String(document.getElementById('gmailTo').value||'').trim();
+  var subj=String(document.getElementById('gmailSubject').value||'').trim();
+  var body=String(document.getElementById('gmailBody').value||'');
+  if(!to||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){toast('Escribe un correo de destino válido','err');return;}
+  if(!subj){toast('Escribe el asunto del correo','err');return;}
+  if(!pdfDoc&&!pageOrder.length){toast('Carga un PDF primero','err');return;}
+  if(gmailIsDesktop()){gmailSendDialog();return;}
+  var doSend=async function(){
+    var btn=document.getElementById('gmailSendBtn');
+    try{
+      if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+      toast('Generando PDF con el sello…');setProg(20);
+      var pdfBlob=await buildAnnotatedPdfBlob();
+      setProg(60);
+      var fname=fplNombreRegistro(fileName+'_editado.pdf');
+      var b64=await gmailBlobToB64(pdfBlob);
+      var raw=gmailBuildMime(to,subj,body,fname,b64);
+      setProg(80);
+      var r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+gmailToken,'Content-Type':'application/json'},
+        body:JSON.stringify({raw:raw})
+      });
+      var d=await r.json().catch(function(){return {};});
+      setProg(100);setTimeout(function(){setProg(0);},1200);
+      if(btn){btn.disabled=false;btn.textContent='✉️ Enviar correo';}
+      if(d&&d.id){toast('✅ Correo enviado a '+to+' · adjunto: '+fname,'ok');closeModal('gmailModal');}
+      else{toast('Error al enviar: '+((d&&d.error&&d.error.message)||'respuesta inesperada'),'err');}
+    }catch(err){
+      console.error('gmailEnviar error:',err);
+      setProg(0);
+      if(btn){btn.disabled=false;btn.textContent='✉️ Enviar correo';}
+      toast('Error al enviar el correo','err');
+    }
+  };
+  if(!gmailIsConnected()){gmailConnect(function(ok){if(ok)doSend();});return;}
+  await doSend();
 }
 
 // ── PRINT ──
@@ -10144,7 +10372,11 @@ function fplEscanea(texto,items){ // v2.9.21 — texto + geometría (ítems pdf.
          registro se nombra igual: LPE2273 CCBJE MK.pdf). No aplica al
          Jefe de Estado (lleva «EP001 - EP246»), ni a la formación (el
          campo lleva solo las matrículas), ni al designador sin REG/
-         (matrícula = identificación: no hay nada que combinar). */
+         (matrícula = identificación: no hay nada que combinar).
+         v2.9.30 — SIEMPRE (petición de la oficina, ejemplo JAP7261 +
+         REG/CCDII): el escáner ya no acepta un 7 que solo SE PARECE a
+         una matrícula cuando el REG/ del 18 trae una distinta — el campo
+         combina ID DE VUELO + MATRÍCULA con cualquier prefijo. */
       var _id=String(r.ident||'').toUpperCase().trim();
       var _m=String(r.matricula||'').toUpperCase().trim();
       if(_id&&_m&&_m!==_id&&!r.formacion&&!/\s/.test(_m)&&String(r.origen||'').indexOf('JEFE DE ESTADO')<0){

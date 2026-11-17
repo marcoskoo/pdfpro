@@ -1,4 +1,4 @@
-/* PDFPro — fpl-scan.js (v2.9.27)
+/* PDFPro — fpl-scan.js (v2.9.25)
  * Escaneo del FPL cargado, según la doctrina OACI:
  *
  *   · Doc 4444 (PANS-ATM), Apéndice 2, CASILLERO 7 «IDENTIFICACIÓN DE
@@ -66,16 +66,6 @@
  *     matrículas leídas, el aviso lo dice para completarlas a mano (el
  *     OCR de las FOTOS tiene ese límite y el campo admite 100 caracteres
  *     justamente para el ingreso manual).
- *
- *   Además v2.9.27 — VUELO CON DESIGNADOR (petición de la oficina): el
- *     módulo entrega {matricula, ident} por separado; la APP (fplEscanea)
- *     compone el campo cuando la identificación del vuelo (casillero 7)
- *     NO es la matrícula — designador Doc 8585 + nº de vuelo («LPE2273»)
- *     con «REG/CCBJE» en el casillero 18: el campo «Matrícula (Aeronave /
- *     Espacio)» lleva ID DE VUELO + MATRÍCULA + INICIALES DEL OPERADOR
- *     («LPE2273 CCBJE MK») y así se nombra el archivo del registro. Aquí
- *     no cambia la doctrina: el casillero 7 sigue siendo matrícula
- *     primera y el REG/ respaldo de los vuelos con designador.
  *
  * Módulo puro: se usa en el navegador (window.FPLScan) y en Node (pruebas). */
 'use strict';
@@ -622,7 +612,19 @@ function extraerFPL(texto, items) {
     var vp = _vueloPresidencial(t);
     if (vp) { ident = vp; origenIdent = 'casillero 7 (casillas del formulario)'; }
   }
-  if (ident && esMatricula(ident))
+  /* v2.9.30 — SIEMPRE QUE EL CASILLERO 7 NO TRAIGA LA MATRÍCULA (petición
+     de la oficina, ejemplo JAP7261 + REG/CCDII): el marcador Doc 4444 de
+     que la identificación del vuelo (casillero 7) NO es la matrícula es el
+     ítem REG/ del casillero 18 con un valor DISTINTO — entonces el campo
+     lleva ID DE VUELO + MATRÍCULA («JAP7261 CCDII», igual que el designador
+     «LPE2273 CCBJE»). El REG/ se consulta ANTES de dar por buena una
+     identificación del 7 que solo SE PARECE a una matrícula (prefijo de 2
+     letras: HC…, PT…, XA…, LV…): antes ese parecido pasaba esMatricula y
+     el REG/ quedaba ignorado. Sin REG/ — o si el REG/ repite el valor del
+     7 o trae la formación (varias) — el 7 sigue siendo la matrícula. */
+  var ri = _regInfo(t) || _regInfo(_compacta(t));
+  if (ident && esMatricula(ident) &&
+      !(ri && ri.todas && ri.todas.length < 2 && _norm(ri.v) !== _norm(ident)))
     return _final({ matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }); // el 7 YA trae la matrícula
 
   // v2.9.25 — VUELO EN FORMACIÓN: «GUÍA + 1» en el casillero 7 (texto tal
@@ -638,7 +640,7 @@ function extraerFPL(texto, items) {
   //    v2.9.22: también «REG FAP 329» sin barra (fallo de presentación del
   //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado;
   //    v2.9.25: formación — recoge TODAS las matrículas del ítem
-  var ri = _regInfo(t) || _regInfo(_compacta(t));
+  //    (v2.9.30: ri ya se calculó ARRIBA, antes del parecido-matrícula del 7)
   if (ri) {
     var todas = (ri.todas && ri.todas.length ? ri.todas : [ri.v]).slice(0, 12);
     if (todas.length >= 2 || form)

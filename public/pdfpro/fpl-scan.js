@@ -612,7 +612,19 @@ function extraerFPL(texto, items) {
     var vp = _vueloPresidencial(t);
     if (vp) { ident = vp; origenIdent = 'casillero 7 (casillas del formulario)'; }
   }
-  if (ident && esMatricula(ident))
+  /* v2.9.30 — SIEMPRE QUE EL CASILLERO 7 NO TRAIGA LA MATRÍCULA (petición
+     de la oficina, ejemplo JAP7261 + REG/CCDII): el marcador Doc 4444 de
+     que la identificación del vuelo (casillero 7) NO es la matrícula es el
+     ítem REG/ del casillero 18 con un valor DISTINTO — entonces el campo
+     lleva ID DE VUELO + MATRÍCULA («JAP7261 CCDII», igual que el designador
+     «LPE2273 CCBJE»). El REG/ se consulta ANTES de dar por buena una
+     identificación del 7 que solo SE PARECE a una matrícula (prefijo de 2
+     letras: HC…, PT…, XA…, LV…): antes ese parecido pasaba esMatricula y
+     el REG/ quedaba ignorado. Sin REG/ — o si el REG/ repite el valor del
+     7 o trae la formación (varias) — el 7 sigue siendo la matrícula. */
+  var ri = _regInfo(t) || _regInfo(_compacta(t));
+  if (ident && esMatricula(ident) &&
+      !(ri && ri.todas && ri.todas.length < 2 && _norm(ri.v) !== _norm(ident)))
     return _final({ matricula: _norm(ident), origen: origenIdent, ident: _norm(ident) }); // el 7 YA trae la matrícula
 
   // v2.9.25 — VUELO EN FORMACIÓN: «GUÍA + 1» en el casillero 7 (texto tal
@@ -628,7 +640,7 @@ function extraerFPL(texto, items) {
   //    v2.9.22: también «REG FAP 329» sin barra (fallo de presentación del
   //    piloto en los FPL de operadores estatales) y «REGFAP329» pegado;
   //    v2.9.25: formación — recoge TODAS las matrículas del ítem
-  var ri = _regInfo(t) || _regInfo(_compacta(t));
+  //    (v2.9.30: ri ya se calculó ARRIBA, antes del parecido-matrícula del 7)
   if (ri) {
     var todas = (ri.todas && ri.todas.length ? ri.todas : [ri.v]).slice(0, 12);
     if (todas.length >= 2 || form)
