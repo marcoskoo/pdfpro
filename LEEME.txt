@@ -1,7 +1,35 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.8 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.9 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.9
+────────────────────────────────────────────────────────────────────
+  1. HORA DE RECEPCIÓN DEL CORREO POR ARCHIVO CARGADO (Gmail
+     asistido, SIN OAuth — integra el módulo «gmail-hora-recepcion»
+     que usted proveyó). Al cargar un FPL, licencia o cualquier
+     documento, la app busca en Gmail el correo que trajo ESE archivo
+     y llena sola la «Fecha/Hora Recepción (UTC)» de la ficha del
+     sello.
+     · Cómo funciona: abre Gmail con su Chrome (perfil persistente).
+       La PRIMERA vez se abre una ventana para que inicie sesión en
+       sphiaisaro@gmail.com — una sola vez; después todo es invisible
+       (headless) y la sesión queda guardada en el perfil.
+     · No necesita las credenciales OAuth de Google (siguen siendo
+       opcionales para el «Barrer ahora»).
+     · Búsqueda: filename:"nombre sin extensión" y, si no hay nada,
+       texto libre — en texto libre NUNCA abre un correo que no
+       mencione el archivo (el original abría el primero de la lista).
+     · La hora que muestra Gmail está en hora de Lima (UTC−5): se
+       convierte a UTC antes de llenar el sello (también se corrigió
+       la ruta OAuth, que llenaba hora local en un campo rotulado
+       UTC — al cruzar medianoche cambiaba el día).
+     · Panel «Correo»: botón «🕐 Hora del correo del archivo cargado»
+       y casilla «Automático al cargar el documento» (activada por
+       defecto; si ya hay hora escrita no se toca).
+     · Requisito: tener Google Chrome instalado (no descarga
+       Chromium). El portapapeles ya no se usa (el original copiaba
+       la hora automáticamente).
 
 NOVEDADES DE LA VERSIÓN 3.1.8
 ────────────────────────────────────────────────────────────────────

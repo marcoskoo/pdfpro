@@ -31,6 +31,12 @@ contextBridge.exposeInMainWorld('pdfproDesktop', {
    *  no hay credenciales configuradas. */
   gmailClientId: () => ipcRenderer.invoke('gmail:clientId'),
 
+  /* ── v3.1.9 — Hora de recepción por archivo cargado (Gmail asistido con
+   *  Playwright; sin OAuth). Progreso por evento 'gmail-hora:evento'. ── */
+  gmailHoraBuscar: (archivo) => ipcRenderer.invoke('gmail-hora:buscar', archivo),
+  gmailHoraEstado: () => ipcRenderer.invoke('gmail-hora:estado'),
+  onGmailHoraEvento: (cb) => ipcRenderer.on('gmail-hora:evento', (_e, d) => cb(d)),
+
   /* ── v3.1.0 — Verificación de licencias DGAC (SIVLAM) ── */
   sivlamVerificar: (tipo, numero) => ipcRenderer.invoke('sivlam:verificar', { tipo, numero }),
   onSivlamStatus: (cb) => ipcRenderer.on('sivlam:status', (_e, msg) => cb(msg)),

@@ -15,6 +15,10 @@ const path = require('path');
 const fs = require('fs');
 const fpl = require('./fpl-registro');
 const gmail = require('./gmail-monitor');
+/* v3.1.9 — hora de recepción por archivo cargado (Gmail asistido con
+ * Playwright; perfil de Chrome persistente, sin OAuth) */
+const GmailHoraService = require('./gmail-hora/GmailHoraService');
+const { parseHoraGmail } = require('./gmail-hora/hora');
 
 const APP_DIR = path.join(__dirname, 'app');
 const IS_DEV = !app.isPackaged;
@@ -551,6 +555,65 @@ ipcMain.handle('gmail:perfil', async () => {
   } catch (e) {
     return { ok: false, error: e.message };
   }
+});
+
+/* ── v3.1.9 — HORA DE RECEPCIÓN POR ARCHIVO CARGADO (Gmail asistido) ──
+   Alternativa al OAuth (funciona sin credenciales): Playwright abre Gmail
+   con un perfil de Chrome persistente (login UNA vez, luego headless) y
+   busca el correo por el nombre del archivo adjunto del documento cargado.
+     gmail-hora:estado  → {ok, disponible} (¿está Playwright instalado?)
+     gmail-hora:buscar → {ok, horaRecepcion, recibidoMs (epoch, zona Lima),
+                          recibidoUTC, fuente, asunto, remitente, …}
+   El progreso llega por el evento 'gmail-hora:evento' {msg, tipo}
+   (tipo 'login' = hay que iniciar sesión en la ventana abierta). */
+let _gmailHoraSvc = null;
+function gmailHoraEvento(msg, tipo) {
+  try {
+    if (win && !win.isDestroyed()) win.webContents.send('gmail-hora:evento', { msg, tipo: tipo || 'info' });
+  } catch (e) { /* ventana cerrada */ }
+}
+ipcMain.handle('gmail-hora:estado', () => {
+  const d = GmailHoraService.disponible();
+  return { ok: true, disponible: !!d.playwright };
+});
+ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
+  try {
+    const nombre = String(archivo || '').trim();
+    if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
+    if (!GmailHoraService.disponible().playwright) {
+      return { ok: false, error: 'Playwright no está instalado en la app (npm i playwright)', tipo: 'PlaywrightFalta' };
+    }
+    if (!_gmailHoraSvc) {
+      _gmailHoraSvc = new GmailHoraService({
+        userDataDir: path.join(app.getPath('userData'), 'gmail-playwright-profile'),
+        headless: true,
+        onProgress: (m) => gmailHoraEvento(m),
+        onLoginRequired: (m) => gmailHoraEvento(m, 'login')
+      });
+    }
+    const r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+    /* la hora llega como texto de visualización de Gmail (zona de la
+       cuenta, por defecto Lima UTC−5): se convierte a epoch/UTC */
+    const ms = parseHoraGmail(r.horaRecepcion);
+    return {
+      ok: true,
+      archivo: nombre,
+      asunto: r.asunto,
+      remitente: r.remitente,
+      remitenteCorreo: r.remitenteCorreo,
+      archivoAdjunto: r.archivoAdjunto,
+      horaRecepcion: r.horaRecepcion,
+      fuente: r.fuente,
+      recibidoMs: ms || 0,
+      recibidoUTC: ms ? new Date(ms).toISOString() : ''
+    };
+  } catch (e) {
+    return { ok: false, error: e.message, tipo: e.name || 'Error' };
+  }
+});
+/* cierra el navegador asistido al salir de la app (la sesión persiste) */
+app.on('before-quit', () => {
+  if (_gmailHoraSvc) { try { _gmailHoraSvc.cerrar(true); } catch (e) { /* noop */ } }
 });
 
 /* ── v3.1.0 — VERIFICACIÓN DE LICENCIAS DGAC (SIVLAM) ──
