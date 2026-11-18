@@ -1,0 +1,60 @@
+PDFPro 2.9.21 — la matrícula del casillero 7 va primero (doctrina OACI)
+
+Lo que reportaste
+─────────────────
+«Se carga el archivo FlightPlan SPHI-SPST.pdf, el sistema muestra "FLIGT";
+debería mostrar: "Matrícula (Aeronave / Espacio)": OB1630. Cuando la
+matrícula ya está en el casillero 7, ya no es necesario buscarla en el
+casillero 18.»
+
+Investigación OACI aplicada
+───────────────────────────
+· Doc 4444 (PANS-ATM), Apéndice 2, casillero 7 «IDENTIFICACIÓN DE AERONAVE»
+  (máx. 7 caracteres, sin guiones): es BIEN la MATRÍCULA (Anexo 7: marca de
+  nacionalidad + marca de matrícula; Perú = OB, RAP 45.205) BIEN el
+  designador OACI de la empresa + identificación del vuelo (Doc 8585:
+  CMP468, LPE1234, FAP211).
+· Casillero 18, ítem REG/: «la marca de nacionalidad y la de matrícula de la
+  aeronave, SI DIFIERE de la identificación del casillero 7» — el REG/ solo
+  hace falta cuando el casillero 7 trae el designador del vuelo.
+
+Correcciones
+────────────
+1) ORDEN DE BÚSQUEDA (Doc 4444, como pidió la oficina):
+   · Casillero 7 PRIMERO: si la identificación ES una matrícula (OB… de
+     Perú; CC/HC/CP/HK/XA/LV… de vecinos; N… de EE.UU.), ESA es la
+     matrícula y ya no se mira el casillero 18 — aunque exista un REG/.
+   · Si el casillero 7 trae designador + nº de vuelo (CMP468, LPE1234,
+     FAP211), la matrícula sale del REG/ del 18 y el aviso indica el vuelo:
+     «casillero 18 (REG/) · vuelo CMP468».
+   · Sin casillero 7 reconocible → REG/ del casillero 18 (como antes).
+2) BUG «FLIGHT/FLIGT»: en los formularios impresos (una casilla por
+   carácter) la etiqueta «Aircraft Identification» va seguida de la etiqueta
+   «Flight Rules», y el escáner tomaba esa palabra como matrícula. Ahora
+   todo valor capturado se valida (una matrícula nunca es «FLIGHT»,
+   «RULES», «REG», «EET»… ni un código de aeródromo como SPST/SPJC).
+3) CASILLERO 7 POR GEOMETRÍA: las casillas del formulario se ordenan por
+   coordenadas X para reconstruir la fila en orden visual
+   izquierda→derecha, porque el texto interno del PDF llega revuelto
+   («4 6 8 … C M P»).
+4) RAP 45.205: matrícula provisional OB1234P y de traslado OB1234T.
+   Doc 8585: los designadores OBC/OBJ/OBK/OBS/OBT no se hacen pasar por
+   matrículas OB…
+
+Verificado
+──────────
+· 129 pruebas unitarias del escáner (antes 77), incluida la integración con
+  el FPL real «ATC CM468 11NOV.pdf» → HP1520 · vuelo CMP468.
+· E2E en la app real (8/8): réplica fiel del «FlightPlan SPHI-SPST.pdf» →
+  OB1630 del casillero 7, sin rastro de FLIGHT/FLIGT · aerolínea CMP468 +
+  REG/HP1520 → HP1520 · regresiones de télex, formulario, oficio y nombre
+  de archivo de registro («OB1630 EV.pdf»).
+· Smoke de la app de escritorio: appVersion 2.9.21, escáner OACI OK,
+  archivado real con fecha UTC.
+
+Instalación
+───────────
+· PDFPro-Setup-2.9.21.exe — instalador (se actualiza solo a partir de
+  2.9.14).
+· PDFPro-Portable-2.9.21.exe — portable (avisa de novedades y abre la
+  página de descargas).

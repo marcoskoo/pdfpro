@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. **Main screen:** A login screen, not an editor. It shows a \"PDFPro\" login card with \"Iniciar Sesión\" (Log In) and \"Registrarse\" (Register) tabs, fields for \"Usuario o Email\" and \"Contraseña\", a blue \"Ingresar al Sistema\" button, and links to register or recover a password.\n\n2. **Excel-like grid:** No spreadsheet grid is visible — no rows, columns, or cell headers.\n\n3. **Document tabs:** None. The only tabs are the login/register tabs within the auth card.\n\n4. **Left sidebar:** There is no sidebar — just the centered logo (\"PDFPro – CORPAC AIS/ARO SPHII – Sistema de Edición PDF\") and login form on a dark background.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794442699,
+  "id": "20261112081814618f94d0e2324c61",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261112081814618f94d0e2324c61",
+  "usage": {
+    "completion_tokens": 165,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1057,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1222
+  }
+}

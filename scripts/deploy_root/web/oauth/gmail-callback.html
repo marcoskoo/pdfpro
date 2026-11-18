@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conexión Gmail — PDFPro Suite</title>
+<style>
+:root{--bg:#0f1013;--surf:#17191e;--s2:#1f2128;--bdr:#3a3e4d;--acc:#4f8ef7;--text:#dde0ea;--t2:#8590a4;--t3:#505a6e;--ok:#30c97e;--err:#f05050;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:30px;max-width:560px;width:100%;text-align:center}
+h1{font-size:1.3rem;margin-bottom:6px}
+.sub{color:var(--t2);font-size:.9rem;margin-bottom:20px}
+#code{display:inline-block;background:var(--s2);border:1px dashed var(--acc);border-radius:10px;padding:12px 16px;font-family:monospace;font-size:.85rem;color:var(--acc);word-break:break-all;max-width:100%;margin:10px 0}
+.btn{display:inline-block;background:var(--acc);color:#000;font-weight:700;border:none;padding:12px 24px;border-radius:10px;cursor:pointer;font-size:.95rem;margin-top:6px}
+.msg{font-size:.85rem;color:var(--t2);margin-top:14px}
+.err{color:var(--err)}
+.ok{color:var(--ok)}
+ol{text-align:left;color:var(--t2);font-size:.88rem;margin:14px auto;max-width:420px}
+ol li{margin:6px 0}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📧 Conexión de Gmail con PDFPro</h1>
+  <div class="sub">Retorno de autorización de Google para sphiaisaro@gmail.com</div>
+  <div id="main">
+    <div class="msg">Leyendo el código de autorización…</div>
+  </div>
+  <ol id="pasos" style="display:none">
+    <li>Copia el <strong>código</strong> que se muestra arriba (botón «Copiar código»).</li>
+    <li>Vuelve a <strong>PDFPro Suite</strong> (app o web).</li>
+    <li>Pestaña <strong>SELLO → Monitoreo Gmail</strong> → cuadro <strong>«Pega el código»</strong>.</li>
+    <li>Pega el código y pulsa <strong>Enviar</strong>. Listo: el monitoreo queda activo.</li>
+  </ol>
+  <p class="msg"><a href="/">← Volver a PDFPro Suite</a></p>
+</div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var main=document.getElementById('main');
+  var pasos=document.getElementById('pasos');
+  var code=q.get('code'), error=q.get('error');
+  function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  if(code){
+    /* La app abierta en otra pestaña/ventana del mismo navegador recibe el
+       código por postMessage y se conecta sola (cierra este popup). */
+    try{
+      if(window.opener&&!window.opener.closed){
+        window.opener.postMessage({type:'gmail_code',code:code},'https://licencias-firmas.vercel.app');
+        try{window.opener.postMessage({type:'gmail_code',code:code},'*');}catch(e){}
+      }
+    }catch(e){}
+    main.innerHTML='<div class="msg ok">✅ Autorización recibida.'
+      +(window.opener?' La app debería conectarse sola en unos segundos; si no, usa el código manual.':'')
+      +'</div>'
+      +'<div style="font-size:.8rem;color:var(--t3);margin-top:6px">Código de autorización:</div>'
+      +'<div id="code">'+esc(code)+'</div><br>'
+      +'<button class="btn" id="cp">📋 Copiar código</button>'
+      +'<div class="msg" id="cpmsg"></div>';
+    pasos.style.display='block';
+    document.getElementById('cp').onclick=function(){
+      var done=function(){document.getElementById('cpmsg').textContent='Código copiado — pégalo en PDFPro (SELLO → Monitoreo Gmail)';};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done,function(){fallback();});}
+      else fallback();
+      function fallback(){
+        var t=document.createElement('textarea');t.value=code;document.body.appendChild(t);t.select();
+        try{document.execCommand('copy');done();}catch(e){}
+        document.body.removeChild(t);
+      }
+    };
+    /* cierre automático si la ventana madre confirmó recepción */
+    window.addEventListener('message',function(ev){
+      if(ev.data&&ev.data.type==='gmail_code_ok'){try{window.close();}catch(e){}}
+    });
+  } else if(error){
+    main.innerHTML='<div class="msg err">❌ Google devolvió un error: <b>'+esc(error)+'</b></div>'
+      +'<div class="msg">Vuelve a PDFPro y pulsa «Conectar Gmail» de nuevo. Si el problema persiste, revisa que la cuenta sphiaisaro@gmail.com esté autorizada en el consentimiento.</div>';
+  } else {
+    main.innerHTML='<div class="msg">Esta página recibe el retorno del OAuth de Gmail de PDFPro Suite. Abre «Conectar Gmail» desde la app para comenzar.</div>';
+  }
+})();
+</script>
+</body>
+</html>

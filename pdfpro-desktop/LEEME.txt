@@ -1,0 +1,735 @@
+════════════════════════════════════════════════════════════════════
+  PDFPro 2.9.21 — Versión de escritorio para Windows
+  PDF Editor Pro · CORPAC AIS/ARO SPHI
+════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 2.9.21 (matrícula del casillero 7 primero)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «se carga el archivo FlightPlan SPHI-SPST.pdf,
+  el sistema muestra "FLIGT"; debería mostrar "Matrícula (Aeronave /
+  Espacio)": OB1630. Cuando la matrícula ya está en el casillero 7,
+  ya no es necesario buscarla en el casillero 18».
+
+  INVESTIGACIÓN OACI (base de la corrección):
+  · Doc 4444 (PANS-ATM), Apéndice 2, casillero 7 «IDENTIFICACIÓN DE
+    AERONAVE»: es BIEN la MATRÍCULA (Anexo 7: marca de nacionalidad +
+    marca de matrícula; Perú = OB, RAP 45.205) BIEN el designador de
+    la empresa + nº de vuelo (Doc 8585: CMP468, LPE1234, FAP211).
+  · Casillero 18, ítem REG/: lleva la matrícula «si difiere de la
+    identificación del casillero 7» — o sea: el REG/ solo hace falta
+    cuando el casillero 7 trae el designador del vuelo.
+
+  CORREGIDO — el orden de búsqueda ahora sigue esa doctrina:
+  1) CASILLERO 7 PRIMERO: si la identificación ES una matrícula
+     (OB… de Perú; CC/HC/CP/HK/XA/LV… de vecinos; N… de EE.UU.),
+     ESA es la matrícula y ya no se mira el casillero 18 (OB1630
+     aunque el formulario también traiga REG/).
+  2) Si el casillero 7 trae designador + nº de vuelo (CMP468,
+     LPE1234, FAP211), la matrícula sale del REG/ del 18 — y el
+     aviso dice el vuelo: «casillero 18 (REG/) · vuelo CMP468».
+  3) Sin casillero 7 reconocible → REG/ del casillero 18.
+
+  EL BUG DE «FLIGHT/FLIGT» — en los formularios impresos (una casilla
+  por carácter) la etiqueta «Aircraft Identification» va seguida de la
+  etiqueta «Flight Rules», y el escáner tomaba esa palabra como si
+  fuera la matrícula. Ahora todo valor capturado se valida (una
+  matrícula nunca es «FLIGHT», «RULES», «REG», «EET»… ni un código de
+  aeródromo como SPST/SPJC) y las casillas del casillero 7 se leen
+  por GEOMETRÍA: con las coordenadas de cada casilla se reconstruye
+  la fila en orden visual izquierda→derecha, porque el texto interno
+  del PDF llega revuelto («4 6 8 … C M P»).
+
+VERIFICADO PUNTO A PUNTO (2.9.21):
+  · 129 pruebas unitarias del escáner (antes 77): doctrina OACI,
+    designadores del Doc 8585 (OBC/OBJ/OBK/OBS/OBT no se hacen pasar
+    por OB…), matrícula provisional OB1234P y de traslado OB1234T
+    (RAP 45), rechazo de FLIGHT/FLIGT y de aeródromos SPST-SPJC-SKBQ ✓
+  · Con el FPL REAL «ATC CM468 11NOV.pdf»: matrícula HP1520, vuelo
+    CMP468, origen «casillero 18 (REG/) · vuelo CMP468» ✓
+  · E2E en la app real con una réplica fiel del «FlightPlan
+    SPHI-SPST.pdf» (casillero 7 con OB1630 en casillas, sin REG/):
+    campo OB1630, aviso «casillero 7», sin rastro de FLIGHT/FLIGT ✓
+  · E2E aerolínea (casillero 7 = CMP468 + REG/HP1520): HP1520 ✓
+  · Regresiones: télex FAP211+REG/OB1630 → OB1630 · formulario con
+    etiqueta OB-2147 → OB2147 · oficio → campo limpio · nombre de
+    archivo de registro «OB1630 EV.pdf» ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.20 (iniciales KM → MK corregido)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «inicio de sesión Marcos Koo, el sistema muestra
+  iniciales KM, debería mostrar MK».
+
+  CAUSA — el formulario de registro/editar pedía el nombre completo
+  como «Apellidos y Nombres», así que tu cuenta quedó guardada con el
+  nombre al revés («Koo Paz Marcos Roberto» o «Koo Marcos»). Con la
+  regla de la 2.9.19 (4 palabras = nombres + PATERNO + materno) eso
+  daba K de «Koo» + M de «Marcos» = KM.
+
+  CORREGIDO — ahora el cálculo de iniciales TAMBIÉN entiende el orden
+  «Apellidos y Nombres», lo Detecta y lo voltea:
+  · «Koo Paz, Marcos Roberto» (con coma)  → MK
+  · «Koo Paz Marcos Roberto» (sin coma)   → MK
+  · «Koo Marcos»                           → MK
+  · «Koo Paz Marcos» / «Koo Marcos Roberto» → MK
+  · «Asian Castro, Frank Dave»  → FA · «Chumpitaz Court Francessca
+    Michelle» → FC
+  El orden normal sigue igual: «Marcos Roberto Koo Paz» → MK · tus 5
+  ejemplos (MK, FA, RC, JV, FC) sin cambios.
+
+  ADEMÁS — el formulario de registro y el editor de usuarios ahora
+  piden «Nombres y Apellidos (ej. Marcos Roberto Koo Paz)» para que
+  las cuentas nuevas se guarden en el orden correcto desde el inicio.
+
+  No necesitas editar tu usuario: aunque el nombre siga guardado al
+  revés, las iniciales ya salen bien (MK).
+
+VERIFICADO PUNTO A PUNTO (2.9.20):
+  · 77 pruebas unitarias del escáner: 12 nuevas del orden «Apellidos
+    y Nombres» (incluye anti-falsos-positivos: «Ana María Torres»
+    sigue AT, «José Ramírez Díaz» sigue JR) ✓
+  · E2E en la app real: sesión «Koo Paz, Marcos Roberto», «Koo Paz
+    Marcos Roberto», «Koo Marcos», «Marcos Koo», «Marcos Roberto Koo
+    Paz» → todas MK (campo + espejo móvil) · «Asian Castro, Frank
+    Dave» → FA · «Chumpitaz Court Francessca Michelle» → FC ✓
+  · E2E 2.9.19: tus 5 ejemplos siguen OK (MK, FA, RC, JV, FC) ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · Excel real ATC CM468 → HP1520 · cambio
+    de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: 11 nombres de prueba
+    (incluidos los invertidos) = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.19 (iniciales — ejemplos verificados)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste (tus ejemplos exactos):
+  · «Marcos Roberto Koo Paz»           = MK
+  · «Frank Dave Asian Castro»          = FA
+  · «Ruswel Melciades Cacho Paredes»   = RC
+  · «Jacqueline Cristina Vílchez Aguirre»    = JV
+  · «Francessca Michelle Chumpitaz Court»    = FC
+
+  CORREGIDO — la 2.9.18 se confundía con los segundos nombres: con
+  «Marcos Roberto Koo Paz» salía «MR» (la «R» de Roberto, que es
+  segundo NOMBRE, no apellido). Ahora la regla es la convención de la
+  oficina: con 4 palabras el nombre completo es
+  «nombre1 + nombre2 + APELLIDO PATERNO + apellido materno» y el
+  paterno es la TERCERA palabra:
+  · «Marcos Roberto Koo Paz»   → MK (paterno «Koo»)
+  · «Frank Dave Asian Castro»  → FA (paterno «Asian»)
+  · «Ruswel Melciades Cacho Paredes» → RC (paterno «Cacho»)
+  · «Jacqueline Cristina Vílchez Aguirre» → JV (paterno «Vílchez»)
+  · «Francessca Michelle Chumpitaz Court» → FC (paterno «Chumpitaz»)
+
+  La regla completa (todas las longitudes):
+  · 1.ª letra = inicial del PRIMER NOMBRE · 2.ª = APELLIDO PATERNO
+  · 4+ palabras → paterno = 3.ª palabra (convención de la oficina)
+  · 3 palabras → si la 2.ª es un segundo nombre típico o partícula,
+    el paterno es la 3.ª: «Ana María Torres» → AT · «Luis Alberto
+    Ccahuana» → LC · «Ruswel Melciades Cacho» → RC; si no, es la 2.ª:
+    «José Ramírez Díaz» → JR
+  · 2 palabras → «Marcos Koo» → MK
+  · Partículas del nombre: «María del Carmen Rojas» → MR · «San/Santa»
+    inicia el apellido: «Juan San Martín Palacios» → JS
+  · Títulos ignorados («Sr.», «Ing.») · lo que escribas a mano en el
+    campo se respeta tal cual
+
+VERIFICADO PUNTO A PUNTO (2.9.19):
+  · 65 pruebas unitarias del escáner: los 5 ejemplos del usuario
+    (MK, FA, RC, JV, FC) + variantes sin materno + 3 palabras ✓
+  · E2E en la app real: sesión con cada uno de los 5 nombres →
+    iniciales correctas en el campo Y en el espejo móvil ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
+    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: los 5 ejemplos del
+    usuario = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.18 (iniciales: primer nombre + apellido paterno)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «corregir primera letra (inicial del primer nombre),
+  segunda letra (inicial del apellido paterno)».
+
+  CORREGIDO — la segunda letra era la inicial equivocada con nombres
+  compuestos: antes se tomaba la PENÚLTIMA palabra del nombre y con
+  «Ana María Torres» salía «AM» (la «M» de María, que es segundo
+  nombre, NO el apellido). Ahora el apellido paterno es la palabra que
+  SIGUE a los nombres de pila:
+  · «Ana María Torres»      → AT (antes AM ✗) — nombres «Ana María» + paterno «Torres»
+  · «Luis Alberto Ccahuana» → LC (antes LA ✗)
+  · «Rosa María Flores»     → RF (antes RM ✗)
+  · «Juan Carlos Morales»   → JM (antes JC ✗)
+  · «María del Carmen Rojas»→ MR (antes MC ✗) — «del» no es apellido
+  · «José Ramírez Vega Silva» → JR — el paterno es la 2.ª palabra,
+    no la materna
+  · «Juan San Martín Palacios» → JS — «San» inicia el apellido
+    compuesto «San Martín»
+  · «José Ramírez Díaz»     → JR (sin cambio) — nombre simple + paterno + materno
+  · «Ana María Torres Vega» → AT (sin cambio) — 4 palabras
+  · «Marcos Koo»            → MK (sin cambio) — 2 palabras
+  · «Sr. Marcos Koo»        → MK — títulos ignorados
+  La regla completa: 1.ª letra = inicial del PRIMER NOMBRE · 2.ª letra
+  = inicial del APELLIDO PATERNO. Se saltan las partículas («de»,
+  «del», «la»…) y los segundos nombres típicos («María», «Luis»,
+  «Alberto», «Carmen»…) para encontrar el paterno. Si escribes tus
+  iniciales a mano en el campo, se respetan tal cual.
+
+VERIFICADO PUNTO A PUNTO (2.9.18):
+  · 55 pruebas unitarias del escáner: 18 de iniciales con nombres
+    compuestos y partículas reales ✓
+  · E2E en la app real: sesión «Ana María Torres» → AT · «Luis
+    Alberto Ccahuana» → LC · «María del Carmen Rojas» → MR (campo +
+    espejo móvil) ✓
+  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
+    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
+    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
+  · Smoke de la app de escritorio empaquetada: fplScanIniciales con
+    los 5 nombres compuestos = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.17 (correcciones al escaneo FPL)
+────────────────────────────────────────────────────────────────────
+  Lo que reportaste: «he cargado 3 planes de vuelo y solo detecto una
+  sola matrícula, habiendo errores en la identificación de los otros 2.
+  Al cambiar de usuario aún se visualizan las iniciales del usuario
+  anterior».
+
+  CORREGIDO — matrícula en los FPL de Excel:
+  · Los FPL que llegan en .xlsx/.xls (los formularios ATC de las líneas
+    aéreas) NO se escaneaban: ahora se leen todas las hojas del libro y
+    la matrícula se detecta igual que en PDF/Word.
+  · Verificado con tus archivos reales «ATC CM468 11NOV»:
+    el .xlsx y el .pdf detectan HP1520 (casillero 18, ítem REG/HP1520).
+
+  CORREGIDO — la matrícula del FPL anterior ya no se arrastra:
+  · Al abrir otro archivo, el campo «Matrícula» parte de cero: si el
+    nuevo archivo no trae matrícula, queda VACÍO (antes mostraba la del
+    FPL anterior y podías sellar con la matrícula equivocada).
+  · Si el archivo ES un FPL pero no se reconoce la matrícula, aparece
+    el aviso «⚠ FPL sin matrícula reconocida — escríbela…» para que la
+    escribas a mano. Con documentos que no son FPL (oficios, NOTAM) el
+    campo simplemente queda limpio, sin avisos.
+  · Los formularios con UNA CASILLA POR CARÁCTER («C M P 4 6 8» en
+    casillero 7, típico de las aerolíneas) ahora se compactan antes de
+    buscar: «O B 2 1 4 7» → OB2147.
+
+  CORREGIDO — iniciales al cambiar de usuario:
+  · Al cambiar de usuario, las iniciales del campo cambian INMEDIATO a
+    las del nuevo usuario con sesión (antes quedaban las del anterior
+    aunque el campo mostrara otro nombre).
+  · Al cerrar sesión se limpian las iniciales y la matrícula: el
+    siguiente usuario empieza de cero.
+  · Si escribes tus iniciales a mano durante la sesión, se respetan.
+
+VERIFICADO PUNTO A PUNTO (2.9.17):
+  · 45 pruebas unitarias del escáner (27 anteriores + 6 de casillas por
+    carácter + 4 del aviso «FPL sin matrícula» + 8 de iniciales) ✓
+  · E2E con TUS ARCHIVOS REALES ATC CM468: .xlsx → HP1520 · .pdf →
+    HP1520 · oficio → campo limpio · FPL sin matrícula → aviso y campo
+    vacío · cambio de usuario → iniciales «AT» al instante y matrícula
+    limpia · recarga con el mismo usuario → la matrícula se conserva ✓
+  · Regresión completa del escaneo: télex → OB1630 · formulario →
+    OB2147 · nombre final «OB2147 EV.pdf» ✓
+  · Smoke de la app de escritorio empaquetada: fplScanCompacta y
+    fplScanAviso = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.16 (iniciales del operador de 2 letras)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «solo 2 (letras) iniciales del operador (inicial del
+  primer nombre e inicial del apellido paterno)».
+
+  · Las iniciales del operador ahora son SIEMPRE 2 letras: la inicial
+    del PRIMER NOMBRE + la inicial del APELLIDO PATERNO.
+      - «Marcos Koo»            → MK
+      - «Ana María Torres Vega» → AT  (Ana + Torres)
+      - «José Ramírez Díaz»     → JR  (José + Ramírez)
+      - «Ana Torres»            → AT
+    Con 3 o más palabras se aplica la convención peruana «nombres +
+    apellido paterno + apellido materno»: el paterno es la penúltima
+    palabra. Con una sola palabra solo hay inicial de nombre.
+  · El campo «Iniciales del Operador» (escritorio y panel móvil) ahora
+    admite como máximo 2 letras, sin puntos ni espacios.
+  · Se rellenan solas igual que antes: al entrar a la app y al cargar
+    cada FPL, con las del dueño del sello activo (usuario con sesión).
+  · El nombre del archivo sigue «MATRÍCULA INICIALES» (ej. OB2147 MK)
+    y el sello muestra «OPR: MK».
+
+VERIFICADO PUNTO A PUNTO (2.9.16):
+  · 35 pruebas unitarias: 27 del escáner de matrícula (sin cambios) +
+    8 de iniciales con la regla nueva (MK, AT, JR, EV, 1 letra, vacío,
+    minúsculas) ✓
+  · E2E en navegador: iniciales auto «EV» al entrar; nombre compuesto
+    «Ana María Torres Vega» → campo «AT» y nombre final «OB2147 AT.pdf»;
+    campos limitados a 2 letras (escritorio y móvil); «A.B» se sanea a
+    «AB»; escritas a mano se respetan ✓
+  · Regresión del escaneo FPL intacta: télex → OB1630, formulario →
+    OB2147, oficio → campo intacto, aviso y espejo móvil ✓
+  · Smoke de la app de escritorio empaquetada: fplScanIniciales = true ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.15 (escaneo FPL automático al cargar)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «que al cargar el archivo se realice el escaneo para
+  recolección de los datos de matrícula, que podría obtenerse del
+  casillero 7 o del casillero 18 (ejemplo: REG/OB2147), y se copie de
+  manera automática a "Matrícula (Aeronave / Espacio)"… sabemos a
+  quienes pertenecen los sellos, entonces esto nos permite obtener las
+  iniciales, las cuales se copiarán de manera automática en "Iniciales
+  del Operador"».
+
+  · AL CARGAR EL ARCHIVO (PDF, Word o foto/escaneo) PDFPro lo escanea
+    y copia la MATRÍCULA sola al campo «Matrícula (Aeronave / Espacio)»:
+      - Casillero 18 — ítem «REG/» (ej. REG/OB2147): tiene prioridad
+        porque es la matrícula explícita (aunque el casillero 7 traiga
+        un callsign distinto, ej. FAP211).
+      - Casillero 7 — identificación de aeronave: tanto del mensaje
+        télex OACI «(FPL-OB1630-IS…» (también CHG/CNL/DEP/DLA/ARR)
+        como de la etiqueta del formulario impreso «IDENTIFICACIÓN DE
+        AERONAVE» / «AIRCRAFT IDENTIFICATION».
+      - Acepta OB1630, OB-1630, OB 1630 → se normaliza a OB1630 (como
+        en tu ejemplo); también matrículas extranjeras (REG/HC-COAS,
+        REG/N123AB, REG/9V-OJK…). Si el OCR confunde la O con un cero
+        (0B1630) se corrige sola.
+      - PDF y Word con texto → lectura instantánea (1-2 s). FOTO o PDF
+        ESCANEADO (sin capa de texto) → OCR automático de la primera
+        página en español (unos segundos; verás «🔎 Escaneando FPL…»).
+  · INICIALES DEL OPERADOR: se rellenan solas con las del dueño del
+    SELLO ACTIVO (el usuario con sesión iniciada, ej. «Marcos Koo» →
+    «MK»), al entrar a la app y al cargar cada FPL. Si ya escribiste
+    iniciales a mano, se respetan.
+  · Aviso «📋 Matrícula detectada: OB1630 — casillero 18 (REG/)» al
+    detectarla; el panel móvil del sello recibe el mismo dato.
+  · Si el archivo NO es un FPL (oficio, NOTAM…) no toca los campos:
+    lo que ya escribiste se mantiene.
+  · Al guardar/exportar sigue el flujo de siempre: el archivo se
+    nombra «MATRÍCULA INICIALES» (ej. OB1630 MK.pdf) y se archiva solo
+    en la carpeta del día UTC.
+
+VERIFICADO PUNTO A PUNTO (2.9.15):
+  · 31 pruebas unitarias del extractor: REG/ con guion/espacio,
+    prioridad sobre callsign, télex (FPL/CHG/CNL/DEP), formulario
+    español/inglés, OCR sucio (0B→OB), y SIN falsas alarmas (PROB40,
+    «OBSTÁCULO», oficios) ✓
+  · Extracción real con el mismo pdf.js de la app sobre PDFs de
+    prueba: télex → OB1630, formulario → OB2147, oficio → nada ✓
+  · E2E en navegador (flujo completo de usuario): FPL télex con
+    callsign FAP211 + REG/OB1630 → campo «OB1630» en 1 s; formulario
+    → «OB2147»; oficio → campo intacto; iniciales «EV» auto al
+    entrar; aviso visible; espejo móvil; nombre final «OB2147 EV.pdf» ✓
+  · Smoke de la app de escritorio empaquetada: fpl-scan.js cargado
+    vía app:// y extractor correcto dentro de la app ✓
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.14 (carpeta por fecha UTC + auto-actualización)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.14 (carpeta por fecha UTC + auto-actualización)
+────────────────────────────────────────────────────────────────────
+  1) REGISTRO FPL POR FECHA UTC (corrección): «ese archivo debió
+     guardarse en la carpeta del día 13, ya que en aviación trabajamos
+     con hora UTC». La carpeta del registro usa ahora la fecha UTC
+     (hora zulú), la misma del sello de recepción:
+       ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
+     Un FPL recibido a las 23:30Z del día 13 va a la carpeta 13;
+     a las 01:30Z del día 14 va a la carpeta 14.
+
+  2) LA APP INSTALADA SE ACTUALIZA SOLA:
+     · Al arrancar (y cada 4 horas) PDFPro comprueba en GitHub si hay
+       versión nueva. Si la hay, avisa, la DESCARGA en segundo plano
+       (el progreso se ve en el título de la ventana) y al terminar
+       ofrece «Reiniciar e instalar»: un clic y queda actualizada.
+       Si prefieres no molestar, «Instalar al salir» la aplica sola
+       al cerrar la app.
+     · Tus ajustes, sesión y la carpeta de registro FPL se conservan.
+     · Menú «Ayuda → Buscar actualizaciones…» para comprobarlo cuando
+       quieras (te dice «está al día» si no hay nada nuevo).
+     · La versión PORTABLE no puede reemplazarse a sí misma (limitación
+       técnica de los ejecutables de un solo archivo): avisa de la
+       novedad y abre la página de descargas con un clic.
+     · NOTA: la 2.9.12/2.9.13 que ya tienes instalada NO se actualiza
+       sola — instala esta 2.9.14 una última vez manualmente y a
+       partir de ella ya se actualizará automáticamente.
+
+VERIFICADO PUNTO A PUNTO (2.9.14):
+  · 23 pruebas del módulo de registro con fecha UTC: 14-nov 01:00Z →
+    carpeta 14 (ya NO se usa la hora de Lima); 13-nov 23:30Z → 13;
+    1-ene 00:05Z → 01 Enero del año nuevo; 31-dic 23:30Z → 31.
+  · Smoke de Electron con archivado REAL a las 03:47Z del 13-nov:
+    el archivo se escribió en ...\FPL\2026\11 Noviembre\13\ — la
+    carpeta exacta del ejemplo (con 2.9.13 habría ido a la 12).
+  · Comparador de versiones (para el aviso de la portable): 6 casos
+    OK (v-prefijo, 2.10.0 > 2.9.99, 3.0.0 > 2.9.14, igual versión…).
+  · Empaquetado con auto-actualización: app-update.yml dentro del
+    instalador y latest.yml + blockmap publicados en el release de
+    GitHub (lo que el actualizador descarga).
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.13 (Registro FPL automático)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «al guardar o exportar el archivo ya editado y/o
+  ya con el sello de recepción, que le asigne un nuevo nombre con la
+  matrícula de la aeronave/espacio y las iniciales del operador
+  (ejemplo: OB2147 MK, de Marcos Koo) y que se guarde en la carpeta
+  FPL (C:\Users\...\Desktop\REGISTROS FPL NOTAM\FPL) por fecha:
+  ...\FPL\2026\11 Noviembre\13, creando la carpeta nueva al iniciar
+  cada día/mes/año». (Fecha: Lima en 2.9.13; corregida a UTC en 2.9.14.)
+
+  · NUEVO CAMPO «Matrícula (Aeronave / Espacio)» en la ficha del
+    sello (pestaña SELLO, junto a las iniciales del operador; también
+    en el panel móvil). Escribe ahí la matrícula (ej. OB2147).
+  · Al GUARDAR o EXPORTAR (PDF, Word, Excel, imagen en su formato
+    original, imagen→PDF, exportación a Drive), el archivo se nombra
+    automáticamente «MATRÍCULA INICIALES» → OB2147 MK.pdf
+    (las iniciales salen del campo del sello; si está vacío, se
+    calculan del usuario con sesión iniciada). Sin matrícula → se
+    mantiene el nombre habitual, sin sorpresas.
+  · En la versión de ESCRITORIO el archivo se archiva SOLO en:
+      <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<día>
+    Ej. de hoy: ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
+    La fecha era la de LIMA (UTC-5) → CORREGIDO EN 2.9.14: ahora es
+    UTC (hora zulú), la misma del sello de recepción.
+    Las carpetas del día/mes/año se crean automáticamente (también al
+    arrancar la app), y al cerrar aparece un aviso con la ruta exacta.
+  · Si ya existe «OB2147 MK.pdf» ese día, no se sobreescribe: se
+    guarda como «OB2147 MK (2).pdf», «(3)», …
+  · Menú «Archivo»: casilla «Guardar exportaciones en la carpeta FPL»
+    (para desactivarlo y descargar con el nombre nuevo donde quieras)
+    y «Abrir carpeta de registro FPL…».
+  · En la WEB no se puede escribir carpetas del PC (seguridad de los
+    navegadores): la descarga llega con el nombre nuevo
+    (OB2147 MK.pdf) para que la archives con un clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.13):
+  · 20 pruebas del módulo de registro: fecha Lima correcta (14-nov
+    01:00Z → carpeta del 13; 1-ene 02:00Z → 31 Diciembre del año
+    anterior), ruta exacta del ejemplo, colisiones (2), (3), saneo
+    de caracteres prohibidos en Windows.
+  · E2E en navegador con el puente simulado: OB2147+MK → guarda
+    «OB2147 MK.pdf» SIN abrir descarga y con aviso de ruta;
+    archivado desactivado → descarga «OB2147 MK.pdf»; cadena
+    completa: foto FPL abierta → guardar en formato original →
+    «OB2147 MK.jpg» (102 KB reales); campo sincronizado en móvil.
+  · Smoke de Electron 2.9.13 con archivado REAL: la app escribió
+    «SMOKE OB2147 MK.pdf» dentro de REGISTROS FPL NOTAM\FPL\<año>\
+    <MM Mes>\<día> creada al vuelo; arranca, puente y librerías OK,
+    captura con contenido, sin errores nuevos.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.12 (Windows ofrece abrir archivos con PDFPro)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.12 (Windows ofrece abrir los archivos con PDFPro)
+────────────────────────────────────────────────────────────────────
+  Lo que pediste: «que al abrir un archivo Windows pregunte si deseo
+  abrir el archivo con esta aplicación, y que ofrezca hacerlo de
+  manera predeterminada».
+
+  · El instalador registra PDFPro para 17 formatos: PDF (.pdf),
+    Word (.docx/.doc), Excel (.xlsx/.xlsm/.xls/.csv) e imágenes
+    (.jpg/.jpeg/.jfif/.png/.gif/.bmp/.webp/.avif/.ico/.svg).
+    Al abrir un archivo de esos tipos, Windows muestra a PDFPro en
+    «¿Cómo quieres abrir este archivo?» y en el clic derecho →
+    «Abrir con → Elegir otra aplicación» (con la casilla «Usar
+    siempre esta aplicación»).
+  · Al primer arranque, la app PREGUNTA si quieres hacerla la
+    aplicación predeterminada: un botón abre la configuración de
+    Windows «Aplicaciones predeterminadas» para que marques los
+    formatos con un clic. (Windows 10/11 exige esa confirmación:
+    ninguna aplicación puede cambiarse a sí misma de forma
+    predeterminada por su cuenta — es una medida de seguridad del
+    sistema). La opción queda siempre disponible en el menú
+    «Ayuda → Hacer de PDFPro la aplicación predeterminada…».
+  · Doble clic en un archivo (o «Abrir con → PDFPro») → la app lo
+    abre directamente como pestaña. Ahora también con IMÁGENES
+    (antes solo PDF/Word/Excel; y las imágenes abiertas así se
+    guardan ya en su formato correcto, p. ej. JPG→JPG).
+  · «Archivo → Abrir archivo…» ahora incluye las imágenes en sus
+    filtros.
+  · Al desinstalar, las asociaciones se limpian del registro (no
+    quedan entradas huérfanas de PDFPro en «Abrir con»).
+
+  IMPORTANTE: usa el instalador PDFPro-Setup-2.9.12.exe para tener
+  las asociaciones (la versión Portable no registra nada en el
+  sistema, es su naturaleza). Si ya tenías PDFPro instalado,
+  ejecuta el Setup encima: se actualiza conservando tus datos.
+
+VERIFICADO PUNTO A PUNTO (2.9.12):
+  · Script real del instalador compilado (capturado del
+    empaquetador): las 17 asociaciones APP_ASSOCIATE presentes
+    (PDF→PDFPro.Document.PDF, docx/doc→Word, xlsx/xlsm/xls/csv→
+    Excel, 10 formatos de imagen→PDFPro.Image) con comando de
+    apertura «PDFPro.exe "%1"» e iconos instalados en resources.
+  · Desinstalador compilado con las 17 limpiezas APP_UNASSOCIATE.
+  · Flujo «abrir desde Windows» simulado en navegador con el
+    desktop-bridge real: imagen JPG → pestaña de imagen con tipo
+    image/jpeg y hoja=foto completa; PDF → cargado (1 página,
+    2 pestañas); saludo del puente (ready) correcto.
+  · Smoke de Electron con el main.js 2.9.12: app arranca, puente
+    presente, todas las librerías cargan, protocolo app:// OK,
+    captura de pantalla con contenido (no en blanco).
+  · Sin errores de consola nuevos.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.11 (la hoja ES la foto completa)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.11 (la hoja ES la foto COMPLETA)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «se ve la imagen al tamaño del formato
+  A4, pero no permite ver el resto de la hoja, solo se visualiza
+  más o menos un 60% de la foto».
+
+  · La hoja ahora SE ADAPTA A LA FOTO: se ve la foto COMPLETA al
+    tamaño máximo que permite el A4 (la hoja adopta las proporciones
+    exactas de la foto). Nada recortado, nada de fondo blanco.
+    Ejemplo: una foto alta de celular (972×2160) se muestra entera
+    en una hoja de 505×1123 px; antes, al «llenar A4», solo se veía
+    el 63% de la foto.
+  · El botón de la cinta ahora ALTERNA TRES presentaciones:
+      1. «Hoja = foto» (por defecto) — foto completa, sin recortes
+         ni fondo blanco, al tamaño máximo A4.
+      2. «A4 exacto» — hoja A4 literal 794×1123 (o apaisada), la
+         foto la llena por completo recortando lo que sobra.
+      3. «Con margen» — foto completa centrada sobre hoja A4
+         blanca con un pequeño margen.
+    El guardado SIEMPRE respeta la presentación activa: lo que ves
+    es lo que se descarga (a 300 dpi, formato original de la foto).
+  · Los sellos colocados se REUBICAN solos al cambiar de
+    presentación (si la hoja se hace más pequeña, los sellos entran
+    dentro de ella; ninguno queda fuera).
+  · Además corrige un detalle de precisión presente desde la
+    2.9.9: la hoja se estaba encogiendo un poco a la altura de la
+    pantalla (p. ej. 1123 px se veían como 810), por lo que los
+    sellos podían caer un poco más arriba de donde hiciste clic.
+    Ahora la hoja se muestra a su tamaño real y el sello cae
+    EXACTAMENTE donde haces clic.
+
+VERIFICADO PUNTO A PUNTO (2.9.11), flujo completo automatizado:
+  · Foto alta 972×2160 (el caso del 60%) → hoja 505×1123 con la
+    foto OCUPÁNDOLA por completo (rectángulo de la foto = rectángulo
+    de la hoja, sin recorte) y modo «Hoja = foto» activo por defecto.
+  · Guardar → JPEG real 1578×3509 (505×1123 a 300 dpi) con las 4
+    esquinas tomadas de la foto (0 blancas: sin fondo blanco) y el
+    sello de recepción grabado encima (20 909 píxeles de su marco).
+  · Alternar a «A4 exacto» → hoja 794×1123, la foto la llena
+    (cover). Alternar a «Con margen» → foto completa centrada con
+    margen (746 px de ancho dentro de la hoja). Volver a «Hoja =
+    foto» → 505×1123 de nuevo.
+  · Dos sellos colocados en hoja A4 exacta (uno abajo-derecha);
+    al volver a «Hoja = foto» (hoja más angosta) el sello se
+    reubicó automáticamente dentro de la hoja (de x=574 a x=283).
+  · Segunda foto 1200×1600 → hoja 794×1059, foto completa visible.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.10 (la foto llena la hoja A4, recortando)
+────────────────────────────────────────────────────────────────────
+
+NOVEDADES DE LA VERSIÓN 2.9.10 (la foto ES la hoja A4)
+────────────────────────────────────────────────────────────────────
+  Corrige lo que reportaste: «la foto se visualiza sobre un fondo
+  blanco; lo que se quiere es que la foto se muestre del tamaño A4».
+
+  · Ahora la foto LLENA TODA LA HOJA A4 por defecto: es la propia
+    página, sin fondo blanco ni márgenes. Lo que sobra del encuadre
+    se recorta (como al imprimir a página completa).
+  · Nuevo botón «Ver completa» en la cinta de la pestaña de imagen:
+    un clic muestra la foto ENTERA con un pequeño margen (el
+    comportamiento anterior), por si alguna foto no debe recortarse.
+    El botón alterna entre ambos modos («Ver completa» ⇄ «Llenar
+    hoja») y el guardado SIEMPRE respeta el modo que estás viendo:
+    lo que ves es lo que se descarga.
+  · El tamaño de salida no cambia: hoja A4 a 300 dpi (2481×3509 o
+    3509×2481 si es apaisada), en el formato original de la foto
+    (JPG→JPG, PNG→PNG, WebP→WebP; otros → PNG con aviso).
+
+VERIFICADO PUNTO A PUNTO (2.9.10), flujo completo automatizado:
+  · Foto vertical con esquinas rojas → hoja A4 vertical 794×1123,
+    modo «cover» activo por defecto, foto llenando el papel.
+  · Guardar → JPEG real (cabecera JPEG) 2481×3509 con las CUATRO
+    esquinas del archivo tomadas de la foto (0 esquinas blancas:
+    sin fondo blanco) y el sello de recepción grabado encima.
+  · Botón «Ver completa» → la foto pasa a verse entera con margen;
+    guardar en ese modo produce el archivo con las 4 esquinas
+    blancas (margen de hoja) — el modo activo se respeta en la
+    descarga.
+  · Toggle de vuelta a «Llenar hoja» → la foto vuelve a llenar el
+    A4, el sello colocado sigue en su sitio.
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.9 (fotos e imágenes en página A4)
+────────────────────────────────────────────────────────────────────
+  Ahora puedes cargar FOTOS o cualquier imagen (JPG, PNG, GIF, BMP,
+  WebP, AVIF, ICO, SVG) y la app la presenta sobre una página A4 en
+  blanco (apaisada si la foto es horizontal), lista para colocarle
+  el sello de recepción y el sello personal — igual que en Word y
+  Excel:
+
+  · «Abrir» o arrastra la foto: se abre en su propia pestaña «IMG».
+  · «Sello Rec.» → haz clic sobre la foto: el sello queda colocado
+    en la hoja A4 (se arrastra para moverlo, doble clic edita su
+    hora, ✕ lo borra, Ctrl+Z quita el último).
+  · «Guardar imagen» descarga la hoja A4 (300 dpi, calidad de
+    impresión) con la foto y los sellos, EN EL FORMATO ORIGINAL:
+    un .jpg se guarda como .jpg, un .png como .png, un .webp como
+    .webp. Si el formato de origen no se puede volver a grabar en
+    el navegador (GIF/BMP/ICO/AVIF/SVG), se guarda como PNG sin
+    pérdida y se te avisa.
+  · «Exportar PDF» también funciona: la misma hoja A4 con tus
+    sellos, como PDF puro.
+  · Se pueden abrir varias imágenes a la vez: cada una en su
+    pestaña (mezcladas con PDF/Excel/Word en la misma carga).
+
+VERIFICADO PUNTO A PUNTO (2.9.9), con la app real, flujo completo
+automatizado en el navegador:
+  · Dos imágenes a la vez (JPG vertical 1600×2000 + PNG horizontal
+    1920×1080): dos pestañas IMG, A4 vertical 794×1123 y A4
+    apaisada 1123×794, foto centrada con margen.
+  · Sello de recepción colocado con un clic dentro de la hoja
+    (RECIBIDO/RECEIVED + fecha y hora UTC + AIS/ARO – CORPAC +
+    sede SPHI – Chiclayo), pestaña marcada como modificada.
+  · Guardar PNG → archivo PNG real (cabecera PNG) de 3509×2481
+    px (= A4 apaisado a 300 dpi) con el sello grabado encima.
+  · Guardar JPG → archivo JPEG real (cabecera JPEG) de 2481×3509
+    px (= A4 vertical a 300 dpi), misma extensión que la original.
+  · Exportar PDF → PDF puro (cabecera %PDF-1.7).
+  · GIF de prueba → guardado como PNG con aviso (comportamiento
+    documentado arriba).
+  · Sin errores de consola durante todo el flujo.
+
+────────────────────────────────────────────────────────────────────
+  HISTORIAL — versión 2.9.8 (sellos también al guardar Word)
+────────────────────────────────────────────────────────────────────
+  Corrige «abro un archivo excel/word, coloco sello, exporto, abro
+  el archivo exportado y no hay sello». Causa real encontrada:
+
+  · WORD (.docx): al guardar, los sellos vivían solo en la capa
+    visual de la app y NUNCA se escribían dentro del archivo. Ahora
+    cada sello (de recepción y personal) se incrusta como imagen PNG
+    flotante anclada al párrafo más cercano a donde lo colocaste:
+    abre el .docx guardado en Word/LibreOffice y verás ambos sellos
+    en su sitio. La posición viaja con el párrafo: si editas el
+    texto, el sello acompaña al documento.
+  · EXCEL (.xlsx): ya funcionaba desde la 2.9.7 (imágenes ancladas
+    a su celda). Se re-verificó punto a punto en esta versión, sin
+    regresiones.
+  · Detalle técnico corregido: las imágenes ancladas dentro de
+    tablas no se dibujaban (layoutInCell). Ahora los sellos flotan
+    sobre el documento aunque el ancla caiga en una celda de tabla.
+  · Al colocar un sello en Word, la pestaña ahora se marca como
+    modificada (igual que en Excel).
+
+  IMPORTANTE — DE DÓNDE VIENE TU ARCHIVO SIN SELLO:
+  El «ATC CM468 11NOV (1) (1).xlsx» que nos compartiste fue generado
+  el 11-nov a las 23:50 por una versión ANTERIOR a la 2.9.7 (que se
+  entregó después, a la 01:49). Con 2.9.8:
+     1) Desinstala la versión vieja (Configuración → Aplicaciones →
+        PDFPro → Desinstalar) e instala PDFPro-Setup-2.9.8.exe.
+     2) Comprueba que el pie de la app diga «v2.9.8».
+     3) Abre el archivo ORIGINAL (no re-guardes el que exportó la
+        versión vieja), coloca los sellos y usa «Guardar .xlsx» /
+        «Guardar .docx».
+
+VERIFICADO PUNTO A PUNTO (2.9.8), con la app real (Electron, flujo
+completo automatizado):
+  · WORD: abrir .docx con tabla → sello de recepción (con sello
+    personal del usuario dentro) + sello personal «APROBADO» →
+    «Guardar .docx»: el archivo resultante contiene word/media con
+    las dos imágenes PNG y sus anclajes; abierto en LibreOffice se
+    ven AMBOS sellos exactamente donde se colocaron (x 77 pt y
+    x 367 pt). El resto del documento queda byte-idéntico.
+  · WORD: «Exportar PDF» de la misma pestaña: PDF puro (pdf-lib)
+    con los dos sellos dibujados.
+  · EXCEL: abrir el FPL real «ATC CM468 11NOV.xlsx» → sello de
+    recepción (fila 60, col 26) + «APROBADO» (fila 20, col 40) →
+    «Guardar .xlsx»: image2.png + image3.png ancladas; en
+    LibreOffice se ven el logo y los dos sellos.
+  · El documento guardado se re-abre correctamente (python-docx /
+    LibreOffice / Excel): 8 párrafos, 1 tabla — la estructura
+    original no se toca.
+
+CONTENIDO DE ESTE PAQUETE
+─────────────────────────
+  PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
+  PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
+  pdfpro-fuentes-v2.9.8.zip     Proyecto completo para recompilar
+  PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
+                                Muestra real: ábrela en Word y verás
+                                el sello de recepción (con firma) y el
+                                sello APROBADO incrustados
+  PRUEBA - Word con sellos exportado a PDF (v2.9.8).pdf
+                                Muestra real: PDF puro con ambos sellos
+  PRUEBA - Excel con sellos guardado como XLSX (v2.9.8).xlsx
+                                Muestra real: sellos incrustados sobre
+                                el FPL ATC CM468 (ábrela en Excel)
+  ATC CM468 11NOV - REPARADO.xlsx  (de la entrega anterior) tu archivo
+                                de la 2.9.4 con los títulos restaurados
+
+INSTALACIÓN (PDFPro-Setup-2.9.8.exe)
+────────────────────────────────────
+  1. Doble clic al archivo. No pide permisos de administrador
+     (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
+  2. Se instalan automáticamente: acceso directo de escritorio,
+     acceso en el menú Inicio y entrada en «Abrir con» para PDF.
+  3. Incluye desinstalador estándar en Configuración → Aplicaciones.
+  4. La app se abre sola al terminar.
+  5. Si tenías la 2.9.4/2.9.5/2.9.6/2.9.7 instalada, desinstálala
+     primero; tus datos de sesión no se tocan.
+
+VERSIÓN PORTABLE (PDFPro-Portable-2.9.8.exe)
+────────────────────────────────────────────
+  Un solo archivo ejecutable: no instala nada, no toca el registro.
+  Doble clic y listo. Ideal para memorias USB o equipos restringidos.
+
+AVISO DE SMARTSCREEN (importante)
+─────────────────────────────────
+  Los ejecutables no están firmados digitalmente (la firma de código
+  cuesta ~200-400 USD/año). La primera vez Windows puede mostrar
+  «Windows protegió tu PC». Para continuar:
+     Clic en «Más información» → «Ejecutar de todas formas».
+
+QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
+─────────────────────────────────────────────────
+  ✓ 100% SIN INTERNET (todo va dentro del programa):
+    · Editor PDF completo (texto, párrafos, anotaciones, sellos,
+      firmas, marcas de agua, comparador de PDFs, sello de recepción)
+    · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas,
+      con estilos reales (bordes, alineación, fuentes, imágenes)
+    · Sellos incrustados al guardar .xlsx Y .docx
+    · OCR en español e inglés (Tesseract + diccionarios incluidos)
+    · Exportar a PDF / Word / Excel / imágenes, impresión
+    · Decodificador aeronáutico (METAR/TAF/FPL...), gestor AIRAC,
+      METAR gráfico, lectura en voz alta (TTS)
+    · Todas las fuentes embebidas para exportar PDF
+  ⚠ REQUIEREN INTERNET (servicios en la nube de la plataforma):
+    · Inicio de sesión / registro / suscripciones (Supabase)
+    · Panel de administración y biblioteca de firmas remota
+    · Google Drive (conexión OAuth y subida de archivos)
+    · Mapas AIRAC (teselas de OpenStreetMap)
+
+RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.8.zip)
+──────────────────────────────────────────────────
+  1. Descomprime el ZIP en cualquier carpeta.
+  2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
+  3. Doble clic a build-windows.bat  →  genera ambos .exe en dist\.
+
+  Estructura del proyecto:
+    src/main.js             Proceso principal Electron
+    src/preload.js          Puente seguro renderer↔Electron
+    src/app/index.html      La aplicación (estilos reales de .xlsx,
+                             sellos incrustados al guardar .xlsx y
+                             .docx, PDF puro, centrado de impresión)
+    src/app/desktop-bridge.js  Integraciones de escritorio
+    src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib,
+                             xlsx, mammoth, jszip, docx-preview,
+                             fontkit, leaflet, tesseract + idiomas)
+    build/icon.ico          Icono de la aplicación
+    build/installer.nsi     Script NSIS del instalador
+
+PDFPro 2.9.8 · © 2026 CORPAC AIS/ARO SPHI
