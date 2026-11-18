@@ -1,7 +1,26 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.3 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.4 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.4
+────────────────────────────────────────────────────────────────────
+  1. ABRIR PDF DESDE UNA URL CAÍDA — LECTOR CON RESPALDO
+     Si la app web se abre desde una URL vieja/en caché de un
+     deploy borrado (todos sus archivos dan 404), abrir un PDF
+     fallaba con «Setting up fake worker failed: Cannot load
+     script at …». Ahora el lector PDF reintenta con la raíz del
+     sitio y, como último recurso, con el CDN (misma versión
+     3.11.174 del vendor local): el PDF abre igual. Si nada
+     carga, el mensaje indica usar la URL vigente:
+     https://licencias-firmas.vercel.app
+  2. CAMPOS DE FORMULARIO WORD (CONTROLES DE TEXTO) EDITABLES
+     Los campos hechos con controles de contenido de texto ya se
+     pueden editar de verdad: lo escrito DENTRO del campo se
+     guarda dentro del campo (antes el guardado no veía esos
+     runs: la edición se perdía, se duplicaba o se partía entre
+     el campo y el texto de alrededor).
+     Los checkbox siguen intactos en su lugar exacto (v3.1.3).
 
 NOVEDADES DE LA VERSIÓN 3.1.3
 ────────────────────────────────────────────────────────────────────
@@ -87,7 +106,7 @@ INSTALACIÓN
   PDFPro-Setup-3.0.0.exe    Instalador de un clic (recomendado)
                             Crea acceso directo y asocia .pdf, .docx,
                             .xlsx e imágenes con PDFPro.
-  PDFPro-Portable-3.1.3.exe Versión portable sin instalación.
+  PDFPro-Portable-3.1.4.exe Versión portable sin instalación.
 
   La app funciona 100% offline para edición, sello, OCR y guardado.
   Solo necesita internet para: iniciar sesión (Supabase), conectar
@@ -104,8 +123,8 @@ COMPILAR DESDE EL CÓDIGO FUENTE
 ────────────────────────────────────────────────────────────────────
   Requiere Node.js LTS. En la carpeta del proyecto:
      npm install
-     npm run dist          (genera dist\PDFPro-Setup-3.1.3.exe y
-                            dist\PDFPro-Portable-3.1.3.exe)
+     npm run dist          (genera dist\PDFPro-Setup-3.1.4.exe y
+                            dist\PDFPro-Portable-3.1.4.exe)
   En Windows también puedes usar build-windows.bat.
 
-  © 2026 CORPAC AIS/ARO SPHI · PDFPro Suite 3.1.3
+  © 2026 CORPAC AIS/ARO SPHI · PDFPro Suite 3.1.4

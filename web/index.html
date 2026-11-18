@@ -758,7 +758,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.3 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido) · matrícula por OCR · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.4 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido) · matrícula por OCR · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1714,6 +1714,43 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs/pdf.worker.min.js';
+// v3.1.4 — WORKER PDF con cadena de respaldo. Si la ruta relativa no carga
+// (p.ej. la app abierta desde una URL vieja/en caché de un deploy borrado:
+// todos sus archivos devuelven 404), se reintenta con la raíz del origen y,
+// como último recurso, con el CDN (misma versión 3.11.174 que el vendor
+// local). Sin esto, abrir cualquier PDF falla con «Setting up fake worker
+// failed: Cannot load script at …».
+var _pdfWorkerAlts=null;
+function _pdfWorkerAltList(){
+  if(_pdfWorkerAlts) return _pdfWorkerAlts;
+  _pdfWorkerAlts=['vendor/pdfjs/pdf.worker.min.js'];
+  try{
+    if(location.origin&&location.origin.indexOf('http')===0)
+      _pdfWorkerAlts.push(location.origin+'/vendor/pdfjs/pdf.worker.min.js');
+  }catch(e){}
+  _pdfWorkerAlts.push('https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js');
+  _pdfWorkerAlts.push('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js');
+  return _pdfWorkerAlts;
+}
+var _pdfWorkerIdx=0;
+async function _pdfOpen(mkDoc){
+  var alts=_pdfWorkerAltList(), lastErr=null;
+  for(var i=_pdfWorkerIdx;i<alts.length;i++){
+    try{
+      pdfjsLib.GlobalWorkerOptions.workerSrc=alts[i];
+      var d=await mkDoc();
+      if(i>0&&i!==_pdfWorkerIdx) toast('Motor PDF cargado desde una fuente alternativa: la URL de esta página no sirve todos sus archivos. Usa la URL vigente de la app.','warn');
+      _pdfWorkerIdx=i;
+      return d;
+    }catch(e){
+      var msg=String((e&&e.message)||e);
+      if(!/worker|cannot load script/i.test(msg)) throw e;   // error real del PDF, no del worker
+      lastErr=e;
+    }
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc=alts[0];
+  throw new Error('no se pudo cargar el motor PDF ('+((lastErr&&lastErr.message)||'?')+') — abre la app en su URL vigente (https://licencias-firmas.vercel.app) y verifica tu conexión');
+}
 // ════ v3.1.2 — OCR 100% LOCAL (worker + core wasm + idiomas del vendor) ════
 /* tesseract.min.js cargado localmente apunta por DEFECTO al CDN (jsdelivr)
    para worker/core/langs; sin internet el OCR fallaba silenciosamente y no se
@@ -4865,7 +4902,7 @@ function ocrToTextbox(){
 // ── COMPARADOR DE PDFs ───────────────────────────────────────
 async function pdfExtractPagesText(file){
   var bytes=new Uint8Array(await file.arrayBuffer());
-  var doc=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
+  var doc=await _pdfOpen(function(){ return pdfjsLib.getDocument({data:bytes.slice()}).promise; });
   var pages=[];
   for(var i=0;i<doc.numPages;i++){
     var pg=await doc.getPage(i+1);
@@ -8923,7 +8960,7 @@ async function loadPDF(file){
   // v2.2.0 — copia defensiva: pdf.js TRANSFIERE el buffer al worker (lo detacha).
   // Mantener rawPdfBytes intacto arregla además la exportación vectorial (pdf-lib).
   var _pdfBytesForWorker=rawPdfBytes.slice();
-  pdfDoc=await pdfjsLib.getDocument({data:_pdfBytesForWorker}).promise;
+  pdfDoc=await _pdfOpen(function(){ return pdfjsLib.getDocument({data:_pdfBytesForWorker.slice()}).promise; });
   pageCount=pdfDoc.numPages;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
   for(var i=0;i<pageCount;i++)pageOrder.push(i);setProg(30);
   for(var i=0;i<pageCount;i++){var pg=await pdfDoc.getPage(i+1);var tc=await pg.getTextContent();pageItems[i]=tc.items;pageTexts[i]=tc.items.map(function(s){return s.str;}).join(' ');}
@@ -11212,12 +11249,37 @@ function _wzCharOps(A, B){
   });
   return out;
 }
-// v3.1.3 — sincroniza un control de contenido (checkbox) con el glifo que el
-// usuario dejó en la vista: actualiza el w:t dentro del sdtContent y el estado
-// w14:checked (mapea el glifo contra checkedVal/uncheckedVal del propio control).
+// v3.1.4 — expande un w:sdt INLINE en runs efectivos para el análisis del
+// párrafo: los checkbox (w14:checkbox) se recogen como pseudo-run «ctrl»
+// (intocable: queda en su lugar exacto; marcar/desmarcar se sincroniza y
+// nunca se duplica). Los DEMÁS controles (texto, fecha, lista) se expanden:
+// sus runs internos se editan como cualquier run y el control envuelve el
+// resultado — así los campos del formulario Word SÍ son editables y el
+// guardado los respeta. Los sdt anidados se resuelven en cascada.
+function _wzSdtExpand(sdt,out){
+  var sc=null;
+  for(var q=0;q<sdt.children.length;q++){ if(sdt.children[q].tagName==='w:sdtContent'){ sc=sdt.children[q]; break; } }
+  if(!sc) return;
+  if(sdt.getElementsByTagName('w14:checkbox').length){
+    var st='';
+    var sts=sc.getElementsByTagName('w:t');
+    for(var si=0;si<sts.length;si++) st+=sts[si].textContent;
+    if(st) out.push({__ctrl:true, el:sdt, txt:st});
+    return;
+  }
+  for(var k=0;k<sc.children.length;k++){
+    var c=sc.children[k];
+    if(c.tagName==='w:sdt'){ _wzSdtExpand(c,out); continue; }
+    out.push(c);
+  }
+}
+// v3.1.3 — sincroniza un control checkbox con el glifo que el usuario dejó en
+// la vista: actualiza el w:t dentro del sdtContent y el estado w14:checked
+// (mapea el glifo contra checkedVal/uncheckedVal del propio control).
 function _wzSyncCtrl(xdoc,ctrlRun,newTxt){
   try{
     var sdt=ctrlRun.el;
+    if(!sdt.getElementsByTagName('w14:checkbox').length) return;   // v3.1.4: sólo checkbox
     var ts=sdt.getElementsByTagName('w:t');
     if(!ts.length) return;
     var old=ts[0].textContent;
@@ -11265,34 +11327,30 @@ async function wordSaveDocx(tab){
         var ch=node.children[i], tg=ch.tagName;
         if(tg==='w:p'){
           var runs=[], text='';
+          // v3.1.4 — los controles de contenido INLINE (w:sdt hijos del
+          // párrafo) no son w:r: docx-preview renderiza su texto en la vista
+          // pero el guardado no lo veía → los párrafos con campos NUNCA
+          // alineaban y las ediciones se perdían o duplicaban. Ahora los
+          // sdts se expanden (ver _wzSdtExpand) y el texto queda alineado.
+          var pch=[];
           for(var r=0;r<ch.children.length;r++){
             var rn=ch.children[r];
-            // v3.1.3 — controles de contenido INLINE (checkbox w14:checkbox):
-            // docx-preview renderiza su glifo (☒/☐) en la vista, pero su run
-            // vive DENTRO de w:sdt, no es hijo directo del párrafo. Se recoge
-            // como run virtual «ctrl»: el párrafo alinea por clave con la
-            // vista y el control NUNCA se reescribe ni se duplica — queda en
-            // su lugar exacto del archivo original.
-            if(rn.tagName==='w:sdt'){
-              var sc=rn.getElementsByTagName('w:sdtContent')[0];
-              if(sc){
-                var st='';
-                var sts=sc.getElementsByTagName('w:t');
-                for(var si=0;si<sts.length;si++) st+=sts[si].textContent;
-                if(st){ runs.push({el:rn, ts:[], ph:null, ctrl:true, txt:st}); text+=st; }
-              }
-              continue;
-            }
-            if(rn.tagName!=='w:r') continue;
+            if(rn.tagName==='w:sdt'){ _wzSdtExpand(rn,pch); continue; }
+            pch.push(rn);
+          }
+          for(var j=0;j<pch.length;j++){
+            var el=pch[j];
+            if(el.__ctrl){ runs.push({el:el.el, ts:[], ph:null, ctrl:true, txt:el.txt}); text+=el.txt; continue; }
+            if(el.tagName!=='w:r') continue;
             var ts=[], ph=null;
-            for(var g=0;g<rn.children.length;g++){
-              var ge=rn.children[g];
+            for(var g=0;g<el.children.length;g++){
+              var ge=el.children[g];
               if(ge.tagName==='w:t'){ ts.push(ge); text+=ge.textContent; }
               else if(ge.tagName==='w:tab'){ ph='\t'; text+='\t'; }
               else if(ge.tagName==='w:br'){ ph=ph||'\n'; text+='\n'; }
               // drawing/objetos: sin texto, el run queda intacto
             }
-            runs.push({el:rn, ts:ts, ph:ph, txt:ts.map(function(t){return t.textContent;}).join('')});
+            runs.push({el:el, ts:ts, ph:ph, txt:ts.map(function(t){return t.textContent;}).join('')});
           }
           xblocks.push({p:ch, runs:runs, text:text, key:nvNormT(text), parent:node});
         }
@@ -11407,22 +11465,31 @@ async function wordSaveDocx(tab){
           });
           if(io){
             _wzSyncCtrl(xdoc,cr,io.s.charAt(0));
-            if(io.s.length>1){ io.s=io.s.slice(1); io.a=cr.b; }
+            if(io.s.length>1){ io.s=io.s.slice(1); io.a=cr.b; io._afterCtrl=true; }
             else io._ctrlDone=true;
           }else{
             try{ if(cr.el.parentNode) cr.el.parentNode.removeChild(cr.el); }catch(e3){}
           }
         });
+        var _lastEqB=null;
         ops.forEach(function(o){
           if(o._ctrlDone) return;
           if(o.t==='eq'){
+            _lastEqB=o.b;
             xb.runs.forEach(function(r2,rj){
               if(r2.ph||r2.ctrl) return;
               var s0=Math.max(r2.a,o.a), s1=Math.min(r2.a+r2.txt.length,o.b);
               if(s1>s0) runTxt[rj]+=r2.txt.slice(s0-r2.a,s1-r2.a);
             });
           }else{
-            var ti=runIndexAt(o.a);
+            // v3.1.4 — el texto NUEVO se inserta en el run del último carácter
+            // igualado (donde el usuario lo tecleó de verdad), no en la
+            // posición de re-sincronización del LCS: sin esto, lo escrito
+            // dentro de un control de texto puede quedar PARCIALMENTE FUERA
+            // del campo (p.ej. «ROBERTO» → «RO» dentro del control y «BERTO»
+            // en el run exterior).
+            var anchor=(o._afterCtrl||_lastEqB==null)?o.a:_lastEqB;
+            var ti=runIndexAt(anchor);
             if(ti>=0) runTxt[ti]+=o.s;
             else pendingIns+=o.s;
           }

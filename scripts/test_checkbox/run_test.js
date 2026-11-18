@@ -150,7 +150,7 @@ function check(name, cond, detail) {
         'diff: ' + (saved.length === originalDocXml.length ? 'mismo largo, contenido distinto' : 'longitud ' + originalDocXml.length + '→' + saved.length));
     }
     const sd = sdtInfos(parseXml(saved || originalDocXml));
-    check('5 controles checkbox presentes', sd.length === 5, 'encontrados: ' + sd.length);
+    check('6 controles presentes (4 checkbox + texto + bloque)', sd.length === 6, 'encontrados: ' + sd.length);
     check('sin glifos sueltos en runs normales', looseGlyphs(parseXml(saved || originalDocXml)).length === 0,
       JSON.stringify(looseGlyphs(parseXml(saved || originalDocXml))));
   }
@@ -178,7 +178,7 @@ function check(name, cond, detail) {
       check('edición aplicada («456 — EDITADO»)', saved.includes('456 — EDITADO'));
       check('edición única (1 cambio)', toasts.some(t => t.includes('1 cambio')), toasts.join(' | '));
       const sd = sdtInfos(sx);
-      check('5 controles presentes', sd.length === 5, 'encontrados: ' + sd.length);
+      check('6 controles presentes', sd.length === 6, 'encontrados: ' + sd.length);
       check('checkbox en su lugar exacto (XML de cada sdt idéntico)',
         sd.every((s, i) => s.xml === origSdts[i].xml),
         sd.map((s, i) => s.xml === origSdts[i].xml ? i + ':ok' : i + ':DISTINTO').join(' '));
@@ -205,7 +205,7 @@ function check(name, cond, detail) {
       await api.wordSaveDocx(makeTab(wrap));
       const saved = await getSavedXml();
       const sd = sdtInfos(parseXml(saved));
-      check('5 controles presentes', sd.length === 5, 'encontrados: ' + sd.length);
+      check('6 controles presentes', sd.length === 6, 'encontrados: ' + sd.length);
       const t1 = sd.find(s => s.id === '1001');
       check('checkbox 1001 ahora ☐', t1 && t1.glyph === '\u2610', t1 && 'glifo=' + JSON.stringify(t1.glyph));
       check('checkbox 1001 w14:checked=0', t1 && t1.checked === '0', t1 && 'checked=' + t1.checked);
@@ -242,9 +242,41 @@ function check(name, cond, detail) {
       await api.wordSaveDocx(makeTab(wrap));
       const saved = await getSavedXml();
       const sd = sdtInfos(parseXml(saved));
-      check('quedan 4 controles (1001 eliminado)', sd.length === 4 && !sd.find(s => s.id === '1001'), 'encontrados: ' + sd.map(s => s.id).join(','));
+      check('quedan 5 controles (1001 eliminado)', sd.length === 5 && !sd.find(s => s.id === '1001'), 'encontrados: ' + sd.map(s => s.id).join(','));
       check('sin glifos sueltos en runs normales', looseGlyphs(parseXml(saved)).length === 0, JSON.stringify(looseGlyphs(parseXml(saved))));
       check('el resto del texto sobrevive', saved.includes('Vuelo militar') && saved.includes('Fin del documento') && saved.includes('Parrafo dentro de bloque sdt'));
+    }
+  }
+
+  /* T5 — editar DENTRO de un control de TEXTO: el campo es editable y el guardado lo respeta */
+  console.log('T5 · campo de texto (control) → edición dentro del campo, sin duplicar');
+  {
+    const wrap = await render();
+    let edited = false;
+    wrap.querySelectorAll('section.docx article p').forEach((p) => {
+      const walker = dom.window.document.createTreeWalker(p, 4 /* SHOW_TEXT */);
+      let n; while ((n = walker.nextNode())) {
+        if (n.nodeValue.includes('MARCOS')) { n.nodeValue = n.nodeValue.replace('MARCOS', 'ROBERTO'); edited = true; }
+      }
+    });
+    if (!edited) check('ERROR: no se pudo editar el campo de texto en la vista', false);
+    else {
+      toasts.length = 0; lastBlob = null;
+      await api.wordSaveDocx(makeTab(wrap));
+      const saved = await getSavedXml();
+      const sd = sdtInfos(parseXml(saved));
+      check('6 controles presentes', sd.length === 6, 'encontrados: ' + sd.length);
+      const tc = sd.find(s => s.id === '3001');
+      check('control 3001 conserva su envoltorio con el texto editado', tc && tc.glyph === 'KOO PAZ, ROBERTO',
+        tc && 'texto=' + JSON.stringify(tc.glyph));
+      check('«ROBERTO» exactamente una vez y dentro del control', (saved.match(/ROBERTO/g) || []).length === 1 && !!tc && tc.glyph.includes('ROBERTO'),
+        'apariciones: ' + (saved.match(/ROBERTO/g) || []).length);
+      check('«MARCOS» ya no existe', !saved.includes('MARCOS'));
+      check('sin duplicar el párrafo («OPERADOR:» 1 vez)', (saved.match(/OPERADOR: /g) || []).length === 1,
+        'apariciones: ' + (saved.match(/OPERADOR: /g) || []).length);
+      check('texto alrededor del campo intacto (« — FIRMA»)', saved.includes(' \u2014 FIRMA'));
+      check('edición única (1 cambio)', toasts.some(t => t.includes('1 cambio')), toasts.join(' | '));
+      check('sin glifos sueltos en runs normales', looseGlyphs(parseXml(saved)).length === 0, JSON.stringify(looseGlyphs(parseXml(saved))));
     }
   }
 

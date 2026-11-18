@@ -28,6 +28,11 @@ def sdt(checked, sid):
         '</w:sdtContent></w:sdt>' % (sid, ck, glyph)
     )
 
+def sdt_text(sid, inner):
+    """Control de contenido de TEXTO (Developer > control de texto enriquecido)."""
+    return ('<w:sdt><w:sdtPr><w:id w:val="%d"/><w:alias w:val="operador"/></w:sdtPr>'
+            '<w:sdtContent>%s</w:sdtContent></w:sdt>' % (sid, inner))
+
 def run(t, b=False):
     rpr = '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:b/></w:rPr>' if b else \
           '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/></w:rPr>'
@@ -42,6 +47,7 @@ document = (
     '<w:body>'
     + p(run('INFORME DE VUELO ', b=True) + run('123 — control de checkbox'))
     + p(run('Vuelo militar ') + sdt(True, 1001) + run(' SI ') + sdt(False, 1002) + run(' NO'))
+    + p(run('OPERADOR: ') + sdt_text(3001, run('KOO PAZ, ') + run('MARCOS', True)) + run(' — FIRMA'))
     + '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>'
       '<w:top w:val="single" w:sz="4" w:color="auto"/><w:left w:val="single" w:sz="4" w:color="auto"/>'
       '<w:bottom w:val="single" w:sz="4" w:color="auto"/><w:right w:val="single" w:sz="4" w:color="auto"/>'
