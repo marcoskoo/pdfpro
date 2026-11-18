@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.0 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.1 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -9364,7 +9364,7 @@ async function loadPDF(file){
   // detectar la matrícula (Aeronave/Espacio) y llenar la ficha del sello.
   // Si el PDF ya tiene texto embebido (no escaneado) se usa ese texto directo.
   try{autoOcrMatricula();}catch(e){console.warn('autoOcr',e);}
-  try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
+  try{gmailHoraAuto();}catch(e){} // v3.2.1 — hora del correo por archivo
 }
 
 /* v3.0.0 — detección automática de matrícula al cargar:
@@ -10983,16 +10983,18 @@ function gmailUsarHora(idx){
   gmailAplicarHora(m.recibidoMs,'correo «'+(m.asunto||'')+'»');
 }
 
-/* ── v3.2.0 — HORA DEL CORREO POR ARCHIVO CARGADO (Gmail asistido) ──
+/* ── v3.2.1 — HORA DEL CORREO POR ARCHIVO CARGADO (Gmail asistido) ──
    100% automática al cargar un documento, sin botón: Playwright abre Gmail
    de forma invisible (perfil de Chrome persistente) y busca el correo por
    el nombre del archivo cargado. Sin OAuth, sin credenciales. Si Gmail pide
-   sesión, la ventana de login se abre DENTRO de la app (una sola vez). */
+   sesión, la ventana de login se abre DENTRO de la app (una sola vez).
+   v3.2.1: los fallos REALES se muestran (login cancelado, sesión no
+   transferida, hora no interpretada…) — el silencio queda solo para
+   «no hay correo con este archivo» y «el correo no muestra la hora». */
 var _gmailHoraOk=false,_gmailHoraT=null;
 function gmailHoraPuede(){return !!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraBuscar&&_gmailHoraOk);}
-/* consulta la hora del correo del archivo cargado — automática y
-   silenciosa; solo llena si «Hora Recepción» está vacío (no pisa lo
-   escrito a mano) y avisa con toast al aplicarla */
+/* consulta la hora del correo del archivo cargado — automática; solo llena
+   si «Hora Recepción» está vacío (no pisa lo escrito a mano) */
 async function gmailHoraArchivo(){
   if(!gmailHoraPuede())return;
   var nombre='';
@@ -11003,10 +11005,26 @@ async function gmailHoraArchivo(){
   if(t&&t.value)return;                     // ya hay hora: no se toca
   try{
     var r=await window.pdfproDesktop.gmailHoraBuscar(nombre);
-    if(!r||!r.ok)return;                    // sin correo / sin sesión: silencioso
-    if(!r.recibidoMs)return;                // hora no interpretable: no se inventa
+    if(!r||!r.ok){
+      /* silencio SOLO cuando no hay nada que hacer; los fallos reales se
+         muestran para poder diagnosticarlos (v3.2.1) */
+      if(r&&r.tipo==='ArchivoNoEncontradoError')return;  // sin correo con ese archivo
+      if(r&&r.tipo==='HoraNoExtraidaError')return;       // correo sin hora legible
+      if(!r||r.tipo==='SinArchivo'||r.tipo==='Ocupado')return;
+      if(r.tipo==='LoginCancelado')toast('🔐 No se completó el inicio de sesión en Gmail — se volverá a pedir al cargar otro documento','warn',9000);
+      else if(r.tipo==='SesionNoTransferida')toast('⚠️ Gmail: la sesión no se pudo transferir al buscador. Envía el archivo gmail-hora.log (carpeta %APPDATA%\\PDFPro) para revisarlo','err',14000);
+      else if(r.tipo==='PlaywrightFalta')toast('📧 Falta Playwright en la instalación de escritorio','err',9000);
+      else toast('📧 '+((r&&r.error)||'no se pudo buscar el correo'),'err',9000);
+      return;
+    }
+    if(!r.recibidoMs){
+      /* la hora se leyó pero el formato no se reconoce: se muestra el
+         texto crudo para poder ajustar el parser (no se inventa nada) */
+      toast('📧 Hora leída de Gmail pero no interpretada: «'+r.horaRecepcion+'» — repórtala para ajustar el parser','warn',10000);
+      return;
+    }
     gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'));
-  }catch(e){/* automático: los fallos no molestan al operador */}
+  }catch(e){toast('📧 Error buscando el correo: '+e.message,'err',9000);}
 }
 /* enganche tras cargar un documento (con retardo: deja pasar antes la
    detección de matrícula) */
@@ -11086,7 +11104,7 @@ async function gmailBarrer(manual){
 }
 function gmailInit(){
   gmailRefreshState();
-  gmailHoraInit(); // v3.2.0 — hora del correo por archivo cargado (escritorio)
+  gmailHoraInit(); // v3.2.1 — hora del correo por archivo cargado (escritorio)
   if(_gmailTimer)clearInterval(_gmailTimer);
   _gmailTimer=setInterval(function(){gmailBarrer(false);},5*60*1000); // cada 5 min
 }
@@ -11635,7 +11653,7 @@ async function wordTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
-    try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
+    try{gmailHoraAuto();}catch(e){} // v3.2.1 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();
@@ -13340,7 +13358,7 @@ async function excelTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
-    try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
+    try{gmailHoraAuto();}catch(e){} // v3.2.1 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();

@@ -557,7 +557,7 @@ ipcMain.handle('gmail:perfil', async () => {
   }
 });
 
-/* ── v3.2.0 — HORA DE RECEPCIÓN POR ARCHIVO CARGADO (Gmail asistido) ──
+/* ── v3.2.1 — HORA DE RECEPCIÓN POR ARCHIVO CARGADO (Gmail asistido) ──
    Alternativa al OAuth (funciona sin credenciales): Playwright abre Gmail
    de forma INVISIBLE con un perfil de Chrome persistente y busca el correo
    por el nombre del archivo adjunto del documento cargado (100% automático
@@ -568,13 +568,32 @@ ipcMain.handle('gmail:perfil', async () => {
    LOGIN DENTRO DE LA APP: si Gmail pide sesión, se abre una ventana HIJA de
    la propia app con mail.google.com (partición persistente), el usuario
    inicia sesión ahí, se cosechan las cookies de google.com y se transfieren
-   al navegador invisible; luego se reintenta la búsqueda. Solo ocurre la
-   primera vez (la sesión queda en ambos perfiles).
+   al navegador invisible; luego se reintenta la búsqueda (hasta 2 rondas:
+   Google rota algunas cookies y una segunda cosecha puede completar la
+   transferencia). La ventana de login se cierra sola al terminar.
+   TODO el flujo queda anotado en <userData>/gmail-hora.log (en Windows:
+   %APPDATA%\PDFPro\gmail-hora.log) para diagnosticar a distancia.
    El progreso llega por el evento 'gmail-hora:evento' {msg, tipo}
    (tipo 'login' = ventana de inicio de sesión abierta). */
 let _gmailHoraSvc = null;
 let _gmailHoraLoginWin = null;
+let _gmailHoraCadena = Promise.resolve();      // una búsqueda a la vez
+let _gmailHoraUltimoFalloLogin = 0;            // cooldown tras cancelar login
+
+/* Registro de diagnóstico del flujo completo (con rotación a .old). */
+function gmailHoraLog(msg) {
+  try {
+    const fsX = require('fs');
+    const f = path.join(app.getPath('userData'), 'gmail-hora.log');
+    try {
+      if (fsX.statSync(f).size > 512 * 1024) fsX.renameSync(f, f + '.old');
+    } catch (e) { /* aún no existe */ }
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    fsX.appendFileSync(f, `[${ts}] ${msg}\n`);
+  } catch (e) { /* registro best-effort */ }
+}
 function gmailHoraEvento(msg, tipo) {
+  gmailHoraLog((tipo === 'login' ? '[login] ' : '') + msg);
   try {
     if (win && !win.isDestroyed()) win.webContents.send('gmail-hora:evento', { msg, tipo: tipo || 'info' });
   } catch (e) { /* ventana cerrada */ }
@@ -582,7 +601,8 @@ function gmailHoraEvento(msg, tipo) {
 
 /** Abre Gmail DENTRO de la app para iniciar sesión (ventana hija, sesión
     propia persistente 'gmail-login'). Resuelve con las cookies de
-    google.com cuando el correo queda abierto, null si se cancela. */
+    google.com cuando el correo queda abierto (y cierra la ventana sola);
+    null si se cancela o agota el tiempo. */
 function abrirLoginGmailEnApp() {
   return new Promise((resolve) => {
     if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) {
@@ -603,12 +623,16 @@ function abrirLoginGmailEnApp() {
       }
     });
     let resuelto = false;
-    const finalizar = async (ok) => {
+    const finalizar = async (ok, motivo) => {
       if (resuelto) return;
       resuelto = true;
       clearInterval(poll);
       clearTimeout(limite);
-      if (!ok) { resolve(null); return; }
+      if (!ok) {
+        gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})`);
+        resolve(null);
+        return;
+      }
       try {
         /* cosecha las cookies de la sesión con la que se inició sesión */
         const todas = await particion.cookies.getAll({});
@@ -616,8 +640,14 @@ function abrirLoginGmailEnApp() {
           const dom = String(c.domain || '').replace(/^\./, '');
           return /(^|\.)google\.com$/.test(dom);
         });
+        gmailHoraLog(`login completo: ${cookies.length} cookies de google.com cosechadas`);
         resolve(cookies);
-      } catch (e) { resolve(null); }
+      } catch (e) {
+        gmailHoraLog('error cosechando cookies: ' + e.message);
+        resolve(null);
+      }
+      /* la ventana ya cumplió su misión: se cierra sola */
+      try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
     };
     /* ¿ya con sesión? mail.google.com carga directo; si redirige a
        accounts.google.com hay que iniciar sesión (URL vuelve a mail… al
@@ -635,10 +665,10 @@ function abrirLoginGmailEnApp() {
         setTimeout(() => finalizar(true), 1500);
       }
     }, 1000);
-    const limite = setTimeout(() => finalizar(false), 5 * 60 * 1000);
+    const limite = setTimeout(() => finalizar(false, 'tiempo agotado (5 min)'), 5 * 60 * 1000);
     _gmailHoraLoginWin.on('closed', () => { _gmailHoraLoginWin = null; finalizar(false); });
     _gmailHoraLoginWin.once('ready-to-show', () => _gmailHoraLoginWin.show());
-    _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch(() => finalizar(false));
+    _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch(() => finalizar(false, 'no se pudo cargar Gmail'));
   });
 }
 
@@ -646,10 +676,15 @@ ipcMain.handle('gmail-hora:estado', () => {
   const d = GmailHoraService.disponible();
   return { ok: true, disponible: !!d.playwright };
 });
-ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
-  let nombre = '';
+/* las cargas rápidas de archivos se encolan: una búsqueda a la vez sobre
+   el mismo navegador invisible (evita carreras sobre la misma página) */
+ipcMain.handle('gmail-hora:buscar', (_e, archivo) => {
+  const tarea = _gmailHoraCadena.then(() => _gmailHoraBuscar(String(archivo || '').trim()));
+  _gmailHoraCadena = tarea.then(() => undefined, () => undefined);
+  return tarea;
+});
+async function _gmailHoraBuscar(nombre) {
   try {
-    nombre = String(archivo || '').trim();
     if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
     if (!GmailHoraService.disponible().playwright) {
       return { ok: false, error: 'Playwright no está instalado en la app (npm i playwright)', tipo: 'PlaywrightFalta' };
@@ -662,29 +697,50 @@ ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
         onLoginRequired: (m) => gmailHoraEvento(m, 'login')
       });
     }
+    gmailHoraLog(`buscar «${nombre}»`);
     try {
       await _gmailHoraSvc.iniciar();
-    } catch (e) { /* ya iniciado u otro problema: lo relanza la búsqueda */ }
+    } catch (e) { gmailHoraLog('aviso al iniciar navegador: ' + e.message); }
 
-    let r;
+    let r = null;
     try {
       r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
     } catch (e) {
       if (e.name !== 'LoginRequeridoError') throw e;
-      /* Gmail pide sesión → login DENTRO de la app + transferir cookies */
-      gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
-      const cookies = await abrirLoginGmailEnApp();
-      if (!cookies || !cookies.length) {
-        return { ok: false, error: 'No se completó el inicio de sesión en Gmail', tipo: 'LoginRequeridoError' };
+      /* Gmail pide sesión → login DENTRO de la app + transferir cookies.
+         Hasta 2 rondas: si tras inyectar sigue pidiendo sesión se
+         re-cosechan las cookies (Google las rota) y se reintenta. */
+      for (let ronda = 1; ronda <= 2 && !r; ronda++) {
+        if (Date.now() - _gmailHoraUltimoFalloLogin < 30000) {
+          gmailHoraLog('login omitido: se canceló hace menos de 30 s');
+          return { ok: false, error: 'Inicio de sesión en Gmail cancelado hace un momento', tipo: 'LoginCancelado' };
+        }
+        gmailHoraLog(`ronda ${ronda}: Gmail pide sesión (URL: ${_gmailHoraSvc.urlActual()})`);
+        gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
+        const cookies = await abrirLoginGmailEnApp();
+        if (!cookies || !cookies.length) {
+          _gmailHoraUltimoFalloLogin = Date.now();
+          return { ok: false, error: 'No se completó el inicio de sesión en Gmail', tipo: 'LoginCancelado' };
+        }
+        const inj = await _gmailHoraSvc.inyectarCookies(cookies);
+        gmailHoraLog(`cookies: ${inj.total} cosechadas, ${inj.ok} inyectadas${inj.fallos.length ? ' · fallos: ' + inj.fallos.join(' | ') : ''}`);
+        gmailHoraEvento(`Sesión transferida (${inj.ok} cookies); buscando de nuevo…`);
+        try {
+          r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+        } catch (e2) {
+          if (e2.name !== 'LoginRequeridoError') throw e2;
+          gmailHoraLog(`ronda ${ronda}: sigue pidiendo sesión (URL: ${_gmailHoraSvc.urlActual()})`);
+        }
       }
-      await _gmailHoraSvc.inyectarCookies(cookies);
-      gmailHoraEvento('Sesión aceptada; buscando de nuevo…');
-      r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+      if (!r) {
+        return { ok: false, error: 'La sesión de Gmail no se pudo transferir al buscador invisible', tipo: 'SesionNoTransferida' };
+      }
     }
 
     /* la hora llega como texto de visualización de Gmail (zona de la
        cuenta, por defecto Lima UTC−5): se convierte a epoch/UTC */
     const ms = parseHoraGmail(r.horaRecepcion);
+    gmailHoraLog(`hora «${r.horaRecepcion}» (fuente: ${r.fuente}) → ${ms ? new Date(ms).toISOString() : 'NO INTERPRETADA (revisar formato)'}`);
     return {
       ok: true,
       archivo: nombre,
@@ -698,9 +754,10 @@ ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
       recibidoUTC: ms ? new Date(ms).toISOString() : ''
     };
   } catch (e) {
+    gmailHoraLog(`ERROR ${e.name || 'Error'}: ${e.message}`);
     return { ok: false, error: e.message, tipo: e.name || 'Error' };
   }
-});
+}
 /* cierra el navegador asistido al salir de la app (la sesión persiste) */
 app.on('before-quit', () => {
   if (_gmailHoraSvc) { try { _gmailHoraSvc.cerrar(true); } catch (e) { /* noop */ } }

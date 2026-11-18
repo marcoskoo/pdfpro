@@ -1,7 +1,25 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.0 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.1 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.1 (corrección de la 3.2.0)
+────────────────────────────────────────────────────────────────────
+  1. LA BÚSQUEDA YA NO FALLA EN SILENCIO. En la 3.2.0, si algo fallaba
+     después de iniciar sesión en Gmail (sesión no transferida, u hora
+     leída en un formato no reconocido), no aparecía NADA y parecía que
+     la búsqueda no ocurría. Ahora todo fallo real se muestra en
+     pantalla con su causa.
+  2. TRANSFERENCIA DE SESIÓN MÁS ROBUSTA. Las cookies se inyectan una
+     por una (una rechazada ya no arrastra a las demás) y las
+     SameSite=None viajan con Secure forzado, como exige Chrome. Si
+     Gmail sigue pidiendo sesión se hace una segunda ronda automática
+     (Google rota algunas cookies al validar).
+  3. LA VENTANA DE LOGIN SE CIERRA SOLA al completar el inicio de
+     sesión (antes quedaba abierta).
+  4. REGISTRO DE DIAGNÓSTICO. Todo el flujo queda anotado en
+     %APPDATA%\PDFPro\gmail-hora.log — si algo vuelve a fallar, basta
+     enviar ese archivo para ver exactamente qué pasó.
 
 NOVEDADES DE LA VERSIÓN 3.2.0
 ────────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-/* PDFPro — gmail-hora/GmailHoraService.js (v3.2.0)
+/* PDFPro — gmail-hora/GmailHoraService.js (v3.2.1)
  * Adaptado del módulo «gmail-hora-recepcion» provisto por el usuario
  * (Playwright + perfil persistente de Chrome: se inicia sesión UNA vez y la
  * cookie queda guardada). Cambios respecto al original:
@@ -90,15 +90,26 @@ class GmailHoraService {
     }
   }
 
+  /** URL actual de la página (para el registro de diagnóstico). */
+  urlActual() {
+    try { return this.page ? this.page.url() : ''; } catch (e) { return ''; }
+  }
+
   /** Transfiere al navegador invisible las cookies de una sesión iniciada
       en la ventana de Gmail DENTRO de la app (Electron). Recibe cookies en
       formato Electron {name,value,domain,path,secure,httpOnly,
-      expirationDate,sameSite} y las convierte al formato de Playwright.
-      Tras inyectar, la sesión queda persistida en el perfil. */
+      expirationDate,sameSite} y las convierte al formato de Playwright,
+      UNA A UNA (una cookie rechazada no arruina el resto; Chromium rechaza
+      SameSite=None sin Secure, así que ese par va forzado). Devuelve
+      {total, ok, fallos:[…]}. Tras inyectar, la sesión queda persistida
+      en el perfil. */
   async inyectarCookies(cookies) {
     this._assertIniciado();
-    const pw = (Array.isArray(cookies) ? cookies : []).map((c) => {
-      const out = {
+    const lista = Array.isArray(cookies) ? cookies : [];
+    let ok = 0;
+    const fallos = [];
+    for (const c of lista) {
+      const pw = {
         name: c.name,
         value: c.value,
         domain: c.domain || 'google.com',
@@ -106,15 +117,19 @@ class GmailHoraService {
         secure: !!c.secure,
         httpOnly: !!c.httpOnly
       };
-      if (c.expirationDate) out.expires = c.expirationDate; // ambos en segundos
-      if (c.sameSite === 'no_restriction') out.sameSite = 'None';
-      else if (c.sameSite === 'lax') out.sameSite = 'Lax';
-      else if (c.sameSite === 'strict') out.sameSite = 'Strict';
-      return out;
-    });
-    if (pw.length) await this.context.addCookies(pw);
-    this.opts.onProgress('Sesión transferida al navegador de búsqueda.');
-    return pw.length;
+      if (c.expirationDate) pw.expires = Math.floor(c.expirationDate); // segundos
+      if (c.sameSite === 'no_restriction') { pw.sameSite = 'None'; pw.secure = true; }
+      else if (c.sameSite === 'lax') pw.sameSite = 'Lax';
+      else if (c.sameSite === 'strict') pw.sameSite = 'Strict';
+      try {
+        await this.context.addCookies([pw]);
+        ok++;
+      } catch (e) {
+        fallos.push(`${c.name}: ${String(e.message || e).split('\n')[0].slice(0, 80)}`);
+      }
+    }
+    if (ok) this.opts.onProgress(`Sesión transferida al navegador de búsqueda (${ok} cookies).`);
+    return { total: lista.length, ok, fallos };
   }
 
   _assertIniciado() {
