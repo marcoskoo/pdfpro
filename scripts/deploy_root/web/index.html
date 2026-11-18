@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.7 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios CORPAC impresos: casillas reconstruidas por geometría (el texto interno llega revuelto) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.9 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado (Gmail asistido, sin OAuth) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1286,6 +1286,14 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             </div>
           </div>
           <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px" onclick="gmailBarrer(true)">🔄 Barrer ahora (últimos 7 días)</button>
+          <!-- v3.1.9 — hora del correo POR ARCHIVO CARGADO (Gmail asistido,
+               solo escritorio: Playwright + perfil de Chrome persistente) -->
+          <div id="gmailHoraBox" style="display:none;margin-bottom:6px">
+            <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:4px;border-color:rgba(79,142,247,.35);color:var(--acc)" onclick="gmailHoraArchivo(false)">🕐 Hora del correo del archivo cargado</button>
+            <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3);cursor:pointer;margin:0 0 6px">
+              <input type="checkbox" id="gmailHoraAuto" checked onchange="gmailHoraAutoSave()"> Automático al cargar el documento
+            </label>
+          </div>
           <div id="gmailList" style="max-height:220px;overflow-y:auto;font-size:10.5px"></div>
         </div>
         <div class="sello-panel">
@@ -4998,7 +5006,9 @@ function _fplTipoDeFormulario(items){
       var it2=items[i];
       var c=String(it2.str||'').trim().toUpperCase();
       if(!/^[SNGMX]$/.test(c))continue;
-      if(it2.x>=x0-4&&it2.y<=fila+5&&it2.y>=fila-20)letras.push(it2);
+      /* v3.1.8 — banda extendida hacia abajo: en los formularios
+         electrónicos el rótulo va ARRIBA y la letra en su casilla debajo */
+      if(it2.x>=x0-4&&it2.y<=fila+28&&it2.y>=fila-20)letras.push(it2);
     }
     if(!letras.length)return '';
     letras.sort(function(a,b){return a.x-b.x;});
@@ -5007,6 +5017,48 @@ function _fplTipoDeFormulario(items){
       for(var j=0;j<items.length;j++){
         var mk=String(items[j].str||'').trim();
         if(/^[☒✓✔×X]$/.test(mk)&&Math.abs(items[j].x-letras[i].x)<10&&Math.abs(items[j].y-letras[i].y)<10)return letras[i].str;
+      }
+    }
+    /* v3.1.8 — sin marcas y letras MUY separadas: no es la lista de opciones
+       (celdas contiguas) sino campos distintos (p. ej. el tipo «S» del c-8 y
+       la categoría de estela «M» del c-9); se toma el grupo de la izquierda */
+    var maxGap=0;
+    for(i=1;i<letras.length;i++)maxGap=Math.max(maxGap,letras[i].x-letras[i-1].x);
+    if(maxGap>120)return letras[0].str;
+    return '';
+  }catch(e){return '';}
+}
+/* v3.1.8 — matrícula del casillero 18 (REG/) por GEOMETRÍA: reconstruye la
+   fila visual del rótulo «REG/» con los ítems {str,x,y} ordenados por
+   posición (pdf.js). Cubre los formularios electrónicos con una casilla por
+   carácter, donde el texto plano llega revuelto o con el guion suelto tras
+   la compacción («R E G / O B - 2 1 7 6 P»); si el rótulo quedó solo en su
+   fila, se prueba con la fila siguiente (rótulo arriba, valor abajo). */
+function _fplRegDeFormulario(items){
+  try{
+    if(!items||!items.length)return '';
+    var its=items.slice().sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
+    var filas=[],cur=[its[0]];
+    for(var i=1;i<its.length;i++){
+      if(its[i].y-cur[cur.length-1].y<=6)cur.push(its[i]);
+      else{filas.push(cur);cur=[its[i]];}
+    }
+    if(cur.length)filas.push(cur);
+    var re=/\bREG\s*\/?\s*([0-9A-Z]{1,3}\s*[-\u00AD]\s*[0-9A-Z]{2,5}|[0-9A-Z]{4,8})/;
+    var valida=function(cap){
+      var rc=String(cap||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'');
+      if(rc&&!_FPL_PALABRA.test(rc.replace(/[^A-Z]/g,''))&&(_fplEsMatricula(rc)||(/\d/.test(rc)&&/^[A-Z0-9\-]{4,8}$/.test(rc))))return _fixOcrLetters(rc);
+      return '';
+    };
+    for(var f=0;f<filas.length;f++){
+      var txt=_fplSinAcentos(filas[f].map(function(o){return String(o.str||'');}).join(' ')).toUpperCase();
+      if(txt.indexOf('REG')<0)continue;
+      var m=_fplCompacta(txt).match(re);
+      if(m){var v=valida(m[1]);if(v)return v;}
+      if(f+1<filas.length){
+        var txt2=_fplCompacta(txt+' '+_fplSinAcentos(filas[f+1].map(function(o){return String(o.str||'');}).join(' ')).toUpperCase());
+        var m2=txt2.match(re);
+        if(m2){var v2=valida(m2[1]);if(v2)return v2;}
       }
     }
     return '';
@@ -5031,10 +5083,18 @@ function fplExtraerCampos(texto,items,nombreArchivo){
   var r={c7:'',tipoS:false,reg:'',eoibt:'',c8:''};
   var m,i;
   /* ── casillero 18: matrícula REG/… (sin el prefijo) ── */
-  m=tc.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD]?[0-9A-Z]{2,5})/);
-  if(m){
-    var rc=String(m[1]||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'');
-    if(rc&&!_FPL_PALABRA.test(rc.replace(/[^A-Z]/g,''))&&(_fplEsMatricula(rc)||/^[A-Z0-9\-]{4,8}$/.test(rc)))r.reg=_fixOcrLetters(rc);
+  // v3.1.8 — 1) GEOMETRÍA: la fila visual del rótulo «REG/» reconstruida en
+  //    orden horizontal; los formularios electrónicos usan una casilla por
+  //    carácter y el texto plano queda con el guion suelto («OB - 2176P»)
+  if(items){var g18=_fplRegDeFormulario(items);if(g18)r.reg=g18;}
+  // 2) texto: guion rodeado de espacios tras la compacción, o valor sin guion
+  if(!r.reg){
+    m=tc.match(/\bREG\s*\/?\s*([0-9A-Z]{1,3}\s*[-\u00AD]\s*[0-9A-Z]{2,5}|[0-9A-Z]{4,8})/);
+    if(m){
+      var rc=String(m[1]||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'');
+      // v3.1.8 — el respaldo de forma exige dígitos: «REG/ GNSS» no es matrícula
+      if(rc&&!_FPL_PALABRA.test(rc.replace(/[^A-Z]/g,''))&&(_fplEsMatricula(rc)||(/\d/.test(rc)&&/^[A-Z0-9\-]{4,8}$/.test(rc))))r.reg=_fixOcrLetters(rc);
+    }
   }
   /* ── casillero 7: identificación de vuelo / matrícula ── */
   // 1) geometría del formulario impreso (texto interno revuelto)
@@ -5083,17 +5143,29 @@ function fplExtraerCampos(texto,items,nombreArchivo){
   if(!r.tipoS){
     var iTipo=tc.search(/TIPO\s*DE\s*VUELO|TYPE\s*OF\s*FLIGHT|FLIGHT\s+TYPE/);
     if(iTipo>=0){
-      var nl=tc.indexOf('\n',iTipo);
-      var linea=tc.slice(iTipo,nl<0?iTipo+80:nl);
-      var unics=linea.match(/\b[SNGMX]\b/g)||[];
-      var unq=[];for(var q=0;q<unics.length;q++)if(unq.indexOf(unics[q])<0)unq.push(unics[q]);
-      if(unq.length===1)r.tipoS=(unq[0]==='S');
-      else{
+      /* v3.1.8 — se analiza una línea a la vez: el rótulo puede quedar en
+         una línea y la letra en la casilla de la siguiente (rótulo arriba,
+         valor abajo); «IS» junto = reglas I + tipo S en una sola casilla */
+      var _fplTipoLinea=function(linea){
+        var unics=linea.match(/\b[SNGMX]\b/g)||[];
+        var combos=linea.match(/\b(?:I|V|Y|Z)[SNGMX]\b/g)||[];
+        for(var cb=0;cb<combos.length;cb++)if(unics.indexOf(combos[cb].slice(-1))<0)unics.push(combos[cb].slice(-1));
+        var unq=[];for(var q=0;q<unics.length;q++)if(unq.indexOf(unics[q])<0)unq.push(unics[q]);
+        if(unq.length===1)return unq[0]==='S';
         /* lista de opciones —sueltas «S N G M X» o compactada «SNGMX»—:
            se aplica la que esté marcada con ☒/✓/×; sin marca no se asume */
         var mk2=linea.match(/[☒✓✔×]\s*([SNGMX])|([SNGMX])\s*[☒✓✔×]/);
-        if(mk2)r.tipoS=((mk2[1]||mk2[2])==='S');
+        if(mk2)return ((mk2[1]||mk2[2])==='S');
+        return unq.length?'A':'N';   // 'A' ambigua · 'N' sin datos
+      };
+      var nl=tc.indexOf('\n',iTipo);
+      var linea=tc.slice(iTipo,nl<0?iTipo+80:nl);
+      var tp=_fplTipoLinea(linea);
+      if(tp==='N'&&nl>=0){
+        var nl2=tc.indexOf('\n',nl+1);
+        tp=_fplTipoLinea(tc.slice(nl+1,nl2<0?nl+81:nl2));
       }
+      if(tp===true)r.tipoS=true;
     }
   }
   /* ── casillero 13: EOBT (hora propuesta fuera de calzos) ── */
@@ -5117,9 +5189,10 @@ function fplExtraerCampos(texto,items,nombreArchivo){
       }
     }
   }
-  // 3) «EOBT: 1100» / «FUERA DE CALZOS: 1100»
+  // 3) «EOBT: 1100» / «FUERA DE CALZOS: 1100» — v3.1.8: admite un rótulo
+  //    intermedio («EOBT / TIME 0145») antes de la hora
   if(!r.eoibt){
-    m=tc.match(/\bEOBT[:\s]*(\d{4})/)||tc.match(/FUERA\s*DE\s*CALZOS[:\s]*(\d{4})/);
+    m=tc.match(/\bEOBT\b[^0-9]{0,25}(\d{4})/)||tc.match(/FUERA\s*DE\s*CALZOS\b[^0-9]{0,25}(\d{4})/);
     if(m)r.eoibt=m[1];
   }
   // 4) télex: primer «AAAA hhhh» ANTES de la etiqueta de destino (la salida
@@ -9296,6 +9369,7 @@ async function loadPDF(file){
   // detectar la matrícula (Aeronave/Espacio) y llenar la ficha del sello.
   // Si el PDF ya tiene texto embebido (no escaneado) se usa ese texto directo.
   try{autoOcrMatricula();}catch(e){console.warn('autoOcr',e);}
+  try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
 }
 
 /* v3.0.0 — detección automática de matrícula al cargar:
@@ -10897,15 +10971,91 @@ function gmailRenderList(){
   });
   box.innerHTML=html;
 }
-function gmailUsarHora(idx){
-  var m=_gmailMsgs[idx];if(!m||!m.recibidoMs)return;
-  var d=new Date(m.recibidoMs);
-  var fecha=d.toLocaleDateString('en-CA'); // YYYY-MM-DD para el input date
-  var hora=String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+/* v3.1.9 — aplica una hora de recepción (epoch ms) a la ficha del sello en
+   UTC (los campos están rotulados UTC y el sello imprime «… UTC»); la usan
+   la ruta OAuth («Usar hora en el sello») y la ruta asistida por archivo. */
+function gmailAplicarHora(ms,origen){
+  var d=new Date(ms);
+  var fecha=d.toISOString().slice(0,10);            // UTC YYYY-MM-DD
+  var hora=String(d.getUTCHours()).padStart(2,'0')+String(d.getUTCMinutes()).padStart(2,'0');
   var f=document.getElementById('selloRxDate');if(f)f.value=fecha;
   var h=document.getElementById('selloRxTime');if(h)h.value=hora;
   updateSelloPreview();
-  toast('Hora de recepción del correo aplicada al sello: '+gmailFmtHora(m.recibidoMs),'ok');
+  toast('📥 Recepción aplicada (UTC): '+fecha.split('-').reverse().join('/')+' '+hora+' — '+origen,'ok');
+}
+function gmailUsarHora(idx){
+  var m=_gmailMsgs[idx];if(!m||!m.recibidoMs)return;
+  gmailAplicarHora(m.recibidoMs,'correo «'+(m.asunto||'')+'»');
+}
+
+/* ── v3.1.9 — HORA DEL CORREO POR ARCHIVO CARGADO (Gmail asistido) ──
+   En el escritorio, Playwright abre Gmail con un perfil de Chrome
+   persistente (login UNA vez; luego todo headless) y busca el correo por
+   el nombre del archivo del documento cargado. Sin OAuth, sin credenciales. */
+var _gmailHoraOk=false,_gmailHoraT=null;
+function gmailHoraPuede(){return !!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraBuscar&&_gmailHoraOk);}
+function gmailHoraAutoSave(){
+  var c=document.getElementById('gmailHoraAuto');
+  try{localStorage.setItem('pdfpro_gmail_hora_auto',c&&c.checked?'1':'0');}catch(e){}
+}
+function gmailHoraAutoOn(){
+  try{return localStorage.getItem('pdfpro_gmail_hora_auto')!=='0';}catch(e){return true;}
+}
+/* consulta la hora del correo del archivo cargado (auto=true: silenciosa,
+   solo si el campo «Hora Recepción» está vacío) */
+async function gmailHoraArchivo(auto){
+  if(!gmailHoraPuede())return;
+  var nombre='';
+  try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
+  if(!nombre)nombre=fileName||'';
+  if(!nombre){if(!auto)toast('Carga primero un documento','warn');return;}
+  if(auto){
+    var t=document.getElementById('selloRxTime');
+    if(t&&t.value)return;               // ya hay hora: no se toca
+  }
+  try{
+    var r=await window.pdfproDesktop.gmailHoraBuscar(nombre);
+    if(!r||!r.ok){
+      if(auto)return;                    // automático: silencioso
+      if(r&&r.tipo==='ArchivoNoEncontradoError')toast('No se encontró ningún correo con el archivo «'+nombre+'»','warn',8000);
+      else if(r&&r.tipo==='LoginRequeridoError')toast('No se inició sesión en Gmail a tiempo; pulsa el botón de nuevo','err',9000);
+      else toast('No se pudo obtener la hora: '+((r&&r.error)||'error'),'err',9000);
+      return;
+    }
+    if(!r.recibidoMs){
+      if(!auto)toast('Hora leída pero no interpretable: «'+r.horaRecepcion+'» — repórtala para ajustar el parser','warn',9000);
+      return;
+    }
+    gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'));
+  }catch(e){
+    if(!auto)toast('Error: '+e.message,'err');
+  }
+}
+/* enganche tras cargar un documento (con retardo: deja pasar antes la
+   detección de matrícula) */
+function gmailHoraAuto(){
+  if(!gmailHoraPuede()||!gmailHoraAutoOn())return;
+  if(_gmailHoraT)clearTimeout(_gmailHoraT);
+  _gmailHoraT=setTimeout(function(){gmailHoraArchivo(true);},1500);
+}
+/* inicialización (desde gmailInit): muestra el bloque si el escritorio
+   tiene el servicio, restaura el toggle y escucha el progreso */
+async function gmailHoraInit(){
+  try{
+    if(!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraEstado))return;
+    var st=await window.pdfproDesktop.gmailHoraEstado();
+    _gmailHoraOk=!!(st&&st.ok&&st.disponible);
+    if(!_gmailHoraOk)return;
+    var box=document.getElementById('gmailHoraBox');if(box)box.style.display='block';
+    var c=document.getElementById('gmailHoraAuto');if(c)c.checked=gmailHoraAutoOn();
+    if(window.pdfproDesktop.onGmailHoraEvento){
+      window.pdfproDesktop.onGmailHoraEvento(function(d){
+        if(!d||!d.msg)return;
+        if(d.tipo==='login')toast('🔐 '+d.msg,'warn',12000);
+        else toast('📧 '+d.msg);
+      });
+    }
+  }catch(e){}
 }
 
 /* ── Barrido ── */
@@ -10961,6 +11111,7 @@ async function gmailBarrer(manual){
 }
 function gmailInit(){
   gmailRefreshState();
+  gmailHoraInit(); // v3.1.9 — hora del correo por archivo cargado (escritorio)
   if(_gmailTimer)clearInterval(_gmailTimer);
   _gmailTimer=setInterval(function(){gmailBarrer(false);},5*60*1000); // cada 5 min
 }
@@ -11509,6 +11660,7 @@ async function wordTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
+    try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();
@@ -13213,6 +13365,7 @@ async function excelTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
+    try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();
