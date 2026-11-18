@@ -3,3 +3,12 @@ dist/
 *.log
 .DS_Store
 src/gmail-credentials.json
+
+# v3.1.3 — artefactos y secretos locales
+.env
+.next/
+download/
+scripts/test_checkbox/test_cb.docx
+skills/
+upload/
+next-env.d.ts
