@@ -1,7 +1,34 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.4 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.5 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.5
+────────────────────────────────────────────────────────────────────
+  1. INICIALES DEL OPERADOR — ORDEN «APELLIDOS Y NOMBRES» (MK, NO KM)
+     Se recuperó el fix de la v2.9.20 que se había perdido en la
+     reescritura v3.0.0: si la cuenta guardó el nombre al revés
+     («Koo Paz, Marcos Roberto», «Koo Paz Marcos Roberto»,
+     «Koo Marcos»), las iniciales ahora salen MK igual que con el
+     orden normal («Marcos Roberto Koo Paz» → MK). Regla del
+     usuario: inicial del primer nombre + inicial del primer
+     apellido, siempre 2 letras.
+
+  2. CAMPO «MATRÍCULA (AERONAVE / ESPACIO)» — REGLAS DEL USUARIO
+     El botón ✈ Detectar (y la detección automática al cargar)
+     arma ahora el valor completo del campo según el plan de vuelo:
+     · Tipo de vuelo «S» (casillero 8): ID de vuelo (casillero 7)
+       + matrícula REG/ (casillero 18, sin el prefijo) + iniciales
+       → «JAP7163 CCDII MK».
+     · Otro tipo (matrícula en el casillero 7): matrícula + EOBT
+       (casillero 13 — hora propuesta fuera de calzos, la que
+       acompaña al aeródromo de salida: «SPHI 1100» → 1100) +
+       iniciales → «OB2032 1100 MK». Sin hora detectable:
+       «OB2032 MK».
+     Al guardar/exportar, el archivo se nombra con ese valor SIN
+     duplicar las iniciales («OB2032 1100 MK.pdf», no «… MK MK»).
+     El campo admite ahora 24 caracteres y su texto de ayuda
+     documenta las reglas.
 
 NOVEDADES DE LA VERSIÓN 3.1.4
 ────────────────────────────────────────────────────────────────────

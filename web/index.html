@@ -758,7 +758,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.4 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido) · matrícula por OCR · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.5 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · matrícula por OCR · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1311,10 +1311,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
           <div style="margin-bottom:10px">
             <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Matrícula (Aeronave / Espacio)</label>
             <div style="display:flex;gap:5px">
-              <input class="f-input" id="selloMatricula" maxlength="12" placeholder="EJ: OB2147" style="flex:1;font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
+              <input class="f-input" id="selloMatricula" maxlength="24" placeholder="EJ: OB2032 1100 MK" style="flex:1;font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
               <button class="btn btn-sm" style="font-size:10px;padding:4px 8px;flex-shrink:0" onclick="matriculaDetectarManual()" title="Busca la matrícula en el documento cargado (texto del PDF + OCR de la 1.ª página) y la llena aquí">✈ Detectar</button>
             </div>
-            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al guardar o exportar, el archivo se nombra <strong style="color:var(--acc)">MATRÍCULA&nbsp;INICIALES</strong> (ej. OB2147 MK). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; en la web se descarga con ese nombre.</div>
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al guardar o exportar, el archivo se nombra con este campo (ej. <strong style="color:var(--acc)">OB2032 1100 MK</strong>). <strong>✈ Detectar</strong> arma el valor solo: <strong>tipo de vuelo S</strong> → ID de vuelo (casillero 7) + matrícula REG/ (casillero 18) + iniciales (<strong>JAP7163 CCDII MK</strong>); <strong>otro tipo</strong> → matrícula (casillero 7) + EOBT (hora propuesta fuera de calzos, casillero 13) + iniciales (<strong>OB2032 1100 MK</strong>). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; en la web se descarga con ese nombre.</div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -1662,7 +1662,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
       </div>
       <div>
         <label class="f-label" style="font-size:10px;margin-bottom:2px">Matrícula</label>
-        <input class="f-input" id="mobSelloMatricula" maxlength="12" placeholder="EJ: OB2147" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');mobSelloSync(true)">
+        <input class="f-input" id="mobSelloMatricula" maxlength="24" placeholder="EJ: OB2032 1100 MK" style="font-size:13px;padding:9px 8px;font-family:JetBrains Mono,monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');mobSelloSync(true)">
       </div>
     </div>
     <div id="mobSelloPreview" style="text-align:center;border:1.5px solid rgba(192,0,0,.45);border-radius:8px;padding:9px 8px;margin:9px 0;background:rgba(255,255,255,.04)"></div>
@@ -4828,6 +4828,94 @@ function extraerMatricula(texto,nombreArchivo){
   if(m){var c9=setCand(m[1]);if(c9)return c9;}
   return '';
 }
+/* ══ v3.1.5 — CAMPOS DEL PLAN DE VUELO (casilleros 7, 8, 13 y 18) ══
+   Reglas del usuario para el valor del campo «Matrícula (Aeronave /
+   Espacio)» y el nombre del archivo al guardar/exportar:
+   · Tipo de vuelo «S» (casillero 8): IDENTIFICACIÓN de vuelo (casillero 7)
+     + matrícula de REG/ (casillero 18, sin el prefijo) + iniciales →
+     «JAP7163 CCDII MK».
+   · Resto de vuelos (la matrícula está en el casillero 7): casillero 7 +
+     EOBT (casillero 13 — hora propuesta fuera de calzos, la que acompaña
+     al aeródromo de salida: «SPHI 1100» → 1100) + iniciales →
+     «OB2032 1100 MK». Sin hora detectable se omite: «OB2032 MK». */
+function fplExtraerCampos(texto){
+  var t=_deSpaceIcao(String(texto||'').toUpperCase());
+  var r={c7:'',tipoS:false,reg:'',eoibt:''};
+  var m,i;
+  // ── casillero 18: matrícula REG/… (sin el prefijo) ──
+  var reREG=/\bREG\/([A-Z0-9]{2}-?[A-Z0-9]{1,6})\b/g;
+  while((m=reREG.exec(t))){
+    var rc=m[1].replace(/[^A-Z0-9\-]/g,'');
+    // REG/ da contexto propio: basta alfanumérico de 4-8 que no sea un
+    // rótulo (REG/CCDII es alfabético puro y no pasa _esMatriculaValida)
+    if(rc.length>=4&&rc.length<=8&&!MATRICULA_BLACKLIST[rc]&&!MATRICULA_BLACKLIST[rc.replace(/-/g,'')]){r.reg=_fixOcrLetters(rc);break;}
+  }
+  // ── casillero 8: reglas + tipo de vuelo. AFTN: «(FPL-JAP7163-IS-…»;
+  //    formularios DGAC/ICAO: «TIPO DE VUELO: S» ──
+  m=t.match(/\(\s*FPL\s*[-–]\s*[A-Z0-9]{2,8}\s*[-–]\s*([A-Z]{1,3})(?=[-–\s]|$)/)
+   ||t.match(/\bFPL\s*[-–]\s*[A-Z0-9]{2,8}\s*[-–]\s*([A-Z]{1,3})(?=[-–\s]|$)/);
+  if(m){var c8=m[1];r.tipoS=(c8==='S')||(/^[IVYZ]{1,2}S$/.test(c8));}
+  if(!r.tipoS){
+    m=t.match(/(?:TIPO\s+DE\s+VUELO|TYPE\s+OF\s+FLIGHT|FLIGHT\s+TYPE)[^\nA-Z0-9]*\b([SNGMX])\b/);
+    if(m)r.tipoS=(m[1]==='S');
+  }
+  // ── casillero 13: EOBT (hora propuesta fuera de calzos). Etiquetada
+  //    (formularios: «AERÓDROMO DE SALIDA: SPHI 1100», «EOBT: 1100») o el
+  //    PRIMER «AAAA hhhh» del mensaje AFTN (el 1.º es la salida; el que
+  //    sigue, el destino, se ignora) ──
+  m=t.match(/(?:AER[OÓ]DROMO\s+DE\s+SALIDA|DEPARTURE\s+AERODROME|AERODROME\s+OF\s+DEPARTURE)[^\n]{0,30}?([A-Z]{4})\s+(\d{4})/)
+   ||t.match(/\bEOBT[:\s]*(\d{4})/)
+   ||t.match(/FUERA\s+DE\s+CALZOS[:\s]*(\d{4})/);
+  if(m)r.eoibt=m[2]||m[1]||'';
+  if(!r.eoibt){
+    m=t.match(/(?:^|[-–\s])([A-Z]{4})\s+(\d{4})(?=[-–\s]|$)/);
+    if(m)r.eoibt=m[2];
+  }
+  // ── casillero 7: identificación de vuelo / matrícula ──
+  var pats7=[
+    /\(\s*FPL\s*[-–]\s*([A-Z0-9]{2,8})\s*[-–]/,
+    /\bFPL\s*[-–]\s*([A-Z0-9]{2,8})\s*[-–]/,
+    /IDENTIFICACI[OÓ]N\s+DE\s+VUELO[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
+    /ID\s+DE\s+VUELO[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
+    /AIRCRAFT\s+IDENTIFICATION[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
+    /IDENTIFICACI[OÓ]N\s+DE\s+AERONAVE[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
+    /REGISTRO\s+DE\s+(?:LA\s+)?MATR[IÍ]CULA[:\s]*([A-Z0-9]{1,2}[\-]?[A-Z0-9]{2,6})/,
+    /INDICATIVO\s+DE\s+LLAMADA[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
+    /CALLSIGN[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/
+  ];
+  for(i=0;i<pats7.length;i++){
+    m=t.match(pats7[i]);
+    if(m){
+      var c7c=m[1].replace(/[\s\/\.]/g,'');
+      if(_esMatriculaValida(c7c)){r.c7=_fixOcrLetters(c7c);break;}
+    }
+  }
+  return r;
+}
+/* v3.1.5 — compone el valor del campo «Matrícula (Aeronave / Espacio)»
+   según las reglas del usuario (ver fplExtraerCampos). */
+function fplComponerRegistro(fpl){
+  if(!fpl)return '';
+  var ini=fplInicialesOperador();
+  var partes;
+  if(fpl.tipoS&&fpl.c7&&fpl.reg){
+    partes=[fpl.c7,fpl.reg];                            // tipo S → c7 + REG/
+  }else if(fpl.c7){
+    partes=[fpl.c7];if(fpl.eoibt)partes.push(fpl.eoibt); // c7 + EOBT
+  }else if(fpl.reg){
+    partes=[fpl.reg];if(fpl.eoibt)partes.push(fpl.eoibt);
+  }else return '';
+  if(ini)partes.push(ini);
+  return partes.join(' ');
+}
+/* v3.1.5 — llena el campo «Matrícula (Aeronave / Espacio)» (escritorio y
+   móvil) y guarda la sesión. */
+function _fplSetMatricula(v){
+  var el=document.getElementById('selloMatricula');
+  if(el&&(!el.value||el.value!==v)){el.value=v;fplMatriculaChanged();}
+  var mel=document.getElementById('mobSelloMatricula');
+  if(mel)mel.value=v;
+}
 /* v3.1.0 — Detección MANUAL de matrícula (botón «✈ Detectar» de la ficha del
    sello): reúne todo el texto disponible (texto embebido del PDF + último OCR)
    y si no hay nada, fuerza un OCR de la 1.ª página (PDF escaneado) o usa la
@@ -4872,12 +4960,14 @@ async function matriculaDetectarManual(){
 function ocrExtraerMatricula(ocrTexto){
   var nombre='';
   try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
-  var mat=extraerMatricula(ocrTexto||window._ocrText||'',nombre);
+  var txt=ocrTexto||window._ocrText||'';
+  // v3.1.5 — reglas del usuario: componer el campo según el plan de vuelo
+  // (tipo S → c7 + REG/ + iniciales · resto → c7 + EOBT + iniciales)
+  var comp=fplComponerRegistro(fplExtraerCampos(txt));
+  if(comp){_fplSetMatricula(comp);toast('✈ Matrícula detectada: '+comp,'ok');return;}
+  var mat=extraerMatricula(txt,nombre);
   if(!mat)return;
-  var el=document.getElementById('selloMatricula');
-  if(el&&(!el.value||el.value!==mat)){el.value=mat;fplMatriculaChanged();}
-  var mel=document.getElementById('mobSelloMatricula');
-  if(mel)mel.value=mat;
+  _fplSetMatricula(mat);
   toast('✈ Matrícula detectada: '+mat,'ok');
 }
 function ocrCopy(){
@@ -9001,7 +9091,7 @@ async function autoOcrMatricula(){
     if(joined.replace(/\s/g,'').length>=12){
       var nombre='';
       try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
-      var m=extraerMatricula(joined,fileName||nombre);
+      var m=fplComponerRegistro(fplExtraerCampos(joined))||extraerMatricula(joined,fileName||nombre);
       if(m){
         var el=document.getElementById('selloMatricula');
         if(el&&!el.value){el.value=m;fplMatriculaChanged();}
@@ -10837,27 +10927,43 @@ function inicialesDeNombre(fullName){
     return {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','Ü':'U'}[c]||'';
   });
 }
-/* v3.0.0 — respeta también los apellidos compuestos con "de/del/la/las/los/van":
-   «Pedro de la Cruz Villa» → apellido paterno Cruz → PC. */
+/* v3.1.5 — ORDEN «APELLIDOS Y NOMBRES» (recupera el fix v2.9.20, perdido en
+   la reescritura v3.0.0): la ficha guarda el nombre completo como «Apellidos
+   y Nombres», así que hay que detectar el orden y voltearlo antes de tomar
+   las iniciales:
+   · «Koo Paz, Marcos Roberto» (con coma)   → MK
+   · «Koo Paz Marcos Roberto» (sin coma)    → MK (un nombre de pila donde
+     iría el apellido delata el orden)
+   · «Koo Marcos»                            → MK
+   El orden normal sigue igual: «Marcos Roberto Koo Paz» → MK, y los
+   apellidos compuestos: «Pedro de la Cruz Villa» → PC. */
 function inicialesDeNombreSmart(fullName){
-  var t=String(fullName||'').trim().split(/\s+/).filter(Boolean);
-  if(!t.length)return '';
-  var PARTICULAS={'de':1,'del':1,'la':1,'las':1,'los':1,'van':1,'von':1,'da':1,'di':1,'mc':1,"o'":1};
-  // busca el primer apellido: primera palabra que NO es partícula y NO es
-  // un segundo nombre típico tras ya tener un nombre… en la práctica: la
-  // primera palabra de la zona de apellidos (las últimas 2 palabras).
-  if(t.length>=3){
-    // la zona de apellidos son las 2 últimas palabras; si la penúltima es
-    // partícula o la última empieza por partícula, retrocede una palabra
-    var i=t.length-2;
-    if(PARTICULAS[t[i].toLowerCase()])i=t.length-3;
-    if(i>0){
-      var prim=t[0].charAt(0).toUpperCase();
-      var ap=t[i].charAt(0).toUpperCase();
-      return normIni(prim+ap);
-    }
+  var n=String(fullName||'').trim();
+  if(!n)return '';
+  var ci=n.indexOf(',');
+  if(ci!==-1)n=n.slice(ci+1).trim()+' '+n.slice(0,ci).replace(/,/g,'').trim();
+  var w=n.replace(/,/g,' ').split(/\s+/).filter(Boolean);
+  while(w.length&&/\.$/.test(w[0]))w.shift(); // títulos: «Sr.», «Ing.»…
+  if(!w.length)return '';
+  if(w.length===1)return normIni(w[0].charAt(0));
+  var _p=/^(de|del|la|las|los|van|von|da|di|mc)$/i,_san=/^(san|santa|santo)$/i;
+  var _s=/^(maria|jose|juan|luis|ana|rosa|carmen|elena|isabel|cristina|sofia|carlos|alberto|jorge|miguel|fernando|andres|jesus|javier|victor|roberto|dave|david|daniel|michelle|melciades|melquiades|frank|kevin|william|cesar|hugo|walter|omar|nelson|roger|ronald|pilar|rocio|marcos|ruswel|jacqueline|francessca|francesca)$/;
+  var ti=function(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+  var d=function(x){return _s.test(ti(x));};
+  var a=0,b=1; // a = índice del primer nombre · b = índice del apellido paterno
+  if(w.length===2){ if(!d(w[0])&&d(w[1])){a=1;b=0;} }                 // «Koo Marcos» → MK
+  else if(w.length===3){
+    if(!d(w[0])&&!d(w[1])&&d(w[2])){a=2;b=0;}                         // «Koo Paz Marcos» → MK
+    else if(!d(w[0])&&d(w[1])&&d(w[2])){a=1;b=0;}                     // «Koo Marcos Roberto» → MK
+    else if(_p.test(w[1])||d(w[1]))b=2;                               // «Ana María Torres» → AT
+    // else b=1                                                        // «José Ramírez Díaz» → JR
+  } else {
+    if(_san.test(w[1]))b=1;                                           // «Juan San Martín» → JS
+    else if(_p.test(w[1])){b=1;while(b<w.length-1&&(_p.test(w[b])||d(w[b])))b++;} // «María del Carmen Rojas» → MR
+    else if(!d(w[0])&&!d(w[1])&&d(w[2])){a=2;b=0;}                    // «Koo Paz Marcos Roberto» → MK
+    else b=2;                                                         // «Marcos Roberto Koo Paz» → MK
   }
-  return inicialesDeNombre(fullName);
+  return normIni(w[a].charAt(0)+w[b].charAt(0));
 }
 function normIni(s){return String(s||'').replace(/[^A-Za-z]/g,function(c){return {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','Ü':'U','á':'A','é':'E','í':'I','ó':'O','ú':'U','ñ':'N','ü':'U'}[c]||'';}).toUpperCase().replace(/[^A-Z]/g,'');}
 /* v3.1.1 — cinturón de seguridad central: TODAS las iniciales que entran al
@@ -10899,7 +11005,10 @@ function fplNombreRegistro(name){
   if(!m)return name; // sin matrícula → se mantiene el nombre original
   var ini=fplInicialesOperador();
   var ext=(String(name).match(/\.([A-Za-z0-9]{1,6})$/)||[])[1]||'';
-  var base=(m+(ini?' '+ini:'')).replace(/\s+/g,' ').trim();
+  // v3.1.5 — la detección de matrícula ya deja las iniciales al final del
+  // campo («OB2032 1100 MK» / «JAP7163 CCDII MK»): no se duplican
+  var ya=!!(ini&&new RegExp('(?:^|\\s)'+ini+'$').test(m));
+  var base=(m+((ini&&!ya)?' '+ini:'')).replace(/\s+/g,' ').trim();
   return base+(ext?'.'+ext:'');
 }
 async function dlBlob(blob,name){
