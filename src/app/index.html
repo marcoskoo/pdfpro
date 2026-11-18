@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.6 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · matrícula por OCR · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios CORPAC impresos: casillas reconstruidas por geometría (el texto interno llega revuelto) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.7 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios CORPAC impresos: casillas reconstruidas por geometría (el texto interno llega revuelto) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1317,9 +1317,8 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Matrícula (Aeronave / Espacio)</label>
             <div style="display:flex;gap:5px">
               <input class="f-input" id="selloMatricula" maxlength="24" placeholder="EJ: OB2032 1100 MK" style="flex:1;font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
-              <button class="btn btn-sm" style="font-size:10px;padding:4px 8px;flex-shrink:0" onclick="matriculaDetectarManual()" title="Busca la matrícula en el documento cargado (texto del PDF + OCR de la 1.ª página) y la llena aquí">✈ Detectar</button>
             </div>
-            <div style="font-size:9.5px;color:var(--t3);margin-top:3px;position:relative">Al guardar o exportar, el archivo se nombra con este campo (ej. <strong style="color:var(--acc)">OB2032 1100 MK</strong>) · <span class="tipr" tabindex="0">ⓘ reglas de armado<span class="tipr-b"><strong>✈ Detectar</strong> arma el valor solo:<br>· <strong>Tipo de vuelo S</strong> → ID de vuelo (casillero 7) + matrícula REG/ (casillero 18, sin prefijo) + iniciales: <strong style="color:var(--acc)">JAP7163 CCDII MK</strong><br>· <strong>Otro tipo</strong> → matrícula (casillero 7) + EOBT (hora propuesta fuera de calzos del casillero 13, la que acompaña al aeródromo de salida: «SPHI 1100» → 1100) + iniciales: <strong style="color:var(--acc)">OB2032 1100 MK</strong><br>· Sin hora detectable se omite: «OB2032 MK». Las iniciales nunca se duplican al guardar.<br>Escritorio: se archiva en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; web: se descarga con ese nombre.</span></span></div>
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px;position:relative">Al guardar o exportar, el archivo se nombra con este campo (ej. <strong style="color:var(--acc)">OB2032 1100 MK</strong>) · <span class="tipr" tabindex="0">ⓘ reglas de armado<span class="tipr-b"><strong>La detección es automática</strong> al cargar el documento (PDF, imagen, Word, Excel) y arma el valor solo:<br>· <strong>Tipo de vuelo S</strong> → ID de vuelo (casillero 7) + matrícula REG/ (casillero 18, sin prefijo) + iniciales: <strong style="color:var(--acc)">JAP7163 CCDII MK</strong><br>· <strong>Otro tipo</strong> → matrícula (casillero 7) + EOBT (hora propuesta fuera de calzos del casillero 13, la que acompaña al aeródromo de salida: «SPHI 1100» → 1100) + iniciales: <strong style="color:var(--acc)">OB2032 1100 MK</strong><br>· Sin hora detectable se omite: «OB2032 MK». Las iniciales nunca se duplican al guardar.<br>Escritorio: se archiva en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; web: se descarga con ese nombre.</span></span></div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -5159,44 +5158,18 @@ function _fplSetMatricula(v){
   var mel=document.getElementById('mobSelloMatricula');
   if(mel)mel.value=v;
 }
-/* v3.1.0 — Detección MANUAL de matrícula (botón «✈ Detectar» de la ficha del
-   sello): reúne todo el texto disponible (texto embebido del PDF + último OCR)
-   y si no hay nada, fuerza un OCR de la 1.ª página (PDF escaneado) o usa la
-   imagen cargada directamente. También rebusca en el nombre del archivo. */
-async function matriculaDetectarManual(){
-  var nombre='';
-  try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
-  var toast_=(function(){toast('Buscando matrícula en el documento…','warn');})();
-  var texto='';
-  // 1) texto embebido del PDF
-  try{for(var i=0;i<pageCount&&i<10;i++){texto+=(pageTexts[i]||'')+'\n';}}catch(e){}
-  // 2) último OCR disponible
-  if(window._ocrText)texto+='\n'+window._ocrText;
-  // 3) nombre del archivo siempre
-  var mat=extraerMatricula(texto,nombre||fileName||'');
-  if(mat){ocrExtraerMatricula(texto);return;}
-  // 4) PDF escaneado sin texto → OCR de la 1.ª página
-  if(typeof pdfDoc!=='undefined'&&pdfDoc&&window.Tesseract){
-    try{
-      var pg=await pdfDoc.getPage(1);
-      var vp=pg.getViewport({scale:2});
-      var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
-      await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
-      var res=await Tesseract.recognize(cv.toDataURL('image/png'),'spa',{});
-      var txt=((res.data&&res.data.text)||'').trim();
-      if(txt){window._ocrText=txt;ocrExtraerMatricula(txt);return;}
-    }catch(e){}
-  }
-  // 5) imagen suelta cargada (jpg/png): la pestaña actual renderiza una imagen
+/* v3.1.7 — el botón «✈ Detectar» se retiró: la detección de la matrícula
+   es AUTOMÁTICA al cargar cualquier documento —
+   · PDF con texto o escaneado → autoOcrMatricula (al terminar loadPDF)
+   · imagen suelta (jpg/png)    → OCR en imgTabOpen (v3.0.0)
+   · Word/Excel nativos         → nvAutoMatricula sobre el texto visible
+   Si no se encuentra matrícula el campo no se toca (queda lo manual). */
+function nvAutoMatricula(tab){
   try{
-    var im=document.querySelector('#pagesBox img');
-    if(im&&im.src){
-      var res2=await Tesseract.recognize(im.src,'spa',{});
-      var txt2=((res2.data&&res2.data.text)||'').trim();
-      if(txt2){window._ocrText=txt2;ocrExtraerMatricula(txt2);return;}
-    }
+    var txt=String((tab&&tab.nvEl&&tab.nvEl.innerText)||'');
+    if(txt.replace(/\s/g,'').length<12)return;
+    ocrExtraerMatricula(txt);
   }catch(e){}
-  toast('No se encontró matrícula: escríbela manualmente (ej. OB2147)','err',6000);
 }
 /* Ejecuta el extractor sobre el último texto OCR y llena el campo
    «Matrícula (Aeronave / Espacio)» de la ficha del sello (escritorio y móvil). */
@@ -9336,14 +9309,10 @@ async function autoOcrMatricula(){
       var nombre='';
       try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
       var m=fplComponerRegistro(fplExtraerCampos(joined,_fplItemsPagina(),fileName||nombre))||extraerMatricula(joined,fileName||nombre);
-      if(m){
-        var el=document.getElementById('selloMatricula');
-        if(el&&!el.value){el.value=m;fplMatriculaChanged();}
-        var mel=document.getElementById('mobSelloMatricula');
-        if(mel&&!mel.value)mel.value=m;
-        toast('✈ Matrícula detectada: '+m,'ok');
-        return;
-      }
+      // v3.1.7 — sin botón: la detección es automática y SIEMPRE refleja el
+      // documento recién cargado (sobrescribe el valor del documento
+      // anterior; si no se encuentra matrícula no toca lo escrito a mano)
+      if(m){_fplSetMatricula(m);toast('✈ Matrícula detectada: '+m,'ok');return;}
     }
   }catch(e){}
   // 2) OCR de la primera página (documento escaneado)
@@ -11539,6 +11508,7 @@ async function wordTabOpen(ab, base){
     wrap.addEventListener('input',function(){ nvMarkDirty(tab); });
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
+    nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
     return true;
   }catch(e){
     hideProg();
@@ -13242,6 +13212,7 @@ async function excelTabOpen(ab, base){
     xlRenderSheet(tab, 0);
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
+    nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
     return true;
   }catch(e){
     hideProg();

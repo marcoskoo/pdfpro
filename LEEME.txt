@@ -1,7 +1,23 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.6 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.7 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.7
+────────────────────────────────────────────────────────────────────
+  1. DETECCIÓN DE LA MATRÍCULA 100% AUTOMÁTICA — SE RETIRÓ EL BOTÓN
+     «✈ Detectar» dejó de existir: ahora el campo «Matrícula (Aeronave /
+     Espacio)» se llena solo al cargar CUALQUIER documento:
+     · PDF con texto → análisis instantáneo de todas las páginas
+     · PDF escaneado → OCR automático de la 1.ª página
+     · Imagen suelta (jpg/png) → OCR de la foto
+     · Word y Excel nativos → análisis del texto visible
+     Además la detección ahora SOBRESCRIBE: si cargas otro FPL, el
+     campo refleja el nuevo documento (antes solo llenaba si estaba
+     vacío y el valor del anterior se quedaba pegado). Si el documento
+     no tiene matrícula, no toca lo que hayas escrito a mano.
+     Las reglas de armado siguen en «ⓘ reglas de armado» (al pasar el
+     mouse bajo el campo).
 
 NOVEDADES DE LA VERSIÓN 3.1.6
 ────────────────────────────────────────────────────────────────────
