@@ -1,7 +1,22 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.9 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.0 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.0
+────────────────────────────────────────────────────────────────────
+  1. HORA DEL CORREO 100% AUTOMÁTICA, SIN BOTÓN. Se retiró el botón
+     «🕐 Hora del correo del archivo cargado» y su casilla «Automático
+     al cargar»: ahora la búsqueda en Gmail se hace sola cada vez que
+     carga un documento, sin pasos intermedios. Si el archivo no vino
+     por correo, o ya hay una hora escrita a mano, no pasa nada
+     (silencioso, no molesta al operador).
+  2. INICIO DE SESIÓN DE GMAIL DENTRO DE LA APP. Antes, la primera vez
+     se abría una ventana aparte de Chrome para iniciar sesión. Ahora
+     Gmail se abre DENTRO de la propia aplicación (ventana hija): usted
+     inicia sesión ahí — una sola vez — y la sesión se transfiere
+     automáticamente al buscador invisible. Solo ocurre la primera vez;
+     después ya no vuelve a pedir sesión.
 
 NOVEDADES DE LA VERSIÓN 3.1.9
 ────────────────────────────────────────────────────────────────────

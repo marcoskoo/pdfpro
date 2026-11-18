@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.9 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado (Gmail asistido, sin OAuth) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.0 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1286,14 +1286,9 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             </div>
           </div>
           <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px" onclick="gmailBarrer(true)">🔄 Barrer ahora (últimos 7 días)</button>
-          <!-- v3.1.9 — hora del correo POR ARCHIVO CARGADO (Gmail asistido,
-               solo escritorio: Playwright + perfil de Chrome persistente) -->
-          <div id="gmailHoraBox" style="display:none;margin-bottom:6px">
-            <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:4px;border-color:rgba(79,142,247,.35);color:var(--acc)" onclick="gmailHoraArchivo(false)">🕐 Hora del correo del archivo cargado</button>
-            <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3);cursor:pointer;margin:0 0 6px">
-              <input type="checkbox" id="gmailHoraAuto" checked onchange="gmailHoraAutoSave()"> Automático al cargar el documento
-            </label>
-          </div>
+          <!-- v3.2.0 — la hora del correo POR ARCHIVO CARGADO es 100%
+               automática al cargar el documento (sin botón; si Gmail pide
+               sesión, la ventana de login se abre dentro de la app) -->
           <div id="gmailList" style="max-height:220px;overflow-y:auto;font-size:10.5px"></div>
         </div>
         <div class="sello-panel">
@@ -9369,7 +9364,7 @@ async function loadPDF(file){
   // detectar la matrícula (Aeronave/Espacio) y llenar la ficha del sello.
   // Si el PDF ya tiene texto embebido (no escaneado) se usa ese texto directo.
   try{autoOcrMatricula();}catch(e){console.warn('autoOcr',e);}
-  try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
+  try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
 }
 
 /* v3.0.0 — detección automática de matrícula al cargar:
@@ -10988,66 +10983,46 @@ function gmailUsarHora(idx){
   gmailAplicarHora(m.recibidoMs,'correo «'+(m.asunto||'')+'»');
 }
 
-/* ── v3.1.9 — HORA DEL CORREO POR ARCHIVO CARGADO (Gmail asistido) ──
-   En el escritorio, Playwright abre Gmail con un perfil de Chrome
-   persistente (login UNA vez; luego todo headless) y busca el correo por
-   el nombre del archivo del documento cargado. Sin OAuth, sin credenciales. */
+/* ── v3.2.0 — HORA DEL CORREO POR ARCHIVO CARGADO (Gmail asistido) ──
+   100% automática al cargar un documento, sin botón: Playwright abre Gmail
+   de forma invisible (perfil de Chrome persistente) y busca el correo por
+   el nombre del archivo cargado. Sin OAuth, sin credenciales. Si Gmail pide
+   sesión, la ventana de login se abre DENTRO de la app (una sola vez). */
 var _gmailHoraOk=false,_gmailHoraT=null;
 function gmailHoraPuede(){return !!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraBuscar&&_gmailHoraOk);}
-function gmailHoraAutoSave(){
-  var c=document.getElementById('gmailHoraAuto');
-  try{localStorage.setItem('pdfpro_gmail_hora_auto',c&&c.checked?'1':'0');}catch(e){}
-}
-function gmailHoraAutoOn(){
-  try{return localStorage.getItem('pdfpro_gmail_hora_auto')!=='0';}catch(e){return true;}
-}
-/* consulta la hora del correo del archivo cargado (auto=true: silenciosa,
-   solo si el campo «Hora Recepción» está vacío) */
-async function gmailHoraArchivo(auto){
+/* consulta la hora del correo del archivo cargado — automática y
+   silenciosa; solo llena si «Hora Recepción» está vacío (no pisa lo
+   escrito a mano) y avisa con toast al aplicarla */
+async function gmailHoraArchivo(){
   if(!gmailHoraPuede())return;
   var nombre='';
   try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
   if(!nombre)nombre=fileName||'';
-  if(!nombre){if(!auto)toast('Carga primero un documento','warn');return;}
-  if(auto){
-    var t=document.getElementById('selloRxTime');
-    if(t&&t.value)return;               // ya hay hora: no se toca
-  }
+  if(!nombre)return;
+  var t=document.getElementById('selloRxTime');
+  if(t&&t.value)return;                     // ya hay hora: no se toca
   try{
     var r=await window.pdfproDesktop.gmailHoraBuscar(nombre);
-    if(!r||!r.ok){
-      if(auto)return;                    // automático: silencioso
-      if(r&&r.tipo==='ArchivoNoEncontradoError')toast('No se encontró ningún correo con el archivo «'+nombre+'»','warn',8000);
-      else if(r&&r.tipo==='LoginRequeridoError')toast('No se inició sesión en Gmail a tiempo; pulsa el botón de nuevo','err',9000);
-      else toast('No se pudo obtener la hora: '+((r&&r.error)||'error'),'err',9000);
-      return;
-    }
-    if(!r.recibidoMs){
-      if(!auto)toast('Hora leída pero no interpretable: «'+r.horaRecepcion+'» — repórtala para ajustar el parser','warn',9000);
-      return;
-    }
+    if(!r||!r.ok)return;                    // sin correo / sin sesión: silencioso
+    if(!r.recibidoMs)return;                // hora no interpretable: no se inventa
     gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'));
-  }catch(e){
-    if(!auto)toast('Error: '+e.message,'err');
-  }
+  }catch(e){/* automático: los fallos no molestan al operador */}
 }
 /* enganche tras cargar un documento (con retardo: deja pasar antes la
    detección de matrícula) */
 function gmailHoraAuto(){
-  if(!gmailHoraPuede()||!gmailHoraAutoOn())return;
+  if(!gmailHoraPuede())return;
   if(_gmailHoraT)clearTimeout(_gmailHoraT);
-  _gmailHoraT=setTimeout(function(){gmailHoraArchivo(true);},1500);
+  _gmailHoraT=setTimeout(gmailHoraArchivo,1500);
 }
-/* inicialización (desde gmailInit): muestra el bloque si el escritorio
-   tiene el servicio, restaura el toggle y escucha el progreso */
+/* inicialización (desde gmailInit): comprueba que el escritorio tenga el
+   servicio y escucha el progreso (búsqueda, login dentro de la app…) */
 async function gmailHoraInit(){
   try{
     if(!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraEstado))return;
     var st=await window.pdfproDesktop.gmailHoraEstado();
     _gmailHoraOk=!!(st&&st.ok&&st.disponible);
     if(!_gmailHoraOk)return;
-    var box=document.getElementById('gmailHoraBox');if(box)box.style.display='block';
-    var c=document.getElementById('gmailHoraAuto');if(c)c.checked=gmailHoraAutoOn();
     if(window.pdfproDesktop.onGmailHoraEvento){
       window.pdfproDesktop.onGmailHoraEvento(function(d){
         if(!d||!d.msg)return;
@@ -11111,7 +11086,7 @@ async function gmailBarrer(manual){
 }
 function gmailInit(){
   gmailRefreshState();
-  gmailHoraInit(); // v3.1.9 — hora del correo por archivo cargado (escritorio)
+  gmailHoraInit(); // v3.2.0 — hora del correo por archivo cargado (escritorio)
   if(_gmailTimer)clearInterval(_gmailTimer);
   _gmailTimer=setInterval(function(){gmailBarrer(false);},5*60*1000); // cada 5 min
 }
@@ -11660,7 +11635,7 @@ async function wordTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Word: edita el texto y guarda sin distorsión de formato','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
-    try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
+    try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();
@@ -13365,7 +13340,7 @@ async function excelTabOpen(ab, base){
     setProg(100);setTimeout(hideProg,500);
     toast('✅ '+base+' — modo Excel: edita las celdas y guarda en el formato original','ok');
     nvAutoMatricula(tab); // v3.1.7 — detección automática, sin botón
-    try{gmailHoraAuto();}catch(e){} // v3.1.9 — hora del correo por archivo
+    try{gmailHoraAuto();}catch(e){} // v3.2.0 — hora del correo por archivo
     return true;
   }catch(e){
     hideProg();

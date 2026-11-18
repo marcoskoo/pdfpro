@@ -557,28 +557,99 @@ ipcMain.handle('gmail:perfil', async () => {
   }
 });
 
-/* ── v3.1.9 — HORA DE RECEPCIÓN POR ARCHIVO CARGADO (Gmail asistido) ──
+/* ── v3.2.0 — HORA DE RECEPCIÓN POR ARCHIVO CARGADO (Gmail asistido) ──
    Alternativa al OAuth (funciona sin credenciales): Playwright abre Gmail
-   con un perfil de Chrome persistente (login UNA vez, luego headless) y
-   busca el correo por el nombre del archivo adjunto del documento cargado.
+   de forma INVISIBLE con un perfil de Chrome persistente y busca el correo
+   por el nombre del archivo adjunto del documento cargado (100% automático
+   al cargar; sin botón).
      gmail-hora:estado  → {ok, disponible} (¿está Playwright instalado?)
      gmail-hora:buscar → {ok, horaRecepcion, recibidoMs (epoch, zona Lima),
                           recibidoUTC, fuente, asunto, remitente, …}
+   LOGIN DENTRO DE LA APP: si Gmail pide sesión, se abre una ventana HIJA de
+   la propia app con mail.google.com (partición persistente), el usuario
+   inicia sesión ahí, se cosechan las cookies de google.com y se transfieren
+   al navegador invisible; luego se reintenta la búsqueda. Solo ocurre la
+   primera vez (la sesión queda en ambos perfiles).
    El progreso llega por el evento 'gmail-hora:evento' {msg, tipo}
-   (tipo 'login' = hay que iniciar sesión en la ventana abierta). */
+   (tipo 'login' = ventana de inicio de sesión abierta). */
 let _gmailHoraSvc = null;
+let _gmailHoraLoginWin = null;
 function gmailHoraEvento(msg, tipo) {
   try {
     if (win && !win.isDestroyed()) win.webContents.send('gmail-hora:evento', { msg, tipo: tipo || 'info' });
   } catch (e) { /* ventana cerrada */ }
 }
+
+/** Abre Gmail DENTRO de la app para iniciar sesión (ventana hija, sesión
+    propia persistente 'gmail-login'). Resuelve con las cookies de
+    google.com cuando el correo queda abierto, null si se cancela. */
+function abrirLoginGmailEnApp() {
+  return new Promise((resolve) => {
+    if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) {
+      _gmailHoraLoginWin.focus();
+      resolve(null); // ya hay un login en curso
+      return;
+    }
+    const { session: ses } = require('electron');
+    const particion = ses.fromPartition('persist:gmail-login');
+    _gmailHoraLoginWin = new BrowserWindow({
+      width: 1100, height: 780, show: false,
+      title: 'Iniciar sesión en Gmail — una sola vez',
+      autoHideMenuBar: true, backgroundColor: '#ffffff',
+      parent: win || undefined,
+      webPreferences: {
+        contextIsolation: true, nodeIntegration: false, sandbox: true,
+        partition: 'persist:gmail-login'
+      }
+    });
+    let resuelto = false;
+    const finalizar = async (ok) => {
+      if (resuelto) return;
+      resuelto = true;
+      clearInterval(poll);
+      clearTimeout(limite);
+      if (!ok) { resolve(null); return; }
+      try {
+        /* cosecha las cookies de la sesión con la que se inició sesión */
+        const todas = await particion.cookies.getAll({});
+        const cookies = todas.filter((c) => {
+          const dom = String(c.domain || '').replace(/^\./, '');
+          return /(^|\.)google\.com$/.test(dom);
+        });
+        resolve(cookies);
+      } catch (e) { resolve(null); }
+    };
+    /* ¿ya con sesión? mail.google.com carga directo; si redirige a
+       accounts.google.com hay que iniciar sesión (URL vuelve a mail… al
+       terminar). Se sondea la URL: robusto y sin tocar la página. */
+    const enGmail = () => {
+      try {
+        const u = _gmailHoraLoginWin.webContents.getURL();
+        return /^https:\/\/mail\.google\.com\//.test(u);
+      } catch (e) { return false; }
+    };
+    const poll = setInterval(() => {
+      if (!_gmailHoraLoginWin || _gmailHoraLoginWin.isDestroyed()) return;
+      if (enGmail()) {
+        /* pequeño margen para que se asienten las cookies de la sesión */
+        setTimeout(() => finalizar(true), 1500);
+      }
+    }, 1000);
+    const limite = setTimeout(() => finalizar(false), 5 * 60 * 1000);
+    _gmailHoraLoginWin.on('closed', () => { _gmailHoraLoginWin = null; finalizar(false); });
+    _gmailHoraLoginWin.once('ready-to-show', () => _gmailHoraLoginWin.show());
+    _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch(() => finalizar(false));
+  });
+}
+
 ipcMain.handle('gmail-hora:estado', () => {
   const d = GmailHoraService.disponible();
   return { ok: true, disponible: !!d.playwright };
 });
 ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
+  let nombre = '';
   try {
-    const nombre = String(archivo || '').trim();
+    nombre = String(archivo || '').trim();
     if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
     if (!GmailHoraService.disponible().playwright) {
       return { ok: false, error: 'Playwright no está instalado en la app (npm i playwright)', tipo: 'PlaywrightFalta' };
@@ -591,7 +662,26 @@ ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
         onLoginRequired: (m) => gmailHoraEvento(m, 'login')
       });
     }
-    const r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+    try {
+      await _gmailHoraSvc.iniciar();
+    } catch (e) { /* ya iniciado u otro problema: lo relanza la búsqueda */ }
+
+    let r;
+    try {
+      r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+    } catch (e) {
+      if (e.name !== 'LoginRequeridoError') throw e;
+      /* Gmail pide sesión → login DENTRO de la app + transferir cookies */
+      gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
+      const cookies = await abrirLoginGmailEnApp();
+      if (!cookies || !cookies.length) {
+        return { ok: false, error: 'No se completó el inicio de sesión en Gmail', tipo: 'LoginRequeridoError' };
+      }
+      await _gmailHoraSvc.inyectarCookies(cookies);
+      gmailHoraEvento('Sesión aceptada; buscando de nuevo…');
+      r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+    }
+
     /* la hora llega como texto de visualización de Gmail (zona de la
        cuenta, por defecto Lima UTC−5): se convierte a epoch/UTC */
     const ms = parseHoraGmail(r.horaRecepcion);
@@ -614,6 +704,7 @@ ipcMain.handle('gmail-hora:buscar', async (_e, archivo) => {
 /* cierra el navegador asistido al salir de la app (la sesión persiste) */
 app.on('before-quit', () => {
   if (_gmailHoraSvc) { try { _gmailHoraSvc.cerrar(true); } catch (e) { /* noop */ } }
+  if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) { try { _gmailHoraLoginWin.close(); } catch (e) { /* noop */ } }
 });
 
 /* ── v3.1.0 — VERIFICACIÓN DE LICENCIAS DGAC (SIVLAM) ──

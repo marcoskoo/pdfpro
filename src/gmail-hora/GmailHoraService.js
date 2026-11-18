@@ -1,12 +1,13 @@
-/* PDFPro — gmail-hora/GmailHoraService.js (v3.1.9)
+/* PDFPro — gmail-hora/GmailHoraService.js (v3.2.0)
  * Adaptado del módulo «gmail-hora-recepcion» provisto por el usuario
  * (Playwright + perfil persistente de Chrome: se inicia sesión UNA vez y la
  * cookie queda guardada). Cambios respecto al original:
  *  - Usa el Chrome instalado en el sistema (channel:'chrome') — no descarga
  *    Chromium; si no hay Chrome cae al Chromium de Playwright si existe.
- *  - Headless por defecto: si Gmail pide sesión, cierra, REABRE con ventana
- *    visible para que el usuario inicie sesión (una sola vez), reintenta la
- *    búsqueda y vuelve a cerrar (la próxima va headless con la cookie).
+ *  - SIEMPRE invisible (headless): cuando Gmail pide sesión NO se abre una
+ *    ventana de Chrome aparte — el proceso principal abre Gmail DENTRO de
+ *    la app (ventana hija de Electron), el usuario inicia sesión ahí y las
+ *    cookies cosechadas se transfieren aquí con inyectarCookies().
  *  - En búsqueda por filename: si ninguna fila visible menciona el archivo
  *    se abre la primera (todos los resultados tienen ese adjunto). En
  *    búsqueda de texto libre SOLO se abre una fila que mencione el archivo
@@ -53,7 +54,6 @@ class GmailHoraService {
     this.opts = { ...DEFAULTS, ...options };
     this.context = null;
     this.page = null;
-    this._visible = false; // relanzado con ventana visible (para login)
   }
 
   /** Inicia el navegador (idempotente). Prefiere el Chrome del sistema. */
@@ -62,9 +62,8 @@ class GmailHoraService {
     if (!playwright) throw new Error('Playwright no está instalado (npm i playwright).');
 
     fs.mkdirSync(this.opts.userDataDir, { recursive: true });
-    const headless = this.opts.headless && !this._visible;
     const base = {
-      headless,
+      headless: this.opts.headless,
       viewport: this.opts.viewport,
       args: this.opts.args
     };
@@ -91,28 +90,44 @@ class GmailHoraService {
     }
   }
 
+  /** Transfiere al navegador invisible las cookies de una sesión iniciada
+      en la ventana de Gmail DENTRO de la app (Electron). Recibe cookies en
+      formato Electron {name,value,domain,path,secure,httpOnly,
+      expirationDate,sameSite} y las convierte al formato de Playwright.
+      Tras inyectar, la sesión queda persistida en el perfil. */
+  async inyectarCookies(cookies) {
+    this._assertIniciado();
+    const pw = (Array.isArray(cookies) ? cookies : []).map((c) => {
+      const out = {
+        name: c.name,
+        value: c.value,
+        domain: c.domain || 'google.com',
+        path: c.path || '/',
+        secure: !!c.secure,
+        httpOnly: !!c.httpOnly
+      };
+      if (c.expirationDate) out.expires = c.expirationDate; // ambos en segundos
+      if (c.sameSite === 'no_restriction') out.sameSite = 'None';
+      else if (c.sameSite === 'lax') out.sameSite = 'Lax';
+      else if (c.sameSite === 'strict') out.sameSite = 'Strict';
+      return out;
+    });
+    if (pw.length) await this.context.addCookies(pw);
+    this.opts.onProgress('Sesión transferida al navegador de búsqueda.');
+    return pw.length;
+  }
+
   _assertIniciado() {
     if (!this.context || !this.page) throw new ServicioNoIniciadoError();
   }
 
-  /* Headless: si toca login se lanza enseguida (nadie puede iniciar sesión
-     en una ventana invisible). Visible: se espera al usuario. */
+  /* Siempre invisible: si toca login se lanza enseguida — la sesión se
+     inicia en la ventana DENTRO de la app (la orquesta el proceso
+     principal) y llega aquí por inyectarCookies(). */
   async _esperarLogin() {
-    const enLogin = () => /accounts\.google\.com|signin/i.test(this.page.url());
-    if (!enLogin()) return;
-    const headless = this.opts.headless && !this._visible;
-    if (headless) throw new LoginRequeridoError('Gmail requiere iniciar sesión.');
-
-    this.opts.onLoginRequired('Gmail requiere inicio de sesión. Complételo en la ventana abierta (solo esta vez)…');
-    const limite = Date.now() + this.opts.loginTimeout;
-    while (Date.now() < limite) {
-      await this.page.waitForTimeout(1500);
-      if (!enLogin()) {
-        this.opts.onProgress('Sesión detectada.');
-        return;
-      }
+    if (/accounts\.google\.com|signin/i.test(this.page.url())) {
+      throw new LoginRequeridoError('Gmail requiere iniciar sesión.');
     }
-    throw new LoginRequeridoError(`No se detectó inicio de sesión después de ${this.opts.loginTimeout / 1000} segundos.`);
   }
 
   _urlBusqueda(query) {
@@ -266,35 +281,16 @@ class GmailHoraService {
   /**
    * Busca el correo por nombre de archivo y devuelve su hora de recepción
    * (texto tal como lo muestra Gmail — la zona la resuelve hora.js).
+   * Si Gmail pide sesión lanza LoginRequeridoError sin reintento: la
+   * sesión la resuelve el proceso principal (login dentro de la app +
+   * inyectarCookies) y vuelve a llamar aquí.
    * @param {string} archivo Nombre del archivo (ej. «ATC JAP 7163.pdf»).
    * @param {{copiar?: boolean}} opciones `copiar` por defecto false.
    */
   async buscarHoraPorArchivo(archivo, opciones = {}) {
     this._assertIniciado();
     const { copiar = false } = opciones;
-    try {
-      return await this._buscarYExtraer(archivo, copiar);
-    } catch (e) {
-      /* headless + sesión vencida → ventana visible para login + reintento */
-      if (e instanceof LoginRequeridoError && this.opts.headless && !this._visible) {
-        this.opts.onLoginRequired('Abriendo Gmail para iniciar sesión (una sola vez)…');
-        await this.cerrar(true);
-        this._visible = true;
-        await this.iniciar();
-        try {
-          const r = await this._buscarYExtraer(archivo, copiar);
-          /* sesión ya guardada: siguiente búsqueda headless */
-          await this.cerrar(true);
-          this._visible = false;
-          return r;
-        } catch (e2) {
-          await this.cerrar(true);
-          this._visible = false;
-          throw e2;
-        }
-      }
-      throw e;
-    }
+    return this._buscarYExtraer(archivo, copiar);
   }
 
   /** Copia un texto al portapapeles de la página (solo si se pide). */
