@@ -1,7 +1,39 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.5 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.6 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.6
+────────────────────────────────────────────────────────────────────
+  1. REGLAS DEL CAMPO «MATRÍCULA» — AHORA SÍ CON LOS FORMULARIOS
+     IMPRESOS CORPAC/ICAO (PLAN DE VUELO / FLIGHT PLAN)
+     Reporte del usuario: con el formulario impreso el campo quedaba
+     solo con la matrícula («OB2066») en vez de «OB2066 2020 MK».
+     Causa: esos formularios traen UNA CASILLA POR CARÁCTER y el orden
+     interno del texto llega revuelto («OB» lejos de «2 2 0 3», la
+     hora partida «1 3 … 0 … 0»), así que los patrones de texto no
+     veían nada. Solución (la del escáner v2.9.21, recuperada):
+     · GEOMETRÍA: con las coordenadas de pdf.js se reconstruye la fila
+       de casillas en orden visual (izquierda→derecha) → casillero 7
+       (identificación) y casillero 13 (EOBT, la fila de dígitos bajo
+       «Aeródromo de salida»).
+     · TEXTO COMPACTADO: se unen los caracteres sueltos («OB 2 2 0 3»
+       → «OB2203»); si el casillero 8 quedó pegado («OB2203YG») se
+       separa y de paso da el tipo de vuelo.
+     · Tipo de vuelo: letra bajo «TIPO DE VUELO / TYPE OF FLIGHT»;
+       si el formulario imprime la lista de opciones (S N G M X) se
+       busca la marcada (☒/✓/×) y si no se puede saber se aplica la
+       regla de matrícula+EOBT (nunca se asume «S» a ciegas).
+     · Validadores del escáner v2.9.21: «CCDII» (alfabética) ya se
+       acepta como matrícula de REG/; «JAP7163» se reconoce como
+       designador + nº de vuelo (no matrícula).
+     Ejemplo del reporte: OB2066, tipo G, salida SPHI 2020 → el
+     campo y el archivo quedan «OB2066 2020 MK».
+
+  2. AYUDA DEL CAMPO CONTRAÍDA
+     El texto con las reglas bajo «Matrícula (Aeronave / Espacio)»
+     quedó contraído en «ⓘ reglas de armado»: pasa el mouse (o toca)
+     y se muestra completo en un recuadro.
 
 NOVEDADES DE LA VERSIÓN 3.1.5
 ────────────────────────────────────────────────────────────────────

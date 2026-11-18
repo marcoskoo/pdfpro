@@ -28,6 +28,11 @@
 body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;-webkit-font-smoothing:antialiased}
 input,textarea,select{user-select:text!important;font-family:"Inter",sans-serif}
 button{font-family:"Inter",sans-serif;cursor:pointer}
+/* v3.1.6 — ayuda contraída: el texto completo se muestra al pasar el mouse
+   sobre «ⓘ reglas» (o al enfocarlo con teclado/táctil) */
+.tipr{border-bottom:1px dotted var(--t3);cursor:help;white-space:nowrap}
+.tipr .tipr-b{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--s2);color:var(--text);border:1px solid var(--bdr);border-radius:8px;padding:8px 10px;font-size:9.5px;line-height:1.55;text-align:left;white-space:normal;box-shadow:var(--sh2);z-index:60}
+.tipr:hover .tipr-b,.tipr:focus-within .tipr-b{display:block}
 
 /* ── LAYERS ── */
 #loginLayer,#subLayer,#adminLayer,#editorLayer{
@@ -758,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.5 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · matrícula por OCR · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.1.6 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · matrícula por OCR · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (JAP7163 CCDII MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios CORPAC impresos: casillas reconstruidas por geometría (el texto interno llega revuelto) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1314,7 +1319,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <input class="f-input" id="selloMatricula" maxlength="24" placeholder="EJ: OB2032 1100 MK" style="flex:1;font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,'');fplMatriculaChanged()">
               <button class="btn btn-sm" style="font-size:10px;padding:4px 8px;flex-shrink:0" onclick="matriculaDetectarManual()" title="Busca la matrícula en el documento cargado (texto del PDF + OCR de la 1.ª página) y la llena aquí">✈ Detectar</button>
             </div>
-            <div style="font-size:9.5px;color:var(--t3);margin-top:3px">Al guardar o exportar, el archivo se nombra con este campo (ej. <strong style="color:var(--acc)">OB2032 1100 MK</strong>). <strong>✈ Detectar</strong> arma el valor solo: <strong>tipo de vuelo S</strong> → ID de vuelo (casillero 7) + matrícula REG/ (casillero 18) + iniciales (<strong>JAP7163 CCDII MK</strong>); <strong>otro tipo</strong> → matrícula (casillero 7) + EOBT (hora propuesta fuera de calzos, casillero 13) + iniciales (<strong>OB2032 1100 MK</strong>). En la versión de escritorio se archiva solo en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; en la web se descarga con ese nombre.</div>
+            <div style="font-size:9.5px;color:var(--t3);margin-top:3px;position:relative">Al guardar o exportar, el archivo se nombra con este campo (ej. <strong style="color:var(--acc)">OB2032 1100 MK</strong>) · <span class="tipr" tabindex="0">ⓘ reglas de armado<span class="tipr-b"><strong>✈ Detectar</strong> arma el valor solo:<br>· <strong>Tipo de vuelo S</strong> → ID de vuelo (casillero 7) + matrícula REG/ (casillero 18, sin prefijo) + iniciales: <strong style="color:var(--acc)">JAP7163 CCDII MK</strong><br>· <strong>Otro tipo</strong> → matrícula (casillero 7) + EOBT (hora propuesta fuera de calzos del casillero 13, la que acompaña al aeródromo de salida: «SPHI 1100» → 1100) + iniciales: <strong style="color:var(--acc)">OB2032 1100 MK</strong><br>· Sin hora detectable se omite: «OB2032 MK». Las iniciales nunca se duplican al guardar.<br>Escritorio: se archiva en <strong>REGISTROS FPL NOTAM\FPL\año\mes\día</strong>; web: se descarga con ese nombre.</span></span></div>
           </div>
           <div class="sello-preview-box" id="selloPreview">
             <img src="" id="selloLogoImg" alt="CORPAC" style="max-width:100%;height:28px;object-fit:contain;display:block;margin:0 auto 4px">
@@ -4828,7 +4833,7 @@ function extraerMatricula(texto,nombreArchivo){
   if(m){var c9=setCand(m[1]);if(c9)return c9;}
   return '';
 }
-/* ══ v3.1.5 — CAMPOS DEL PLAN DE VUELO (casilleros 7, 8, 13 y 18) ══
+/* ══ v3.1.6 — CAMPOS DEL PLAN DE VUELO (casilleros 7, 8, 13 y 18) ══
    Reglas del usuario para el valor del campo «Matrícula (Aeronave /
    Espacio)» y el nombre del archivo al guardar/exportar:
    · Tipo de vuelo «S» (casillero 8): IDENTIFICACIÓN de vuelo (casillero 7)
@@ -4837,57 +4842,295 @@ function extraerMatricula(texto,nombreArchivo){
    · Resto de vuelos (la matrícula está en el casillero 7): casillero 7 +
      EOBT (casillero 13 — hora propuesta fuera de calzos, la que acompaña
      al aeródromo de salida: «SPHI 1100» → 1100) + iniciales →
-     «OB2032 1100 MK». Sin hora detectable se omite: «OB2032 MK». */
-function fplExtraerCampos(texto){
-  var t=_deSpaceIcao(String(texto||'').toUpperCase());
-  var r={c7:'',tipoS:false,reg:'',eoibt:''};
+     «OB2032 1100 MK». Sin hora detectable se omite: «OB2032 MK».
+   Los formularios impresos CORPAC/ICAO traen UNA CASILLA POR CARÁCTER y el
+   orden interno del texto llega revuelto («OB» lejos de «2 2 0 3», la hora
+   partida «1 3 … 0 … 0»), así que se usan dos fuentes, como en el escáner
+   v2.9.21: GEOMETRÍA de los ítems pdf.js ({str,x,y}: reconstruye la fila de
+   casillas en orden visual izquierda→derecha) y TEXTO COMPACTADO
+   (_fplCompacta une los caracteres sueltos: «OB 2 2 0 3»→«OB2203»; el
+   casillero 8 queda pegado tras la matrícula, «OB2203YG», y se separa). */
+function _fplCompacta(t){return String(t||'').replace(/([0-9A-Z])[\s,]+(?=[0-9A-Z](?:[\s,]|$))/g,'$1');}
+function _fplSinAcentos(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+var _FPL_PALABRA=/^(FPL|CHG|DLA|DEP|ARR|CNL|COR|CDN|ALR|RCL|FIGHT|FLIGHT|FLIGT|FLIHT|RULES|TYPE|PLAN|PRIORITY|VUELO|REGLAS|TIPO|MENSAGE|MENSAJE|MESSAGE|AERONAVE|AIRCRAFT|IDENTIFICATION|IDENTIFICACION|EXACTA|NUMBER|NUMERO|DEPOSITO|REMITENTE|ENDURANCE|AUTONOMIA|PERSONAS|EQUIPO|SURVIVAL|JACKETS|DINGHIES|CAPACITY|COLOR|COLLOR|MARKING|OBSERVACIONES|REMARKS|PILOTO|COMAND|FILED|SPACE|RESERVED|ADDITIONAL|REQUERIMENTS|NAV|SUR|REG|SEL|DOF|EET|EEET|PBN|RMK|CODE|OPR|PER|SKED|DCT|STS|TYP|ALT|RALT|TALT|ENR|RIF|REF|DAT|EQT)$/;
+var _FPL_DESIGNADOR=/^(OBC|OBJ|OBK|OBS|OBT|CMP|LPE|LAN|SKU|AMP|ATC|AVA|TPU|JAP|SKX|VPE|AND|LCB|SRU|APU|CPR|KLM|NGA|NLA|JTR|TAE|BAW|AEA|IBE|AAL|UAL|DAL|CCA|ACA|AMX|GLO|AZU|ARG|FAB|FAP|FPR|INP)$/;
+/* ¿El identificador del casillero 7 ES la matrícula? (puerto del escáner
+   v2.9.21: Anexo 7 · RAP 45.205 · países vecinos; «JAP7163» es designador
+   de empresa + nº de vuelo → NO es matrícula; «CCDII» sí lo es). */
+function _fplEsMatricula(id){
+  var m=String(id||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!m||m.length<4||m.length>7)return false;
+  if(_FPL_PALABRA.test(m))return false;
+  if(/^[A-Z]{3}$/.test(m.slice(0,3))&&_FPL_DESIGNADOR.test(m.slice(0,3))&&/^[0-9]+$/.test(m.slice(3)))return false;
+  if(/^OB[0-9]{3,4}[PT]?$/.test(m))return true;
+  if(/^OB[A-Z0-9]{3,4}$/.test(m))return true;
+  if(/^(CC|HC|CP|HJ|HK|XA|XB|XC|LV|LQ|YV|HP|PP|PR|PS|PT|PU|4X|9V|9H|9A|9G)[A-Z0-9]{3,4}$/.test(m))return true;
+  if(/^N[0-9]{1,4}[A-Z]{0,2}$/.test(m))return true;
+  return false;
+}
+/* Limpia la identificación capturada: si el casillero 8 quedó pegado
+   («OB2203YG», «JAP7163IS») se separa (y alimenta el tipo de vuelo); una
+   identificación que YA es válida completa («CCDII», «JAP7163») no se toca. */
+function _fplLimpiaIdent(v,r){
+  var s=String(v||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'');
+  if(!s)return '';
+  var ok=function(x){return !!x&&x.length>=4&&!_FPL_PALABRA.test(x)&&(_fplEsMatricula(x)||/^[A-Z]{3}\d{3,4}[A-Z]?$/.test(x)||/^[A-Z]{1,2}\d{3,5}[A-Z]?$/.test(x));};
+  if(ok(s))return s;
+  var tail=s.match(/(?:[IVYZ]{1,2}[SNGMX]|[IVYZ]{1,2}|[SNGMX])$/);
+  if(tail){
+    var base=s.slice(0,s.length-tail[0].length);
+    if(ok(base)){if(r)r.c8=tail[0];return base;}
+  }
+  return '';
+}
+/* Casillero 7 por GEOMETRÍA — puerto del escáner v2.9.21 (identDeFormulario):
+   ancla «IDENTIFICACIÓN DE (LA) AERONAVE / AIRCRAFT IDENTIFICATION» y el «7.»
+   de esa fila; banda de casillas debajo; orden por X y corte por huecos
+   grandes (>45 pt): el primer grupo válido es la identificación. */
+function _fplIdentDeFormulario(items){
+  try{
+    if(!items||!items.length)return '';
+    var i,it,cap=null,num7=null,num8=null;
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      var s=_fplSinAcentos(String(it.str||'')).replace(/\s+/g,' ').trim().toUpperCase();
+      if(!s)continue;
+      if(!cap&&/IDENTIFICACION DE (LA )?AERONAVE|AIRCRAFT IDENTIFICATION|IDENTIFICACION DE VUELO|ID DE (LA )?AERONAVE|ID DE VUELO/.test(s))cap=it;
+      if(!num7&&/^7\.?$/.test(s))num7=it;
+      if(!num8&&/^8\.?$/.test(s))num8=it;
+    }
+    if(!cap)return '';
+    var usoNum7=!!(num7&&Math.abs(num7.y-cap.y)<12);
+    var fila=usoNum7?num7.y:cap.y;
+    var x0=usoNum7?num7.x:cap.x-45;
+    var h=usoNum7?24:16;
+    var x1=(num8&&Math.abs(num8.y-cap.y)<12)?num8.x:cap.x+200;
+    if(!(num8&&Math.abs(num8.y-cap.y)<12)){
+      var minX=x1;
+      for(i=0;i<items.length;i++){
+        var it2=items[i];
+        if(it2===cap||it2.x<=cap.x)continue;
+        var s2=_fplSinAcentos(String(it2.str||'')).replace(/\s+/g,' ').trim();
+        if(Math.abs(it2.y-fila)<6&&/^(REGLAS|FLIGHT|RULES|TIPO|TYPE)\b/i.test(s2)&&it2.x<minX)minX=it2.x;
+      }
+      x1=minX;
+    }
+    var ch=[];
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      var c=String(it.str||'').trim();
+      if(!/^[A-Z0-9]{1,3}$/i.test(c))continue;
+      if(/^(FPL|CHG|DLA|DEP|ARR|CNL|DOF|EET|REG|SEL|PBN|RMK|NAV|SUR|CODE|OPR|PER)$/i.test(c))continue;
+      if(it.x>=x0&&it.x<x1&&it.y<=fila+5&&it.y>=fila-h)ch.push(it);
+    }
+    ch.sort(function(a,b){return a.x-b.x;});
+    var grupos=[],cur=ch.length?[ch[0]]:[];
+    for(i=1;i<ch.length;i++){
+      if(ch[i].x-ch[i-1].x>45){grupos.push(cur);cur=[];}
+      cur.push(ch[i]);
+    }
+    if(cur.length)grupos.push(cur);
+    for(i=0;i<grupos.length;i++){
+      var ident=grupos[i].map(function(o){return String(o.str).trim().toUpperCase();}).join('');
+      if(/^[A-Z0-9]{2,7}$/.test(ident)&&!_FPL_PALABRA.test(ident))return ident;
+    }
+    return '';
+  }catch(e){return '';}
+}
+/* v3.1.6 — EOBT por GEOMETRÍA: casillas de UN dígito en la banda bajo la
+   etiqueta «DEPARTURE AERODROME / AERÓDROMO DE SALIDA» (o el «13.»),
+   ordenadas por X: el primer grupo de 4 dígitos es la hora de salida. */
+function _fplEoibtDeFormulario(items){
+  try{
+    if(!items||!items.length)return '';
+    var i,it,anc=null,anc13=null;
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      var s=_fplSinAcentos(String(it.str||'')).replace(/\s+/g,' ').trim().toUpperCase();
+      if(!s)continue;
+      if(!anc13&&/^13(\.|\s|$)/.test(s))anc13=it;
+      if(!anc&&/^(13[ .]*)?(DEPARTURE AERODROME|AERODROME OF DEPARTURE|AERODROMO DE SALIDA|SALIDA Y HORA)/.test(s))anc=it;
+    }
+    if(!anc&&!anc13)return '';
+    var base=anc||anc13;
+    var fila=(anc13&&Math.abs(anc13.y-base.y)<12)?anc13.y:base.y;
+    var x0=Math.max(0,base.x-8);
+    var ch=[];
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      var c=String(it.str||'').trim();
+      if(!/^\d$/.test(c))continue;
+      if(it.x>=x0&&it.y<=fila+5&&it.y>=fila-18)ch.push(it);
+    }
+    ch.sort(function(a,b){return a.x-b.x;});
+    var grupos=[],cur=ch.length?[ch[0]]:[];
+    for(i=1;i<ch.length;i++){
+      if(ch[i].x-ch[i-1].x>45){grupos.push(cur);cur=[];}
+      cur.push(ch[i]);
+    }
+    if(cur.length)grupos.push(cur);
+    for(i=0;i<grupos.length;i++){
+      var g=grupos[i].map(function(o){return String(o.str).trim();}).join('');
+      if(/^\d{4}$/.test(g))return g;
+    }
+    return '';
+  }catch(e){return '';}
+}
+/* v3.1.6 — Tipo de vuelo por GEOMETRÍA: letra única en la banda bajo
+   «TYPE OF FLIGHT / TIPO DE VUELO» (las letras de las REGLAS quedan a la
+   izquierda, bajo su propia etiqueta); si hay varias (lista de opciones
+   S N G M X), la marcada con ☒/✓/×; si no se puede saber → '' (regla 2). */
+function _fplTipoDeFormulario(items){
+  try{
+    if(!items||!items.length)return '';
+    var i,anc=null,reglas=null;
+    for(i=0;i<items.length;i++){
+      var it=items[i];
+      var s=_fplSinAcentos(String(it.str||'')).replace(/\s+/g,' ').trim().toUpperCase();
+      if(!s)continue;
+      if(!anc&&/(^|\s)(TIPO DE VUELO|TYPE OF FLIGHT)(\s|$)/.test(s))anc=it;
+      if(!reglas&&/(^|\s)(REGLAS DE VUELO|FLIGHT RULES)(\s|$)/.test(s))reglas=it;
+    }
+    if(!anc)return '';
+    var fila=anc.y;
+    var x0=(reglas&&Math.abs(reglas.y-anc.y)<12&&reglas.x<anc.x)?reglas.x:anc.x-20;
+    var letras=[];
+    for(i=0;i<items.length;i++){
+      var it2=items[i];
+      var c=String(it2.str||'').trim().toUpperCase();
+      if(!/^[SNGMX]$/.test(c))continue;
+      if(it2.x>=x0-4&&it2.y<=fila+5&&it2.y>=fila-20)letras.push(it2);
+    }
+    if(!letras.length)return '';
+    letras.sort(function(a,b){return a.x-b.x;});
+    if(letras.length===1)return letras[0].str;
+    for(i=0;i<letras.length;i++){
+      for(var j=0;j<items.length;j++){
+        var mk=String(items[j].str||'').trim();
+        if(/^[☒✓✔×X]$/.test(mk)&&Math.abs(items[j].x-letras[i].x)<10&&Math.abs(items[j].y-letras[i].y)<10)return letras[i].str;
+      }
+    }
+    return '';
+  }catch(e){return '';}
+}
+/* v3.1.6 — ítems {str,x,y} de la primera página con contenido (pdf.js). */
+function _fplItemsPagina(){
+  try{
+    for(var j=0;j<3;j++){
+      var arr=(typeof pageItems!=='undefined'&&pageItems[j])||null;
+      if(arr&&arr.length&&String((typeof pageTexts!=='undefined'&&pageTexts[j])||'').trim().length>30)
+        return arr.map(function(o){var t=(o&&o.transform)||[0,0,0,0,0,0];return{str:o.str,x:t[4],y:t[5]};});
+    }
+  }catch(e){}
+  return null;
+}
+function fplExtraerCampos(texto,items,nombreArchivo){
+  var t=String(texto||'');
+  /* sin tildes (AERÓDROMO→AERODROMO, IDENTIFICACIÓN→IDENTIFICACION) y
+     compactado: los patrones trabajan sobre texto ASCII unificado */
+  var tc=_fplCompacta(_fplSinAcentos(t).toUpperCase());
+  var r={c7:'',tipoS:false,reg:'',eoibt:'',c8:''};
   var m,i;
-  // ── casillero 18: matrícula REG/… (sin el prefijo) ──
-  var reREG=/\bREG\/([A-Z0-9]{2}-?[A-Z0-9]{1,6})\b/g;
-  while((m=reREG.exec(t))){
-    var rc=m[1].replace(/[^A-Z0-9\-]/g,'');
-    // REG/ da contexto propio: basta alfanumérico de 4-8 que no sea un
-    // rótulo (REG/CCDII es alfabético puro y no pasa _esMatriculaValida)
-    if(rc.length>=4&&rc.length<=8&&!MATRICULA_BLACKLIST[rc]&&!MATRICULA_BLACKLIST[rc.replace(/-/g,'')]){r.reg=_fixOcrLetters(rc);break;}
+  /* ── casillero 18: matrícula REG/… (sin el prefijo) ── */
+  m=tc.match(/\bREG\s*\/\s*([0-9A-Z]{1,3}[-\u00AD]?[0-9A-Z]{2,5})/);
+  if(m){
+    var rc=String(m[1]||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'');
+    if(rc&&!_FPL_PALABRA.test(rc.replace(/[^A-Z]/g,''))&&(_fplEsMatricula(rc)||/^[A-Z0-9\-]{4,8}$/.test(rc)))r.reg=_fixOcrLetters(rc);
   }
-  // ── casillero 8: reglas + tipo de vuelo. AFTN: «(FPL-JAP7163-IS-…»;
-  //    formularios DGAC/ICAO: «TIPO DE VUELO: S» ──
-  m=t.match(/\(\s*FPL\s*[-–]\s*[A-Z0-9]{2,8}\s*[-–]\s*([A-Z]{1,3})(?=[-–\s]|$)/)
-   ||t.match(/\bFPL\s*[-–]\s*[A-Z0-9]{2,8}\s*[-–]\s*([A-Z]{1,3})(?=[-–\s]|$)/);
-  if(m){var c8=m[1];r.tipoS=(c8==='S')||(/^[IVYZ]{1,2}S$/.test(c8));}
+  /* ── casillero 7: identificación de vuelo / matrícula ── */
+  // 1) geometría del formulario impreso (texto interno revuelto)
+  if(items){var g7=_fplIdentDeFormulario(items);if(g7)r.c7=g7;}
+  // 2) mensaje télex / formulario compactado: «(FPL-OB2147-…» o «(FPL - OB2203YG»
+  if(!r.c7){
+    m=tc.match(/\(?\s*FPL\s*[-–]?\s*([A-Z0-9]{2,8})/);
+    if(m)r.c7=_fplLimpiaIdent(m[1],r);
+  }
+  // 3) etiqueta impresa (hueco generoso; el valor puede traer la cola del c8)
+  if(!r.c7){
+    var p7=[
+      /IDENTIFICACION\s*DE\s*(LA\s*)?AERONAVE/,
+      /IDENTIFICACION\s*DE\s*VUELO/,
+      /IDENTIFICADOR\s*DE\s*(LA\s*)?AERONAVE/,
+      /ID\s*DE\s*(LA\s*)?AERONAVE/,
+      /ID\s*DE\s*VUELO/,
+      /AIRCRAFT\s*IDENTIFICATION/,
+      /REGISTRO\s*DE\s*(LA\s*)?MATRICULA/,
+      /INDICATIVO\s*DE\s*LLAMADA/,
+      /CALLSIGN/
+    ];
+    for(i=0;i<p7.length&&!r.c7;i++){
+      m=tc.match(new RegExp(p7[i].source+'[^A-Z0-9]{0,80}([A-Z0-9][A-Z0-9 \\-]{1,14})'));
+      if(m){
+        /* el último grupo es el valor (los patrones pueden traer grupos
+           internos como (LA\s*)?) */
+        var vc=m[m.length-1].replace(/\s+(9|8|10|13|15|16|18|19)\b.*$/,'')
+                   .replace(/\s+(NUMBER|FLIGHT|RULES|TYPE|REGLAS|TIPO|VUELO|WAKE|EQUIPMENT|EQUIPO|TURBULENCE|TIME|HORA|NIVEL|LEVEL|AERODROME|AERODROMO)\b.*$/,'');
+        r.c7=_fplLimpiaIdent(_fplCompacta(vc),r);
+      }
+    }
+  }
+  // 4) respaldo: el extractor simple sobre el texto compactado y el crudo
+  if(!r.c7){
+    var fb=extraerMatricula(tc,String(nombreArchivo||''))||extraerMatricula(t,String(nombreArchivo||''));
+    if(fb)r.c7=fb;
+  }
+  /* ── casillero 8: tipo de vuelo («S» = programado) ── */
+  if(r.c8){r.tipoS=(r.c8==='S')||(/^[IVYZ]{0,2}S$/.test(r.c8));}
   if(!r.tipoS){
-    m=t.match(/(?:TIPO\s+DE\s+VUELO|TYPE\s+OF\s+FLIGHT|FLIGHT\s+TYPE)[^\nA-Z0-9]*\b([SNGMX])\b/);
-    if(m)r.tipoS=(m[1]==='S');
+    m=tc.match(/\(\s*FPL\s*[-–]\s*[A-Z0-9]{2,8}\s*[-–]\s*([A-Z]{1,3})(?=[-–\s]|$)/);
+    if(m)r.tipoS=(m[1]==='S')||(/^[IVYZ]{1,2}S$/.test(m[1]));
   }
-  // ── casillero 13: EOBT (hora propuesta fuera de calzos). Etiquetada
-  //    (formularios: «AERÓDROMO DE SALIDA: SPHI 1100», «EOBT: 1100») o el
-  //    PRIMER «AAAA hhhh» del mensaje AFTN (el 1.º es la salida; el que
-  //    sigue, el destino, se ignora) ──
-  m=t.match(/(?:AER[OÓ]DROMO\s+DE\s+SALIDA|DEPARTURE\s+AERODROME|AERODROME\s+OF\s+DEPARTURE)[^\n]{0,30}?([A-Z]{4})\s+(\d{4})/)
-   ||t.match(/\bEOBT[:\s]*(\d{4})/)
-   ||t.match(/FUERA\s+DE\s+CALZOS[:\s]*(\d{4})/);
-  if(m)r.eoibt=m[2]||m[1]||'';
+  if(!r.tipoS&&items){var tg=_fplTipoDeFormulario(items);if(tg)r.tipoS=(tg==='S');}
+  if(!r.tipoS){
+    var iTipo=tc.search(/TIPO\s*DE\s*VUELO|TYPE\s*OF\s*FLIGHT|FLIGHT\s+TYPE/);
+    if(iTipo>=0){
+      var nl=tc.indexOf('\n',iTipo);
+      var linea=tc.slice(iTipo,nl<0?iTipo+80:nl);
+      var unics=linea.match(/\b[SNGMX]\b/g)||[];
+      var unq=[];for(var q=0;q<unics.length;q++)if(unq.indexOf(unics[q])<0)unq.push(unics[q]);
+      if(unq.length===1)r.tipoS=(unq[0]==='S');
+      else{
+        /* lista de opciones —sueltas «S N G M X» o compactada «SNGMX»—:
+           se aplica la que esté marcada con ☒/✓/×; sin marca no se asume */
+        var mk2=linea.match(/[☒✓✔×]\s*([SNGMX])|([SNGMX])\s*[☒✓✔×]/);
+        if(mk2)r.tipoS=((mk2[1]||mk2[2])==='S');
+      }
+    }
+  }
+  /* ── casillero 13: EOBT (hora propuesta fuera de calzos) ── */
+  // 1) geometría: casillas de dígitos bajo la etiqueta de salida
+  if(items){var g13=_fplEoibtDeFormulario(items);if(g13)r.eoibt=g13;}
+  // 2) ventana etiquetada: de «AERÓDROMO DE SALIDA» hasta el destino
   if(!r.eoibt){
-    m=t.match(/(?:^|[-–\s])([A-Z]{4})\s+(\d{4})(?=[-–\s]|$)/);
-    if(m)r.eoibt=m[2];
+    var iDep=tc.search(/AERODROMO\s*DE\s*SALIDA|DEPARTURE\s*AERODROME|AERODROME\s*OF\s*DEPARTURE/);
+    if(iDep>=0){
+      var fin=tc.slice(iDep).search(/AERODROMO\s*DE\s*(DESTINO|LLEGADA)|DESTINATION\s*AERODROME|AERODROME\s*OF\s*DESTINATION|\bALTN\b/);
+      var seg=tc.slice(iDep,fin>0?iDep+fin:iDep+160);
+      var c7dig=(String(r.c7||'').match(/\d{3,5}/)||[''])[0];
+      m=seg.match(/([A-Z]{4})\s*(\d{4})/);
+      if(m&&(!c7dig||m[2]!==c7dig))r.eoibt=m[2];
+      if(!r.eoibt){
+        var re4=/\b(\d{4})\b/g,mm4;
+        while((mm4=re4.exec(seg))){
+          if(c7dig&&mm4[1]===c7dig)continue;
+          r.eoibt=mm4[1];break;
+        }
+      }
+    }
   }
-  // ── casillero 7: identificación de vuelo / matrícula ──
-  var pats7=[
-    /\(\s*FPL\s*[-–]\s*([A-Z0-9]{2,8})\s*[-–]/,
-    /\bFPL\s*[-–]\s*([A-Z0-9]{2,8})\s*[-–]/,
-    /IDENTIFICACI[OÓ]N\s+DE\s+VUELO[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
-    /ID\s+DE\s+VUELO[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
-    /AIRCRAFT\s+IDENTIFICATION[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
-    /IDENTIFICACI[OÓ]N\s+DE\s+AERONAVE[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
-    /REGISTRO\s+DE\s+(?:LA\s+)?MATR[IÍ]CULA[:\s]*([A-Z0-9]{1,2}[\-]?[A-Z0-9]{2,6})/,
-    /INDICATIVO\s+DE\s+LLAMADA[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/,
-    /CALLSIGN[:\s]*([A-Z0-9][\-]?[A-Z0-9]{2,8})/
-  ];
-  for(i=0;i<pats7.length;i++){
-    m=t.match(pats7[i]);
-    if(m){
-      var c7c=m[1].replace(/[\s\/\.]/g,'');
-      if(_esMatriculaValida(c7c)){r.c7=_fixOcrLetters(c7c);break;}
+  // 3) «EOBT: 1100» / «FUERA DE CALZOS: 1100»
+  if(!r.eoibt){
+    m=tc.match(/\bEOBT[:\s]*(\d{4})/)||tc.match(/FUERA\s*DE\s*CALZOS[:\s]*(\d{4})/);
+    if(m)r.eoibt=m[1];
+  }
+  // 4) télex: primer «AAAA hhhh» ANTES de la etiqueta de destino (la salida
+  //    va antes; el EET del destino queda fuera)
+  if(!r.eoibt){
+    var iDest=tc.search(/DESTINATION|AERODROMO\s*DE\s*(DESTINO|LLEGADA)/);
+    m=tc.match(/(?:^|[-–\s])([A-Z]{4})\s*(\d{4})(?=[-–\s]|$)/);
+    if(m&&(iDest<0||m.index<iDest)){
+      var c7d=(String(r.c7||'').match(/\d{3,5}/)||[''])[0];
+      if(!c7d||m[2]!==c7d)r.eoibt=m[2];
     }
   }
   return r;
@@ -4961,9 +5204,10 @@ function ocrExtraerMatricula(ocrTexto){
   var nombre='';
   try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
   var txt=ocrTexto||window._ocrText||'';
-  // v3.1.5 — reglas del usuario: componer el campo según el plan de vuelo
-  // (tipo S → c7 + REG/ + iniciales · resto → c7 + EOBT + iniciales)
-  var comp=fplComponerRegistro(fplExtraerCampos(txt));
+  // v3.1.6 — reglas del usuario: componer el campo según el plan de vuelo
+  // (tipo S → c7 + REG/ + iniciales · resto → c7 + EOBT + iniciales),
+  // con geometría de casillas si el PDF tiene capa de texto
+  var comp=fplComponerRegistro(fplExtraerCampos(txt,_fplItemsPagina(),nombre));
   if(comp){_fplSetMatricula(comp);toast('✈ Matrícula detectada: '+comp,'ok');return;}
   var mat=extraerMatricula(txt,nombre);
   if(!mat)return;
@@ -9091,7 +9335,7 @@ async function autoOcrMatricula(){
     if(joined.replace(/\s/g,'').length>=12){
       var nombre='';
       try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
-      var m=fplComponerRegistro(fplExtraerCampos(joined))||extraerMatricula(joined,fileName||nombre);
+      var m=fplComponerRegistro(fplExtraerCampos(joined,_fplItemsPagina(),fileName||nombre))||extraerMatricula(joined,fileName||nombre);
       if(m){
         var el=document.getElementById('selloMatricula');
         if(el&&!el.value){el.value=m;fplMatriculaChanged();}
