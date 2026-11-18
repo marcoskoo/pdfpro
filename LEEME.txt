@@ -1,7 +1,28 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.1.7 — Versión de escritorio para Windows
+  PDFPro Suite 3.1.8 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.1.8
+────────────────────────────────────────────────────────────────────
+  1. CORREGIDO EL REG/ DE LOS FORMULARIOS ELECTRÓNICOS (StarPerú y
+     similares). Con un FPL de vuelo programado (tipo S) el campo
+     «Matrícula (Aeronave / Espacio)» armaba «SRU2226 MK» y perdía la
+     matrícula del casillero 18 (REG/ OB-2176P); el valor correcto es
+     «SRU2226 OB-2176P MK». Causa: estos formularios imprimen una
+     casilla por carácter y el guion de la matrícula quedaba suelto
+     tras compactar el texto («OB - 2176P»). Arreglos:
+     · REG/ reconstruido por GEOMETRÍA: la fila visual del rótulo se
+       reordena por posición (igual que las casillas del formulario
+       CORPAC impreso) y admite el rótulo arriba / valor abajo.
+     · La regex de texto ahora tolera el guion rodeado de espacios.
+     · El respaldo de forma exige dígitos: «REG/ GNSS» ya no se
+       acepta como matrícula.
+     · TIPO DE VUELO: la letra puede estar en su casilla DEBAJO del
+       rótulo (antes solo se miraba la línea del rótulo) y se separa
+       la lista de opciones (S N G M X contiguas) de campos distintos
+       (el tipo «S» y la categoría de estela «M» quedan lejos).
+     · EOBT: admite un rótulo intermedio («EOBT / TIME 0145»).
 
 NOVEDADES DE LA VERSIÓN 3.1.7
 ────────────────────────────────────────────────────────────────────
