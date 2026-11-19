@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.1 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.2 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -10966,17 +10966,21 @@ function gmailRenderList(){
   });
   box.innerHTML=html;
 }
-/* v3.1.9 — aplica una hora de recepción (epoch ms) a la ficha del sello en
+/* v3.2.2 — aplica una hora de recepción (epoch ms) a la ficha del sello en
    UTC (los campos están rotulados UTC y el sello imprime «… UTC»); la usan
-   la ruta OAuth («Usar hora en el sello») y la ruta asistida por archivo. */
-function gmailAplicarHora(ms,origen){
+   la ruta OAuth («Usar hora en el sello») y la ruta asistida por archivo.
+   La hora que muestra Gmail es la LOCAL de Lima (UTC−5): se convierte a
+   UTC sumando 5 h — 07:00 Lima → 12:00 UTC; si cruza la medianoche
+   (20:30 Lima), el campo queda en 01:30 UTC y la FECHA también avanza un
+   día. El toast muestra la conversión completa para verificarla. */
+function gmailAplicarHora(ms,origen,gmailLocal){
   var d=new Date(ms);
   var fecha=d.toISOString().slice(0,10);            // UTC YYYY-MM-DD
   var hora=String(d.getUTCHours()).padStart(2,'0')+String(d.getUTCMinutes()).padStart(2,'0');
   var f=document.getElementById('selloRxDate');if(f)f.value=fecha;
   var h=document.getElementById('selloRxTime');if(h)h.value=hora;
   updateSelloPreview();
-  toast('📥 Recepción aplicada (UTC): '+fecha.split('-').reverse().join('/')+' '+hora+' — '+origen,'ok');
+  toast('📥 Recepción aplicada (UTC): '+fecha.split('-').reverse().join('/')+' '+hora+' — '+origen+(gmailLocal?' · Gmail: «'+gmailLocal+'» (hora Lima) +5 h → UTC':''),'ok',9000);
 }
 function gmailUsarHora(idx){
   var m=_gmailMsgs[idx];if(!m||!m.recibidoMs)return;
@@ -11023,7 +11027,7 @@ async function gmailHoraArchivo(){
       toast('📧 Hora leída de Gmail pero no interpretada: «'+r.horaRecepcion+'» — repórtala para ajustar el parser','warn',10000);
       return;
     }
-    gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'));
+    gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'),r.horaRecepcion);
   }catch(e){toast('📧 Error buscando el correo: '+e.message,'err',9000);}
 }
 /* enganche tras cargar un documento (con retardo: deja pasar antes la

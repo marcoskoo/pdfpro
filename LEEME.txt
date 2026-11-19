@@ -1,7 +1,18 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.1 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.2 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.2 (conversión Lima→UTC verificada y visible)
+────────────────────────────────────────────────────────────────────
+  1. LA HORA DE GMAIL SE CONVIERTE A UTC SUMANDO 5 HORAS. Gmail muestra
+     la hora local de Lima (UTC−5): al llenar «Hora Recepción (UTC)» se
+     le suman 5 h — un correo recibido a las 07:00 queda como 12:00; si
+     cruza la medianoche (20:30 Lima), el campo pasa a 01:30 UTC del día
+     siguiente y la FECHA también avanza. (Regla aeronáutica +05.)
+  2. LA CONVERSIÓN AHORA SE VE. El toast de confirmación muestra la hora
+     tal como la presentó Gmail y la hora UTC aplicada, para verificarla
+     de un vistazo: «Gmail: «7:00 a. m.» (hora Lima) +5 h → UTC».
 
 NOVEDADES DE LA VERSIÓN 3.2.1 (corrección de la 3.2.0)
 ────────────────────────────────────────────────────────────────────
