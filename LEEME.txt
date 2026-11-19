@@ -3,6 +3,24 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.10 (la captura de la hora, garantizada)
+────────────────────────────────────────────────────────────────────
+  1. Se cerraron los puntos por los que la captura de la hora de
+     recepción podía quedar sin cumplirse:
+       - En la WEB (o en el escritorio sin el servicio asistido), la
+         búsqueda terminaba en silencio si no había sesión de Google.
+         Ahora aparece el botón «🔗 Iniciar sesión en Gmail» con un
+         aviso claro, y al conectar se rebusca sola la hora.
+       - En el escritorio sin el servicio asistido, ese botón caía de
+         nuevo en la misma vía bloqueada; ahora conecta por OAuth con
+         el navegador del sistema.
+  2. Si el correo con el archivo todavía no llegó a Gmail cuando
+     abres el PDF, la app lo vuelve a buscar sola cada 60 s (hasta 4
+     veces, en silencio, sin abrir ventanas) y avisa que lo
+     reintentará.
+  3. Al capturarse la hora, la re-búsqueda se cancela sola; cada
+     carga de documento o cambio de pestaña la renueva.
+
 NOVEDADES DE LA VERSIÓN 3.2.9 (interfaz más limpia)
 ────────────────────────────────────────────────────────────────────
   1. Se retiró el panel «📧 Monitoreo Gmail» de la ficha del sello
