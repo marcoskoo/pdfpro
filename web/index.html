@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.15 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.16 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -11075,8 +11075,10 @@ function gmailFmtHora(ms){
 /* v3.2.14 — comparación del ORDEN del usuario: minúsculas, sin extensión,
    sin el «(n)» de duplicados de Gmail y sin espacios/signos. Idéntica a
    nombreComparable() de src/gmail-hora/hora.js (la vía asistida usa la
-   misma regla). */
-function gmailNombreBase(s){return String(s||'').toLowerCase().replace(/\.[^.\\/]+$/,'').replace(/\s*\(\d+\)\s*$/,'').replace(/[\s_\-.,;:()"'¿?¡!]+/g,'').trim();}
+   misma regla). v3.2.16 — se quitan TODOS los «(n)» finales, no solo uno:
+   al descargar dos veces un adjunto ya renombrado el archivo queda
+   «X (1) (1).pdf» y con un solo recorte no hacía match con «X.pdf». */
+function gmailNombreBase(s){return String(s||'').toLowerCase().replace(/\.[^.\\/]+$/,'').replace(/(?:\s*\(\d+\))+\s*$/,'').replace(/[\s_\-.,;:()"'¿?¡!]+/g,'').trim();}
 /* v3.2.7 — hora de pared de Lima (UTC−5) a partir del epoch: para el
    toast «Gmail: «16:00» (hora Lima) +5 h → UTC» — la misma regla con la
    que Gmail muestra la recepción (04:00 pm = 16:00 Lima → 21:00 UTC). */

@@ -78,7 +78,10 @@ function parseHoraGmail(texto, opts) {
     dia = h.dia; anio = h.anio;
     if (mes == null) { return Date.UTC(h.anio, h.mes - 1, h.dia, hh, mi) - off * 60000; }
   }
-  if (anio == null) anio = new Date().getUTCFullYear();
+  /* v3.2.16 — el año por defecto es el de la ZONA DE LA CUENTA (Lima), no
+     el de UTC: el 31 dic por la noche en Lima ya es 1 de enero en UTC y el
+     año tomado de UTC sería uno más del correcto */
+  if (anio == null) anio = ahoraZona(off).anio;
   if (!mes || !anio || !dia || dia < 1 || dia > 31) return null;
 
   /* la hora se mostró en la zona de la cuenta → epoch en UTC */
@@ -108,9 +111,14 @@ function filaCoincide(textoFila, base) {
     el «(n)» con que Gmail renombra adjuntos duplicados y sin espacios ni
     signos. Es la comparación del ORDEN exigido por el usuario: el nombre
     del adjunto del correo debe hacer MATCH con el del archivo cargado
-    («PV CIX LIM        2226.pdf» == «pv cix lim 2226» == «PV CIX (1).pdf»). */
+    («PV CIX LIM        2226.pdf» == «pv cix lim 2226» == «PV CIX (1).pdf»).
+    v3.2.16 — se quitan TODOS los «(n)» finales, no solo uno: al descargar
+    dos veces un adjunto que Gmail ya renombró, el archivo queda
+    «ATC CM468 11NOV (1) (1).pdf» y con un solo recorte la comparación
+    daba «atccm46811nov1» ≠ «atccm46811nov» → ningún correo hacía match y
+    la hora jamás se capturaba. */
 function nombreComparable(s) {
-  return normalizar(String(s || '').replace(/\.[^.\\/]+$/, '').replace(/\s*\(\d+\)\s*$/, ''));
+  return normalizar(String(s || '').replace(/\.[^.\\/]+$/, '').replace(/(?:\s*\(\d+\))+\s*$/, ''));
 }
 
 /** v3.2.14 — ¿Algún adjunto de la lista coincide con el archivo cargado? */

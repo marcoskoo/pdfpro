@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.16 (match con archivos «(1) (1)»)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ de que la hora no se capturara con archivos
+     descargados dos veces: el archivo queda «ATC CM468 11NOV
+     (1) (1).pdf» y la comparación solo quitaba UN «(1)» → el
+     nombre nunca hacía match con el adjunto del correo. Ahora
+     se quitan TODOS los «(n)» finales, en las tres vías (Google
+     web, Google escritorio y buscador asistido).
+  2. La búsqueda filename:/texto libre también reintenta con el
+     nombre SIN los «(n)» (el correo menciona el adjunto
+     original, no la copia renombrada).
+  3. El año de la hora, cuando Gmail no lo muestra, se toma de
+     la hora de Lima (antes de la de UTC: el 31 dic por la noche
+     daba un año de más).
+
 NOVEDADES DE LA VERSIÓN 3.2.15 (fin del aviso en bucle del inicio de sesión)
 ────────────────────────────────────────────────────────────────────
   1. El aviso «No se completó el inicio de sesión en Gmail» ya no

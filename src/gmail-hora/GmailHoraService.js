@@ -442,6 +442,12 @@ class GmailHoraService {
     }
     this.opts.onProgress('No estaba en los correos recientes; buscando por filename:…');
 
+    /* v3.2.16 — el archivo DESCARGADO puede traer uno o varios «(n)» de
+       duplicado («ATC CM468 11NOV (1) (1).pdf») que el adjunto original
+       del correo no tiene: filename:"…" con el nombre completo fallaría
+       aunque el correo sí está. Se reintenta con la base sin ninguno. */
+    const sinMarcas = base.replace(/(?:\s*\(\d+\))+\s*$/, '').trim();
+
     await this._buscar(`filename:"${base}"`);
     let modo = 'filename';
 
@@ -449,15 +455,22 @@ class GmailHoraService {
       this.opts.onProgress('Sin resultados; reintentando con espacios colapsados…');
       await this._buscar(`filename:"${colapsada}"`);
     }
+    if ((await this._haySinResultados()) && sinMarcas && sinMarcas !== base && sinMarcas !== colapsada) {
+      this.opts.onProgress('Sin resultados; reintentando sin los «(n)» de duplicados…');
+      await this._buscar(`filename:"${sinMarcas}"`);
+    }
     if (await this._haySinResultados()) {
       this.opts.onProgress('Sin resultados con filename:; probando texto libre…');
-      await this._buscar(colapsada || base);
+      await this._buscar((sinMarcas ? sinMarcas.replace(/\s+/g, ' ').trim() : colapsada) || base);
       modo = 'texto';
       if (await this._haySinResultados()) throw new ArchivoNoEncontradoError(archivo);
     }
 
-    /* en texto libre NUNCA se abre un correo que no mencione el archivo */
-    const abrio = await this._abrirCorreo(base, modo === 'texto');
+    /* en texto libre NUNCA se abre un correo que no mencione el archivo
+       (v3.2.16: se busca por el nombre SIN los «(n)», que es como el
+       correo lo menciona — con el nombre completo descargado la fila
+       nunca iba a contenerlo) */
+    const abrio = await this._abrirCorreo(modo === 'texto' ? (sinMarcas || base) : base, modo === 'texto');
     if (!abrio) throw new ArchivoNoEncontradoError(archivo);
 
     return this._resultadoDeCorreoAbierto(archivo, copiar);
