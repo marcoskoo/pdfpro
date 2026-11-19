@@ -3,6 +3,25 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.11 (captura de la hora: causa raíz corregida)
+────────────────────────────────────────────────────────────────────
+  1. Causa raíz de que «la captura no se da»: la búsqueda en Gmail
+     esperaba 2,5 segundos fijos a que la lista de resultados
+     apareciera. Gmail es una aplicación web y en arranque en frío
+     (primer uso del día, máquina lenta, antivirus) la lista aún no
+     existía: la app concluía «no hay correo con este archivo»
+     aunque el correo SÍ estaba. Ahora espera hasta 12 s a que la
+     lista o el aviso de «sin resultados» aparezca de verdad.
+  2. Lo mismo al leer la hora del correo abierto: antes una sola
+     lectura (fallaba en silencio si el mensaje aún renderizaba);
+     ahora reintenta hasta 8 s y, si no logra leerla, lo AVISA y
+     reintenta la captura completa.
+  3. La re-búsqueda automática cada 60 s ya no depende de OAuth:
+     si la sesión de Gmail respondió, también rebusca por la vía
+     asistida (antes solo usaba la API y sin OAuth las rondas no
+     hacían nada). Nunca abre ventanas de login sin que estés
+     delante de la app.
+
 NOVEDADES DE LA VERSIÓN 3.2.10 (la captura de la hora, garantizada)
 ────────────────────────────────────────────────────────────────────
   1. Se cerraron los puntos por los que la captura de la hora de

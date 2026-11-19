@@ -154,14 +154,31 @@ class GmailHoraService {
       waitUntil: 'domcontentloaded',
       timeout: this.opts.timeout
     });
-    await this.page.waitForTimeout(2500);
-    await this._esperarLogin();
+    /* v3.2.11 — Gmail es una SPA: los resultados (o el aviso de «sin
+       resultados») aparecen DESPUÉS de domcontentloaded. Antes se
+       esperaban 2,5 s fijos y con el navegador en frío (primer arranque,
+       máquina lenta, antivirus) la lista aún no existía: la búsqueda
+       terminaba en «archivo no encontrado» aunque el correo SÍ estaba —
+       la causa real de que «la captura no se da». Ahora se espera hasta
+       12 s a que haya una fila de resultado o el aviso de vacío,
+       comprobando cada 400 ms si Gmail pidió sesión. */
+    const t0 = Date.now();
+    while (Date.now() - t0 < 12000) {
+      await this.page.waitForTimeout(400);
+      await this._esperarLogin();
+      const listo = await this.page.evaluate(() => {
+        const re = /no se encontraron coincidencias|no se encontraron mensajes|no matches found/i;
+        return document.querySelectorAll('tr.zA, [role="row"]').length > 0 || re.test(document.body.innerText || '');
+      });
+      if (listo) return;
+    }
   }
 
   async _haySinResultados() {
-    return this.page.evaluate(() =>
-      /no se encontraron coincidencias|no matches found/i.test(document.body.innerText)
-    );
+    return this.page.evaluate(() => {
+      const re = /no se encontraron coincidencias|no se encontraron mensajes|no matches found/i;
+      return re.test(document.body.innerText || '');
+    });
   }
 
   /** Abre el correo del archivo. `estricto` (búsqueda libre) impide abrir
@@ -194,17 +211,11 @@ class GmailHoraService {
     return true;
   }
 
-  async _extraerHora() {
+  /* v3.2.11 — una sola pasada de lectura (3 estrategias); devuelve null si
+     todavía no hay nada legible. La orquesta de reintentos la hace
+     _extraerHora: el correo recién abierto puede tardar en renderizar. */
+  async _extraerHoraUna() {
     // 1) Panel «Mostrar detalles» → fila «fecha:» (fecha completa, la fiable)
-    const boton = this.page
-      .locator('[aria-label="Mostrar detalles"], [data-tooltip="Mostrar detalles"]')
-      .first();
-    if (await boton.count()) {
-      try {
-        await boton.click({ timeout: 3000 });
-        await this.page.waitForTimeout(600);
-      } catch (_) { /* ya estaba abierto o no clicable: se lee igual */ }
-    }
     const desdeDetalles = await this.page.evaluate(() => {
       const celdas = Array.from(document.querySelectorAll('.gI, th, td'));
       for (let i = 0; i < celdas.length; i++) {
@@ -240,7 +251,33 @@ class GmailHoraService {
       return el ? el.getAttribute('title') : null;
     });
     if (desdeLista) return { hora: desdeLista, fuente: 'titulo-lista' };
+    return null;
+  }
 
+  async _extraerHora() {
+    /* v3.2.11 — hasta 8 s para leer la hora: antes se leía una sola vez
+       (1,8 s tras abrir el correo) y si el mensaje aún renderizaba saltaba
+       HoraNoExtraidaError y la captura terminaba en silencio. El botón
+       «Mostrar detalles» se pulsa en cuanto aparece (una vez). */
+    let detallePulsado = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000) {
+      if (!detallePulsado) {
+        const boton = this.page
+          .locator('[aria-label="Mostrar detalles"], [data-tooltip="Mostrar detalles"]')
+          .first();
+        if (await boton.count()) {
+          try {
+            await boton.click({ timeout: 2000 });
+            await this.page.waitForTimeout(600);
+          } catch (_) { /* aún no clicable: se reintenta en la próxima vuelta */ }
+          detallePulsado = true;
+        }
+      }
+      const r = await this._extraerHoraUna();
+      if (r) return r;
+      await this.page.waitForTimeout(600);
+    }
     throw new HoraNoExtraidaError();
   }
 

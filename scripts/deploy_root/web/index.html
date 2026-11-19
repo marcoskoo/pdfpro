@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.10 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.11 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -11083,7 +11083,7 @@ function gmailUsarHora(idx){
    v3.2.1: los fallos REALES se muestran (login cancelado, sesión no
    transferida, hora no interpretada…) — el silencio queda solo para
    «no hay correo con este archivo» y «el correo no muestra la hora». */
-var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailReintentoT=null,_gmailReintentoN=0;
+var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailReintentoT=null,_gmailReintentoN=0,_gmailAsistidaSesionOk=false;
 function gmailHoraPuede(){return !!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraBuscar&&_gmailHoraOk);}
 /* v3.2.3 — muestra/oculta el botón de reintento del login de Gmail (junto a
    «Hora Recepción»): visible solo cuando el último intento quedó sin sesión */
@@ -11179,8 +11179,8 @@ async function gmailHoraApiPorArchivo(nombre,tab){
    si «Hora Recepción» está vacío (no pisa lo escrito a mano).
    v3.2.6: 1.ª vía API de Gmail (OAuth, web y escritorio); 2.ª vía
    asistida con Playwright (solo escritorio, sin OAuth) */
-async function gmailHoraArchivo(manual){
-  _gmailReintentoN=0;                            // v3.2.10: cada búsqueda renueva el presupuesto de reintentos
+async function gmailHoraArchivo(manual,reintento){
+  if(!reintento)_gmailReintentoN=0;              // v3.2.10: cada búsqueda nueva renueva el presupuesto; las rondas de re-búsqueda no
   var nombre='';var _tab=null;
   try{_tab=docTabGet(activeTabId);if(_tab&&_tab.fileName)nombre=_tab.fileName;}catch(e){}
   if(!nombre)nombre=fileName||'';
@@ -11217,17 +11217,19 @@ async function gmailHoraArchivo(manual){
     if(!r||!r.ok){
       /* silencio SOLO cuando no hay nada que hacer; los fallos reales se
          muestran para poder diagnosticarlos (v3.2.1) */
-      /* v3.2.10 — el correo con este archivo aún no está en Gmail (la sesión
-         SÍ funcionó): se avisa y se agenda la re-búsqueda automática en
-         lugar de terminar en silencio */
-      if(r&&r.tipo==='ArchivoNoEncontradoError'){gmailLoginBtnOcultar();gmailHoraReintentoAgendar();toast('📭 Todavía no llega el correo con este archivo — se volverá a buscar solo','warn',9000);return;}
-      if(r&&r.tipo==='HoraNoExtraidaError'){gmailLoginBtnOcultar();return;}       // correo sin hora legible (la sesión SÍ funcionó)
+      /* v3.2.11 — estos dos casos significan que la SESIÓN funcionó (Gmail
+         respondió): se marca para que la re-búsqueda también use la vía
+         asistida, no solo la API */
+      if(r&&r.tipo==='ArchivoNoEncontradoError'){gmailLoginBtnOcultar();_gmailAsistidaSesionOk=true;gmailHoraReintentoAgendar();if(!reintento)toast('📭 Todavía no llega el correo con este archivo — se volverá a buscar solo','warn',9000);return;}
+      if(r&&r.tipo==='HoraNoExtraidaError'){gmailLoginBtnOcultar();_gmailAsistidaSesionOk=true;gmailHoraReintentoAgendar();if(!reintento)toast('📧 El correo está, pero la hora no se pudo leer todavía — se reintentará solo','warn',9000);return;}
       if(!r||r.tipo==='SinArchivo'||r.tipo==='Ocupado')return;
       if(r.tipo==='LoginCancelado'){
+        _gmailAsistidaSesionOk=false;
         gmailLoginBtnMostrar();
         toast('🔐 No se completó el inicio de sesión en Gmail — pulsa «🔗 Iniciar sesión en Gmail» (junto a Hora Recepción) o carga otro documento','warn',12000);
       }
       else if(r.tipo==='SesionNoTransferida'){
+        _gmailAsistidaSesionOk=false;
         gmailLoginBtnMostrar();
         toast('⚠️ Gmail: la sesión no se pudo transferir al buscador. Envía el archivo gmail-hora.log (carpeta %APPDATA%\\PDFPRO) para revisarlo','err',14000);
       }
@@ -11236,6 +11238,7 @@ async function gmailHoraArchivo(manual){
       return;
     }
     gmailLoginBtnOcultar();                     // la sesión quedó funcionando
+    _gmailAsistidaSesionOk=true;
     if(!r.recibidoMs){
       /* la hora se leyó pero el formato no se reconoce: se muestra el
          texto crudo para poder ajustar el parser (no se inventa nada) */
@@ -11253,11 +11256,13 @@ function gmailHoraAuto(){
   _gmailHoraT=setTimeout(gmailHoraArchivo,1500);
 }
 /* v3.2.10 — si el correo del archivo cargado aún no llegó a Gmail (el PDF
-   se abre antes que el correo, caso real del usuario): re-búsqueda
-   SILENTE por la API cada 60 s hasta 4 veces. Nunca abre ventanas (solo
-   la vía API/OAuth; la asistida con Playwright no se reintenta sola);
-   sin sesión OAuth las rondas no hacen nada y se agotan solas. El
-   presupuesto se renueva con cada carga o cambio de pestaña (cada una
+   se abre antes que el correo, caso real del usuario): re-búsqueda cada
+   60 s hasta 4 veces. v3.2.11 — ya no es solo la API: si la última vía
+   asistida respondió (sesión de Gmail válida), también se rebusca por
+   ella — sin OAuth las rondas antes no hacían nada y la captura nunca
+   se cumplía. Solo la API cuando no hay sesión asistida confirmada:
+   jamás se abre una ventana de login sin que el usuario esté delante.
+   El presupuesto se renueva con cada carga o cambio de pestaña (cada una
    dispara gmailHoraArchivo) y se cancela al aplicarse una hora */
 function gmailHoraReintentoAgendar(){
   if(_gmailReintentoT)clearTimeout(_gmailReintentoT);
@@ -11270,7 +11275,10 @@ function gmailHoraReintentoAgendar(){
     try{_tab=docTabGet(activeTabId);if(_tab&&_tab.fileName)nombre=_tab.fileName;}catch(e){}
     if(!nombre||!_tab)return;
     if(t&&t.value)return;                        // ya hay hora (a mano o capturada): nada que reintentar
-    try{await gmailHoraApiPorArchivo(nombre,_tab);}catch(e){}
+    try{
+      if(await gmailHoraApiPorArchivo(nombre,_tab))return;
+      if(_gmailAsistidaSesionOk&&gmailHoraPuede()){await gmailHoraArchivo(false,true);return;}
+    }catch(e){}
     gmailHoraReintentoAgendar();
   },60000);
 }
