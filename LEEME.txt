@@ -1,7 +1,27 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.4 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.5 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.5 (plan StarPerú SRU 2226: el campo
+«Matrícula» ahora muestra «SRU2226 OB2176P MK»)
+────────────────────────────────────────────────────────────────────
+  Regla OACI aplicada (Doc 4444, Apéndice 2): en los vuelos de
+  aerolínea (tipo S = programado) el casillero 7 lleva el designador
+  ICAO + número de vuelo (SRU2226) y la matrícula viaja en REG/ del
+  casillero 18; el campo compone AMBOS más las iniciales. Cuando el
+  casillero 7 ya ES la matrícula (OB2134), sigue mostrándose
+  matrícula + hora + iniciales («OB2134 1120 MK»).
+  1. PLAN SRU 2226: la identificación «SRU 2226» viene como un solo
+     texto con espacio, 19 puntos bajo el rótulo — la geometría del
+     casillero 7 ahora la captura (antes el campo terminaba en
+     «OB-2176P 0145 MK», robando la matrícula del REG/).
+  2. REG/ CON PUNTO («REG./OB-2176P», formulario CORPAC): el patrón
+     ahora tolera puntos y espacios alrededor de la barra.
+  3. MATRÍCULA DEL REG/ SIN GUION: como la escribe el Doc 4444
+     («OB2176P», no «OB-2176P»), también en el nombre al exportar.
+  Los planes JAP 7361 («JAP7361 CCDIU MK») y los de casillero 7 con
+  matrícula propia no cambian (probados con los PDF reales).
 
 NOVEDADES DE LA VERSIÓN 3.2.4 (corrige «la ventana de Gmail se cerró
 al segundo» y la matrícula de planes de aerolínea como SRU 2226)
