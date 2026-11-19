@@ -3,6 +3,23 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.12 (panel de Gmail restaurado)
+────────────────────────────────────────────────────────────────────
+  1. VUELVE el panel «📧 Monitoreo Gmail» a la ficha del sello:
+     estado de la conexión (punto de color + texto), botones
+     «Conectar Gmail» / «Desconectar», «🔄 Barrer ahora (últimos
+     7 días)» y la lista de correos con adjunto. Se había retirado
+     en la 3.2.9 y con él se perdieron las funciones visibles de
+     conexión — sin ellas no había forma de ver si Gmail estaba
+     conectado ni de conectarlo a mano.
+  2. La captura de la hora de recepción sigue siendo 100 %
+     automática al cargar el documento, y al pulsar «Conectar
+     Gmail» la hora del archivo cargado se rebusca sola.
+  3. Se conservan TODAS las correcciones de captura de las
+     versiones 3.2.10 y 3.2.11 (espera real a que Gmail renderice,
+     relectura de la hora, re-búsquedas cada 60 s, avisos en vez
+     de silencios).
+
 NOVEDADES DE LA VERSIÓN 3.2.11 (captura de la hora: causa raíz corregida)
 ────────────────────────────────────────────────────────────────────
   1. Causa raíz de que «la captura no se da»: la búsqueda en Gmail
