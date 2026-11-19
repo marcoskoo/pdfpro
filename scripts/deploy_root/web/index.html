@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.3 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.4 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB-2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2032 1100 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (Gmail asistido, login dentro de la app) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -5128,6 +5128,18 @@ function fplExtraerCampos(texto,items,nombreArchivo){
       }
     }
   }
+  // 3b) v3.2.4 — callsign de empresa (designador ICAO + nº de vuelo:
+  //     «SRU2226», «JAP7163») aunque venga suelto en el texto revuelto:
+  //     el casillero 7 ES la identificación del vuelo (regla del usuario
+  //     al componer el campo) y antes un «SRU2226» sin rótulo legible
+  //     dejaba el campo con la matrícula del documento ANTERIOR
+  if(!r.c7){
+    /* sin paréntesis extra: _FPL_DESIGNADOR.source ya trae los suyos —
+       si se envolvía en otro grupo, m[1]+m[2] daba «SRU»+«SRU» */
+    var reDes=new RegExp('\\b'+_FPL_DESIGNADOR.source.replace(/^\^/,'').replace(/\$$/,'')+'([0-9]{3,4}[A-Z]?)\\b');
+    m=tc.match(reDes);
+    if(m)r.c7=_fplLimpiaIdent(m[1]+m[2],r);
+  }
   // 4) respaldo: el extractor simple sobre el texto compactado y el crudo
   if(!r.c7){
     var fb=extraerMatricula(tc,String(nombreArchivo||''))||extraerMatricula(t,String(nombreArchivo||''));
@@ -5241,7 +5253,13 @@ function nvAutoMatricula(tab){
   try{
     var txt=String((tab&&tab.nvEl&&tab.nvEl.innerText)||'');
     if(txt.replace(/\s/g,'').length<12)return;
-    ocrExtraerMatricula(txt);
+    // v3.2.4 — mismo criterio que los PDF: el campo refleja el documento
+    // cargado; sin detección se limpia (antes quedaba el valor anterior)
+    var nombre='';
+    try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
+    var m=fplComponerRegistro(fplExtraerCampos(txt,null,fileName||nombre))||extraerMatricula(txt,fileName||nombre);
+    if(m){_fplSetMatricula(m);toast('✈ Matrícula detectada: '+m,'ok');}
+    else{_fplSetMatricula('');toast('✈ Matrícula no detectada en este documento — complétala a mano si la necesitas','warn',9000);}
   }catch(e){}
 }
 /* Ejecuta el extractor sobre el último texto OCR y llena el campo
@@ -9373,8 +9391,15 @@ async function loadPDF(file){
 }
 
 /* v3.0.0 — detección automática de matrícula al cargar:
-   1) texto embebido del PDF (instantáneo) → 2) OCR de la 1.ª página. */
+   1) texto embebido del PDF (instantáneo) → 2) OCR de la 1.ª página.
+   v3.2.4 — si nada se detecta el campo se LIMPIA y se avisa: antes
+   quedaba la matrícula del documento ANTERIOR (p. ej. un «OB-2176P…»
+   viejo en un plan SRU2226) y viajaba al nombre del archivo exportado. */
 async function autoOcrMatricula(){
+  var nadaDetectado=function(){
+    _fplSetMatricula('');
+    toast('✈ Matrícula no detectada en este documento — complétala a mano si la necesitas','warn',9000);
+  };
   // 1) texto embebido de todas las páginas
   try{
     var joined='';
@@ -9383,30 +9408,34 @@ async function autoOcrMatricula(){
       var nombre='';
       try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
       var m=fplComponerRegistro(fplExtraerCampos(joined,_fplItemsPagina(),fileName||nombre))||extraerMatricula(joined,fileName||nombre);
-      // v3.1.7 — sin botón: la detección es automática y SIEMPRE refleja el
-      // documento recién cargado (sobrescribe el valor del documento
-      // anterior; si no se encuentra matrícula no toca lo escrito a mano)
       if(m){_fplSetMatricula(m);toast('✈ Matrícula detectada: '+m,'ok');return;}
     }
   }catch(e){}
   // 2) OCR de la primera página (documento escaneado)
-  if(!window.Tesseract||!pdfDoc)return;
-  try{
-    var lbl=document.getElementById('ocrLbl');
-    var prog=document.getElementById('ocrProg');
-    if(prog){prog.style.display='block';}
-    if(lbl)lbl.textContent='Analizando matrícula (OCR 1.ª página)…';
-    var pg=await pdfDoc.getPage(1);
-    var vp=pg.getViewport({scale:2});
-    var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
-    await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
-    var res=await Tesseract.recognize(cv.toDataURL('image/png'),'spa',{logger:function(m){
-      if(m.status==='recognizing text'){var b=document.getElementById('ocrBar');if(b)b.style.width=Math.round(m.progress*100)+'%';}
-    }});
-    if(prog)prog.style.display='none';
-    var txt=((res.data&&res.data.text)||'').trim();
-    if(txt)ocrExtraerMatricula(txt);
-  }catch(e){try{var p2=document.getElementById('ocrProg');if(p2)p2.style.display='none';}catch(e2){}}
+  if(window.Tesseract&&pdfDoc){
+    try{
+      var lbl=document.getElementById('ocrLbl');
+      var prog=document.getElementById('ocrProg');
+      if(prog){prog.style.display='block';}
+      if(lbl)lbl.textContent='Analizando matrícula (OCR 1.ª página)…';
+      var pg=await pdfDoc.getPage(1);
+      var vp=pg.getViewport({scale:2});
+      var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+      await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      var res=await Tesseract.recognize(cv.toDataURL('image/png'),'spa',{logger:function(m){
+        if(m.status==='recognizing text'){var b=document.getElementById('ocrBar');if(b)b.style.width=Math.round(m.progress*100)+'%';}
+      }});
+      if(prog)prog.style.display='none';
+      var txt=((res.data&&res.data.text)||'').trim();
+      if(txt){
+        var nombre2='';
+        try{var _t2=docTabGet(activeTabId);if(_t2&&_t2.fileName)nombre2=_t2.fileName;}catch(e){}
+        var m2=fplComponerRegistro(fplExtraerCampos(txt,_fplItemsPagina(),fileName||nombre2))||extraerMatricula(txt,fileName||nombre2);
+        if(m2){_fplSetMatricula(m2);toast('✈ Matrícula detectada: '+m2,'ok');return;}
+      }
+    }catch(e){try{var p2=document.getElementById('ocrProg');if(p2)p2.style.display='none';}catch(e2){}}
+  }
+  nadaDetectado();
 }
 
 // ── RENDER ──
