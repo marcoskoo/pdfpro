@@ -1,7 +1,24 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.5 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.6 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.6 (hora de recepción del correo: se busca
+A PARTIR DEL ARCHIVO CARGADO)
+────────────────────────────────────────────────────────────────────
+  1. AL CARGAR UN DOCUMENTO la app busca en Gmail el correo que trae
+     ese archivo como adjunto y llena sola «Hora Recepción»: consulta
+     dirigida filename:"nombre del archivo" (y luego texto libre si no
+     aparece), por la API de Gmail — funciona en la WEB y en el
+     ESCRITORIO. Solo se acepta un correo cuyo ADJUNTO coincida con el
+     archivo cargado (nunca uno al azar) y no se pisa una hora escrita
+     a mano. Antes: en la web cargar un documento NO buscaba nada y en
+     el escritorio dependía de la vía asistida (Playwright).
+  2. La vía asistida (Playwright, sin OAuth) sigue de respaldo en el
+     escritorio cuando la API no está conectada.
+  3. Se quitaron los 4 textos de ayuda de la ficha del sello
+     (monitoreo Gmail, recepción, iniciales, armado de la matrícula):
+     los campos funcionan igual, sin las explicaciones debajo.
 
 NOVEDADES DE LA VERSIÓN 3.2.5 (plan StarPerú SRU 2226: el campo
 «Matrícula» ahora muestra «SRU2226 OB2176P MK»)
