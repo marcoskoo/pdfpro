@@ -1,7 +1,25 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.8 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.9 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.9 (interfaz más limpia)
+────────────────────────────────────────────────────────────────────
+  1. Se retiró el panel «📧 Monitoreo Gmail» de la ficha del sello
+     (estado «Sin conectar», botones «Conectar Gmail» / «Desconectar»,
+     «🔄 Barrer ahora (últimos 7 días)» y la lista de correos) —
+     pedido del usuario. Todo lo demás sigue igual.
+  2. La búsqueda de la hora de recepción del correo sigue siendo
+     100 % automática al cargar el documento (por el nombre del
+     archivo adjunto, +5 h → UTC), igual que antes.
+  3. El inicio de sesión pasa por el botón «🔗 Iniciar sesión en
+     Gmail y buscar la hora» (junto a Hora Recepción): en el
+     escritorio abre Gmail dentro de la app, como siempre; en la web
+     inicia la conexión de Google. Tras conectar se vuelve a buscar
+     sola la hora del archivo cargado.
+  4. La caja para pegar el código de Google (si el flujo lo pide)
+     vive ahora junto a ese botón, oculta; solo aparece cuando una
+     conexión la necesita.
 
 NOVEDADES DE LA VERSIÓN 3.2.8 (múltiples archivos: la ficha sigue a
 la pestaña activa)

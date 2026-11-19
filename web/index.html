@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.8 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.9 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1266,30 +1266,10 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
       <!-- SIGS tab -->
       <div id="etab-sigs" class="hidden">
-        <!-- ══ v3.0.0 — MONITOREO GMAIL: hora de recepción del correo con adjunto ══ -->
-        <div class="sello-panel" style="border-color:rgba(234,67,53,.35)">
-          <div class="ersec-title">📧 Monitoreo Gmail — sphiaisaro@gmail.com</div>
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
-            <span id="gmailDot" style="width:9px;height:9px;border-radius:50%;background:#777;flex-shrink:0"></span>
-            <span id="gmailState" style="font-size:11.5px;color:var(--t2);flex:1">Sin conectar</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-            <button class="drive-save-btn" style="margin:0" id="gmailConnectBtn" onclick="gmailConnect()">Conectar Gmail</button>
-            <button class="drive-save-btn" style="margin:0;background:rgba(234,67,53,.12);border-color:rgba(234,67,53,.3);color:#ea4335" onclick="gmailDisconnect()">Desconectar</button>
-          </div>
-          <div id="gmailManualBox" style="display:none;margin-bottom:6px">
-            <div style="font-size:10px;color:var(--t3);margin-bottom:3px">Si Google muestra un código en el navegador (página licencias-firmas.vercel.app), pégalo aquí:</div>
-            <div style="display:flex;gap:6px">
-              <input class="f-input" id="gmailCodeInp" placeholder="4/0AX4X…" style="flex:1;font-size:11px;padding:5px 7px;font-family:JetBrains Mono,monospace">
-              <button class="btn btn-primary btn-sm" onclick="gmailCodeSubmit()">Enviar</button>
-            </div>
-          </div>
-          <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px" onclick="gmailBarrer(true)">🔄 Barrer ahora (últimos 7 días)</button>
-          <!-- v3.2.0 — la hora del correo POR ARCHIVO CARGADO es 100%
-               automática al cargar el documento (sin botón; si Gmail pide
-               sesión, la ventana de login se abre dentro de la app) -->
-          <div id="gmailList" style="max-height:220px;overflow-y:auto;font-size:10.5px"></div>
-        </div>
+        <!-- v3.2.9 — el panel de monitoreo de Gmail (📧) se retiró (pedido del
+             usuario): la búsqueda de la hora del correo sigue siendo 100 %
+             automática al cargar el documento y el inicio de sesión se
+             hace con el botón «🔗 Iniciar sesión en Gmail» de abajo -->
         <div class="sello-panel">
           <div class="ersec-title">Sello de Recepción (UTC)</div>
           <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:8px;margin-bottom:8px">
@@ -1307,6 +1287,16 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
                SesionNoTransferida); el reintento automático solo ocurre al
                cargar otro documento -->
           <button id="gmailLoginBtn" class="btn btn-ghost btn-sm btn-full" style="display:none;margin:0 0 8px" onclick="gmailLoginManual()" title="Abre Gmail dentro de la app para completar el inicio de sesión y luego busca la hora del correo de este archivo">🔗 Iniciar sesión en Gmail y buscar la hora</button>
+          <!-- v3.2.9 — caja del código OAuth (oculta; solo aparece si una
+               conexión la necesita). Antes vivía en el panel de monitoreo de
+               Gmail, retirado a petición del usuario -->
+          <div id="gmailManualBox" style="display:none;margin:0 0 8px">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:3px">Si Google muestra un código en el navegador (página licencias-firmas.vercel.app), pégalo aquí:</div>
+            <div style="display:flex;gap:6px">
+              <input class="f-input" id="gmailCodeInp" placeholder="4/0AX4X…" style="flex:1;font-size:11px;padding:5px 7px;font-family:JetBrains Mono,monospace">
+              <button class="btn btn-primary btn-sm" onclick="gmailCodeSubmit()">Enviar</button>
+            </div>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Hora Transmisión (UTC)</label>
@@ -10934,7 +10924,7 @@ async function gmailConnect(){
   if(gmailIsDesktop()){
     try{
       var r=await window.pdfproDesktop.gmailConectar();
-      if(r&&r.ok){toast('✅ Gmail conectado ('+r.cuenta+')','ok');gmailRefreshState();}
+      if(r&&r.ok){toast('✅ Gmail conectado ('+r.cuenta+')','ok');gmailRefreshState();try{gmailHoraAuto();}catch(e){}}
       else if(r&&r.error==='cancelled'){toast('Conexión cancelada','warn');}
       else{toast('No se pudo conectar: '+((r&&r.error)||'')+' — usa el cuadro de código manual','err');}
     }catch(e){toast('Error conectando Gmail: '+e.message,'err');}
@@ -10960,7 +10950,7 @@ async function gmailConnect(){
       settled=true;
       window.removeEventListener('message',onMsg);
       gmailWebExchange(d.code)
-        .then(function(){toast('✅ Gmail conectado','ok');gmailRefreshState();try{w.close();}catch(e){}})
+        .then(function(){toast('✅ Gmail conectado','ok');gmailRefreshState();try{gmailHoraAuto();}catch(e){}try{w.close();}catch(e){}})
         .catch(function(e){toast('Código rechazado: '+e.message+' — usa el cuadro de código manual','err',9000);});
     }
   };
@@ -10996,11 +10986,11 @@ async function gmailCodeSubmit(){
   try{
     if(gmailIsDesktop()){
       var r=await window.pdfproDesktop.gmailCodigo(code);
-      if(r&&r.ok){toast('✅ Gmail conectado ('+r.cuenta+')','ok');if(inp)inp.value='';gmailRefreshState();}
+      if(r&&r.ok){toast('✅ Gmail conectado ('+r.cuenta+')','ok');if(inp)inp.value='';gmailRefreshState();try{gmailHoraAuto();}catch(e){}}
       else toast('Código rechazado: '+((r&&r.error)||''),'err');
     }else{
       await gmailWebExchange(code);
-      toast('✅ Gmail conectado','ok');if(inp)inp.value='';gmailRefreshState();
+      toast('✅ Gmail conectado','ok');if(inp)inp.value='';gmailRefreshState();try{gmailHoraAuto();}catch(e){}
     }
   }catch(e){toast('Error: '+e.message,'err');}
 }
@@ -11035,7 +11025,7 @@ function gmailHoraLimaTxt(ms){
 }
 function gmailRenderList(){
   var box=document.getElementById('gmailList');if(!box)return;
-  if(!_gmailMsgs.length){box.innerHTML='<div style="color:var(--t3);padding:6px 2px">Sin correos con adjunto todavía. Pulsa «Barrer ahora».</div>';return;}
+  if(!_gmailMsgs.length){box.innerHTML='<div style="color:var(--t3);padding:6px 2px">Sin correos con adjunto todavía.</div>';return;}
   var nombreDoc='';
   try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombreDoc=_t.fileName;}catch(e){}
   var nd=gmailNombreBase(nombreDoc);
@@ -11102,6 +11092,16 @@ function gmailLoginBtnOcultar(){var b=document.getElementById('gmailLoginBtn');i
    cancelado) y busca la hora del correo del archivo actual */
 function gmailLoginManual(){
   gmailLoginBtnOcultar();
+  /* v3.2.9 — el panel de monitoreo de Gmail se retiró: este botón es el único
+     punto de entrada al correo. WEB → inicia la conexión OAuth de Gmail
+     (popup de Google; al conectar se rebusca sola la hora del archivo
+     cargado). ESCRITORIO → abre Gmail dentro de la app (vía asistida),
+     como siempre. */
+  if(!gmailIsDesktop()){
+    toast('🔐 Abriendo el inicio de sesión de Google…','warn',9000);
+    try{gmailConnect();}catch(e){toast('No se pudo abrir el inicio de sesión: '+e.message,'err');}
+    return;
+  }
   toast('🔐 Abriendo Gmail para iniciar sesión… (si no aparece la ventana, mira detrás de la app)','warn',9000);
   gmailHoraArchivo(true);
 }
