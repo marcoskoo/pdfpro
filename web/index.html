@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.14 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.15 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -11145,7 +11145,7 @@ function gmailUsarHora(idx){
    v3.2.1: los fallos REALES se muestran (login cancelado, sesión no
    transferida, hora no interpretada…) — el silencio queda solo para
    «no hay correo con este archivo» y «el correo no muestra la hora». */
-var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailReintentoT=null,_gmailReintentoN=0,_gmailAsistidaSesionOk=false;
+var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailReintentoT=null,_gmailReintentoN=0,_gmailAsistidaSesionOk=false,_gmailLoginCancelToast=false;
 function gmailHoraPuede(){return !!(gmailIsDesktop()&&window.pdfproDesktop.gmailHoraBuscar&&_gmailHoraOk);}
 /* v3.2.3 — muestra/oculta el botón de reintento del login de Gmail (junto a
    «Hora Recepción»): visible solo cuando el último intento quedó sin sesión */
@@ -11295,6 +11295,21 @@ async function gmailHoraArchivo(manual,reintento){
     }
     return;
   }
+  /* v3.2.15 — si Google ya está conectado (OAuth), la búsqueda por API es
+     la vía autorizada y NO se abre la ventana de login del buscador: el
+     correo simplemente aún no llegó (la re-búsqueda por API lo encontrará).
+     La ventana del buscador solo aporta cuando NO hay conexión por Google;
+     abrirla aquí era lo que producía el aviso «No se completó el inicio
+     de sesión» sin necesidad. El botón «🔗» (manual) sí puede abrirla. */
+  if(!manual&&gmailIsDesktop()){
+    var _oauthOk=false;
+    try{var _st=await window.pdfproDesktop.gmailEstado();_oauthOk=!!(_st&&_st.conectado);}catch(e){_oauthOk=false;}
+    if(_oauthOk){
+      gmailHoraReintentoAgendar();
+      if(!reintento)toast('📭 Todavía no llega el correo con este archivo — se volverá a buscar solo','warn',9000);
+      return;
+    }
+  }
   try{
     var r=await window.pdfproDesktop.gmailHoraBuscar(nombre,!!manual);
     if(!r||!r.ok){
@@ -11309,7 +11324,15 @@ async function gmailHoraArchivo(manual,reintento){
       if(r.tipo==='LoginCancelado'){
         _gmailAsistidaSesionOk=false;
         gmailLoginBtnMostrar();
-        toast('🔐 No se completó el inicio de sesión en Gmail — pulsa «🔗 Iniciar sesión en Gmail» (junto a Hora Recepción) o carga otro documento','warn',12000);
+        /* v3.2.15 — el PORQUÉ (ventana cerrada, tiempo agotado, no se pudo
+           cargar…) viene en r.error, y el aviso sale UNA vez por sesión:
+           antes salía con cada PDF cargado. En el proceso principal hay un
+           candado: la ventana no se reabre sola tras un cancel; el botón
+           «🔗 Iniciar sesión en Gmail» la abre cuando el usuario quiera. */
+        if(!_gmailLoginCancelToast){
+          _gmailLoginCancelToast=true;
+          toast('🔐 '+((r&&r.error)||'No se completó el inicio de sesión en Gmail')+' — pulsa «🔗 Iniciar sesión en Gmail» (junto a Hora Recepción) para completarlo cuando quieras','warn',12000);
+        }
       }
       else if(r.tipo==='SesionNoTransferida'){
         _gmailAsistidaSesionOk=false;

@@ -3,6 +3,23 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.15 (fin del aviso en bucle del inicio de sesión)
+────────────────────────────────────────────────────────────────────
+  1. El aviso «No se completó el inicio de sesión en Gmail» ya no
+     sale en bucle: si cierras la ventana de inicio de sesión, la
+     app NO la vuelve a abrir sola (antes se reabría cada 30 s con
+     cada PDF cargado). Se abre solo cuando TÚ lo pidas con el botón
+     «🔗 Iniciar sesión en Gmail».
+  2. El aviso ahora dice el MOTIVO real: «ventana cerrada», «tiempo
+     agotado» o «no se pudo cargar Gmail» — antes no decía nada y no
+     se podía saber qué pasó.
+  3. La ventana de inicio de sesión ya no puede quedar escondida
+     detrás de otras ventanas (siempre queda a la vista).
+  4. Si ya conectaste Google («Conectar Gmail» o el botón «🔗»), la
+     ventana del buscador NO se abre nunca: la búsqueda por Google es
+     la vía autorizada y se re-intenta sola hasta que el correo
+     llegue.
+
 NOVEDADES DE LA VERSIÓN 3.2.14 (búsqueda en el ORDEN correcto)
 ────────────────────────────────────────────────────────────────────
   1. La hora de recepción ahora se busca EXACTAMENTE en el orden

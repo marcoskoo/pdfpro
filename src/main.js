@@ -592,6 +592,7 @@ let _gmailHoraLoginWin = null;
 let _gmailHoraLoginPromesa = null;               // login en curso (llamadas concurrentes comparten)
 let _gmailHoraCadena = Promise.resolve();      // una búsqueda a la vez
 let _gmailHoraUltimoFalloLogin = 0;            // cooldown tras cancelar login
+let _gmailHoraLoginCancelado = false;          // v3.2.15: candado por sesión — tras UN login cancelado, las búsquedas automáticas no vuelven a abrir la ventana (solo el botón «🔗 Iniciar sesión en Gmail»)
 
 /* Registro de diagnóstico del flujo completo (con rotación a .old). */
 function gmailHoraLog(msg) {
@@ -646,6 +647,9 @@ function abrirLoginGmailEnApp() {
       title: 'Iniciar sesión en Gmail — PDFPro (una sola vez)',
       autoHideMenuBar: true, backgroundColor: '#ffffff',
       parent: win || undefined,
+      alwaysOnTop: true, /* v3.2.15 — la ventana de login no puede quedar
+        oculta tras otras ventanas: el usuario no la veía, pasaban los 5
+        minutos y aparecía «No se completó el inicio de sesión» */
       webPreferences: {
         contextIsolation: true, nodeIntegration: false, sandbox: true,
         partition: 'persist:gmail-login'
@@ -653,6 +657,10 @@ function abrirLoginGmailEnApp() {
     });
     _gmailHoraLoginWin.webContents.setUserAgent(uaChrome);
     let resuelto = false;
+    /* v3.2.15 — resuelve { cookies, motivo }: el PORQUÉ del fallo («ventana
+       cerrada», «tiempo agotado (5 min)», «no se pudo cargar Gmail») llega
+       al aviso del usuario; antes todo se reportaba igual y no se podía
+       diagnosticar nada desde la pantalla. */
     const finalizar = async (ok, motivo) => {
       if (resuelto) return;
       resuelto = true;
@@ -667,7 +675,7 @@ function abrirLoginGmailEnApp() {
           if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) urlLogin = _gmailHoraLoginWin.webContents.getURL();
         } catch (e) { /* ventana ya cerrada */ }
         gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})${urlLogin ? ' · URL: ' + urlLogin : ''}`);
-        salir(null);
+        salir({ cookies: null, motivo: motivo || 'ventana cerrada' });
         return;
       }
       try {
@@ -678,10 +686,10 @@ function abrirLoginGmailEnApp() {
           return /(^|\.)google\.com$/.test(dom);
         });
         gmailHoraLog(`login completo: ${cookies.length} cookies de google.com cosechadas`);
-        salir(cookies);
+        salir({ cookies, motivo: '' });
       } catch (e) {
         gmailHoraLog('error cosechando cookies: ' + e.message);
-        salir(null);
+        salir({ cookies: null, motivo: 'no se pudieron leer las cookies de la sesión' });
       }
       /* la ventana ya cumplió su misión: se cierra sola */
       try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
@@ -778,17 +786,26 @@ async function _gmailHoraBuscar(nombre, manual) {
          Hasta 2 rondas: si tras inyectar sigue pidiendo sesión se
          re-cosechan las cookies (Google las rota) y se reintenta. */
       for (let ronda = 1; ronda <= 2 && !r; ronda++) {
-        if (!manual && Date.now() - _gmailHoraUltimoFalloLogin < 30000) {
-          gmailHoraLog('login omitido: se canceló hace menos de 30 s');
-          return { ok: false, error: 'Inicio de sesión en Gmail cancelado hace un momento', tipo: 'LoginCancelado' };
+        /* v3.2.15 — candado por sesión: tras UN login cancelado, las
+           búsquedas AUTOMÁTICAS no vuelven a abrir la ventana. Antes el
+           cooldown era de solo 30 s: cada PDF cargado reabría la ventana,
+           el usuario la cerraba y el aviso «No se completó el inicio de
+           sesión» salía una y otra vez. Solo el botón «🔗 Iniciar sesión
+           en Gmail» (manual=true) la abre de nuevo. */
+        if (!manual && _gmailHoraLoginCancelado) {
+          gmailHoraLog('login omitido: ya se canceló una vez en esta sesión');
+          return { ok: false, error: 'Inicio de sesión en Gmail cancelado — pulsa «🔗 Iniciar sesión en Gmail» para completarlo cuando quieras', tipo: 'LoginCancelado' };
         }
         gmailHoraLog(`ronda ${ronda}: Gmail pide sesión (URL: ${_gmailHoraSvc.urlActual()})`);
         gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
-        const cookies = await abrirLoginGmailEnApp();
+        const login = await abrirLoginGmailEnApp();
+        const cookies = login && login.cookies;
         if (!cookies || !cookies.length) {
           _gmailHoraUltimoFalloLogin = Date.now();
-          return { ok: false, error: 'No se completó el inicio de sesión en Gmail', tipo: 'LoginCancelado' };
+          _gmailHoraLoginCancelado = true;   // v3.2.15: por el resto de la sesión no se reabre sola
+          return { ok: false, error: 'No se completó el inicio de sesión en Gmail (' + ((login && login.motivo) || 'ventana cerrada') + ')', tipo: 'LoginCancelado' };
         }
+        _gmailHoraLoginCancelado = false;    // el login sí se completó: se permite de nuevo si la sesión expira
         const inj = await _gmailHoraSvc.inyectarCookies(cookies);
         gmailHoraLog(`cookies: ${inj.total} cosechadas, ${inj.ok} inyectadas${inj.fallos.length ? ' · fallos: ' + inj.fallos.join(' | ') : ''}`);
         gmailHoraEvento(`Sesión transferida (${inj.ok} cookies); buscando de nuevo…`);
