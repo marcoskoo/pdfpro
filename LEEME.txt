@@ -1,7 +1,28 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.3 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.4 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.4 (corrige «la ventana de Gmail se cerró
+al segundo» y la matrícula de planes de aerolínea como SRU 2226)
+────────────────────────────────────────────────────────────────────
+  1. VENTANA DE GMAIL: YA NO SE CIERRA SOLA ANTES DE TIEMPO. Gmail
+     muestra su pantalla de carga en mail.google.com durante 1-3
+     segundos TAMBIÉN SIN sesión (antes de saltar al formulario de
+     acceso) y la app tomaba eso por «sesión lista»: cerraba la
+     ventana al segundo y el inicio de sesión nunca se completaba.
+     Ahora exige sesión real (cookies SID/SAPISID de Google) con la
+     página terminada de cargar, confirmada dos veces; sin sesión la
+     ventana queda ABIERTA esperando a que inicies sesión.
+  2. MATRÍCULA DE PLANES DE AEROLÍNEA (SRU 2226, JAP 7163…): el
+     casillero 7 con designador de empresa + número de vuelo ahora se
+     reconoce también cuando el rótulo del formulario llega revuelto
+     por el texto interno del PDF.
+  3. EL CAMPO «MATRÍCULA» SIEMPRE REFLEJA EL DOCUMENTO CARGADO: si la
+     detección no encuentra nada se LIMPIA (antes conservaba la
+     matrícula del documento ANTERIOR — un «OB-2176P…» viejo en un
+     plan SRU 2226 — y terminaba en el nombre del archivo exportado) y
+     se avisa con «✈ Matrícula no detectada».
 
 NOVEDADES DE LA VERSIÓN 3.2.3 (corrige «No se completó el inicio de
 sesión en Gmail»)

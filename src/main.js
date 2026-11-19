@@ -611,7 +611,11 @@ function gmailHoraEvento(msg, tipo) {
     aplicación podría no ser seguro»), causa raíz de los login que nunca
     completan desde v3.2.0; (2) una llamada concurrente espera la MISMA
     promesa (antes se resolvía null = «cancelado» y el reintento
-    inmediato fallaba); (3) la ventana toma el foco al mostrarse. */
+    inmediato fallaba); (3) la ventana toma el foco al mostrarse.
+    v3.2.4: la ventana ya NO se cierra por la URL sola — durante la
+    pantalla de carga inicial mail.google.com aparece SIN sesión 1-3 s
+    antes del redirect al login: se exige sesión real (cookies
+    SID/SAPISID/…) con la navegación terminada, 2 sondeos seguidos. */
 function abrirLoginGmailEnApp() {
   if (_gmailHoraLoginPromesa) return _gmailHoraLoginPromesa;
   _gmailHoraLoginPromesa = new Promise((resolve) => {
@@ -644,7 +648,13 @@ function abrirLoginGmailEnApp() {
       clearTimeout(limite);
       const salir = (v) => { _gmailHoraLoginPromesa = null; resolve(v); };
       if (!ok) {
-        gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})`);
+        /* URL final de la ventana: distingue «el usuario cerró el login»
+           de «Google mostró una página inesperada» en gmail-hora.log */
+        let urlLogin = '';
+        try {
+          if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) urlLogin = _gmailHoraLoginWin.webContents.getURL();
+        } catch (e) { /* ventana ya cerrada */ }
+        gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})${urlLogin ? ' · URL: ' + urlLogin : ''}`);
         salir(null);
         return;
       }
@@ -664,21 +674,42 @@ function abrirLoginGmailEnApp() {
       /* la ventana ya cumplió su misión: se cierra sola */
       try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
     };
-    /* ¿ya con sesión? mail.google.com carga directo; si redirige a
-       accounts.google.com hay que iniciar sesión (URL vuelve a mail… al
-       terminar). Se sondea la URL: robusto y sin tocar la página. */
+    /* ¿sesión REAL? La URL sola NO basta (v3.2.4): al abrir sin sesión,
+       mail.google.com muestra su pantalla de carga 1-3 s ANTES de
+       redirigir al login (accounts.google.com) y v3.2.3 cerraba la
+       ventana ahí mismo («cargó por un segundo y se cerró») cosechando
+       cookies parciales sin sesión. Se exigen las TRES señales: URL en
+       Gmail + navegación terminada + cookies de SESIÓN de google.com
+       (SID/SAPISID/HSID/SSID/APISID), confirmadas 2 sondeos seguidos. */
+    const conSesionGoogle = async () => {
+      try {
+        const todas = await particion.cookies.getAll({});
+        const nombres = new Set(todas.filter((c) => {
+          const dom = String(c.domain || '').replace(/^\./, '');
+          return /(^|\.)google\.com$/.test(dom);
+        }).map((c) => c.name));
+        return ['SID', 'SAPISID', 'HSID', 'SSID', 'APISID'].some((n) => nombres.has(n));
+      } catch (e) { return false; }
+    };
     const enGmail = () => {
       try {
         const u = _gmailHoraLoginWin.webContents.getURL();
-        return /^https:\/\/mail\.google\.com\//.test(u);
+        if (!/^https:\/\/mail\.google\.com\//.test(u)) return false;
+        return !_gmailHoraLoginWin.webContents.isLoading();
       } catch (e) { return false; }
     };
+    let confirmaciones = 0;
     const poll = setInterval(() => {
       if (!_gmailHoraLoginWin || _gmailHoraLoginWin.isDestroyed()) return;
-      if (enGmail()) {
-        /* pequeño margen para que se asienten las cookies de la sesión */
-        setTimeout(() => finalizar(true), 1500);
-      }
+      if (!enGmail()) { confirmaciones = 0; return; }
+      conSesionGoogle().then((conSesion) => {
+        if (!conSesion) { confirmaciones = 0; return; }
+        confirmaciones++;
+        if (confirmaciones === 2) {
+          /* pequeño margen para que se asienten las cookies de la sesión */
+          setTimeout(() => finalizar(true), 1500);
+        }
+      }).catch(() => { confirmaciones = 0; });
     }, 1000);
     const limite = setTimeout(() => finalizar(false, 'tiempo agotado (5 min)'), 5 * 60 * 1000);
     _gmailHoraLoginWin.on('closed', () => { _gmailHoraLoginWin = null; finalizar(false); });
