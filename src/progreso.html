@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>PDFPro — Progreso Gmail</title>
+<style>
+  :root{ --bg:#15171c; --panel:#1d2027; --t1:#e8eaed; --t2:#9aa0a6; --t3:#5f6368;
+         --ok:#81c995; --err:#f28b82; --login:#fdd663; --info:#8ab4f8; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--t1);
+       font:12px/1.5 "Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+  header{padding:8px 12px;background:var(--panel);border-bottom:1px solid #2b2f38;flex:0 0 auto}
+  header h1{margin:0;font-size:12px;font-weight:600;letter-spacing:.3px}
+  header .archivo{margin-top:2px;color:var(--t2);font-size:11px;white-space:nowrap;
+                  overflow:hidden;text-overflow:ellipsis}
+  header .archivo b{color:var(--info);font-weight:600}
+  #log{flex:1 1 auto;overflow-y:auto;margin:0;padding:8px 12px;
+       font:11px/1.65 "Cascadia Mono",Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  #log .ts{color:var(--t3);margin-right:6px}
+  #log .info{color:var(--t1)}
+  #log .login{color:var(--login)}
+  #log .ok{color:var(--ok)}
+  #log .err{color:var(--err)}
+  footer{flex:0 0 auto;display:flex;gap:10px;align-items:center;
+         padding:6px 12px;background:var(--panel);border-top:1px solid #2b2f38}
+  footer .hint{color:var(--t3);font-size:10.5px;flex:1}
+  footer button{background:#2b2f38;color:var(--t2);border:0;border-radius:4px;
+                padding:3px 10px;font-size:11px;cursor:pointer}
+  footer button:hover{color:var(--t1)}
+  ::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar-thumb{background:#33373f;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Progreso — búsqueda de la hora de recepción (Gmail)</h1>
+  <div class="archivo" id="archivo">Esperando una búsqueda…</div>
+</header>
+<pre id="log"></pre>
+<footer>
+  <span class="hint">Puede minimizarse o cerrarse — la búsqueda sigue en segundo plano.</span>
+  <button id="limpiar" title="Borra las líneas mostradas (no afecta la búsqueda)">Limpiar</button>
+</footer>
+<script>
+  var MAX_LINEAS = 400;
+  var log = document.getElementById('log');
+  var elArchivo = document.getElementById('archivo');
+  document.getElementById('limpiar').onclick = function () { log.innerHTML = ''; };
+
+  function hhmmssLima(ms) {
+    var d = new Date(ms - 300 * 60000);           /* Lima UTC−5 */
+    function p(n){return String(n).padStart(2,'0');}
+    return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+  }
+
+  function render(lineas) {
+    if (!lineas || !lineas.length) return;
+    var frag = document.createDocumentFragment();
+    lineas.forEach(function (L) {
+      var div = document.createElement('div');
+      var ts = document.createElement('span');
+      ts.className = 'ts';
+      ts.textContent = hhmmssLima(L.ms || Date.now());
+      var tx = document.createElement('span');
+      tx.className = L.tipo || 'info';
+      tx.textContent = L.msg || '';
+      div.appendChild(ts); div.appendChild(tx);
+      frag.appendChild(div);
+    });
+    log.appendChild(frag);
+    while (log.childNodes.length > MAX_LINEAS) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;              /* auto-scroll */
+    var ult = lineas[lineas.length - 1];
+    if (ult && ult.archivo) {
+      elArchivo.textContent = 'Archivo: ';
+      var b = document.createElement('b');
+      b.textContent = ult.archivo;
+      elArchivo.appendChild(b);
+    }
+  }
+
+  if (window.pdfproProgreso && window.pdfproProgreso.onGmailProgreso) {
+    window.pdfproProgreso.onGmailProgreso(function (lineas) { render(lineas); });
+  }
+</script>
+</body>
+</html>

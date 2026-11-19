@@ -611,6 +611,72 @@ function gmailHoraEvento(msg, tipo) {
   try {
     if (win && !win.isDestroyed()) win.webContents.send('gmail-hora:evento', { msg, tipo: tipo || 'info' });
   } catch (e) { /* ventana cerrada */ }
+  gmailProgresoLinea(msg, tipo);
+}
+
+/* ── v3.2.17 — VENTANA DE PROGRESO de la búsqueda de la hora ──
+   Ventana PEQUEÑA, independiente y minimizable que muestra EN TEXTO los
+   pasos que va ejecutando la búsqueda: navegador, login, cookies, cada
+   consulta a Gmail, el recorrido de la bandeja CORREO POR CORREO y el
+   resultado final. Antes los pasos solo llegaban como toasts que
+   desaparecen a los pocos segundos y la búsqueda parecía quedarse quieta
+   («carga Gmail y no hace nada más»). Minimizarla o cerrarla NO cancela
+   la búsqueda: es solo un visor (el historial completo se reenvía al
+   volver a abrirla con la siguiente búsqueda). */
+let _gmailProgresoWin = null;
+let _gmailProgresoLista = [];            /* {ms, msg, tipo, archivo?} */
+let _gmailProgresoArchivo = '';
+const _GMAIL_PROGRESO_MAX = 400;
+
+function gmailProgresoEnviar() {
+  try {
+    if (_gmailProgresoWin && !_gmailProgresoWin.isDestroyed() && _gmailProgresoWin.webContents) {
+      _gmailProgresoWin.webContents.send('gmail-hora:progreso', _gmailProgresoLista);
+    }
+  } catch (e) { /* ventana cerrándose */ }
+}
+
+/* Añade una línea al historial y la envía a la ventana (si está abierta). */
+function gmailProgresoLinea(msg, tipo, archivo) {
+  _gmailProgresoLista.push({
+    ms: Date.now(), msg: String(msg || ''),
+    tipo: tipo || 'info',
+    archivo: archivo || _gmailProgresoArchivo || undefined
+  });
+  if (_gmailProgresoLista.length > _GMAIL_PROGRESO_MAX) {
+    _gmailProgresoLista.splice(0, _gmailProgresoLista.length - _GMAIL_PROGRESO_MAX);
+  }
+  gmailProgresoEnviar();
+}
+
+/* Abre (o reutiliza) la ventana de progreso. showInactive: se muestra sin
+   robar el foco de la ventana principal — el usuario puede seguir
+   trabajando y minimizarla cuando quiera. */
+function gmailProgresoAbrir(archivo) {
+  if (archivo) _gmailProgresoArchivo = archivo;
+  if (_gmailProgresoWin && !_gmailProgresoWin.isDestroyed()) {
+    gmailProgresoEnviar();               /* ya abierta: refresca el historial */
+    return;
+  }
+  _gmailProgresoWin = new BrowserWindow({
+    width: 480, height: 360,
+    minWidth: 320, minHeight: 200,
+    minimizable: true, maximizable: false, resizable: true,
+    autoHideMenuBar: true,
+    title: 'PDFPro — Progreso Gmail',
+    backgroundColor: '#15171c',
+    show: false,                         /* se muestra al cargar (sin flash blanco) */
+    webPreferences: {
+      preload: path.join(__dirname, 'preload-progreso.js'),
+      contextIsolation: true, nodeIntegration: false
+    }
+  });
+  _gmailProgresoWin.loadFile(path.join(__dirname, 'progreso.html'));
+  _gmailProgresoWin.once('ready-to-show', () => {
+    try { _gmailProgresoWin.showInactive(); } catch (e) { /* ya cerrada */ }
+  });
+  _gmailProgresoWin.webContents.on('did-finish-load', gmailProgresoEnviar);
+  _gmailProgresoWin.on('closed', () => { _gmailProgresoWin = null; });
 }
 
 /** Abre Gmail DENTRO de la app para iniciar sesión (ventana hija, sesión
@@ -767,6 +833,10 @@ async function _gmailHoraBuscar(nombre, manual) {
       });
     }
     gmailHoraLog(`buscar «${nombre}»`);
+    /* v3.2.17 — la ventana de progreso se abre (o refresca) con cada
+       búsqueda: el usuario VE los pasos en texto en vez de toasts fugaces */
+    gmailProgresoAbrir(nombre);
+    gmailProgresoLinea(`Búsqueda de la hora de recepción de «${nombre}» (vía asistida)…`);
     /* v3.2.13 — si ningún navegador está disponible (Chrome/Edge/Chromium)
        el error NO se traga: antes un «Executable doesn't exist» seguía como
        «aviso» y la búsqueda moría en un error genérico sin explicación. */
@@ -774,6 +844,7 @@ async function _gmailHoraBuscar(nombre, manual) {
       await _gmailHoraSvc.iniciar();
     } catch (e) {
       gmailHoraLog('ERROR al iniciar navegador: ' + e.message);
+      gmailProgresoLinea('✖ No se pudo iniciar el navegador de búsqueda: ' + e.message, 'err');
       return { ok: false, error: e.message, tipo: 'NavegadorFalta' };
     }
 
@@ -794,6 +865,7 @@ async function _gmailHoraBuscar(nombre, manual) {
            en Gmail» (manual=true) la abre de nuevo. */
         if (!manual && _gmailHoraLoginCancelado) {
           gmailHoraLog('login omitido: ya se canceló una vez en esta sesión');
+          gmailProgresoLinea('✖ Se omitió el inicio de sesión: ya se canceló una vez en esta sesión — pulsa «🔗 Iniciar sesión en Gmail» en la app', 'err');
           return { ok: false, error: 'Inicio de sesión en Gmail cancelado — pulsa «🔗 Iniciar sesión en Gmail» para completarlo cuando quieras', tipo: 'LoginCancelado' };
         }
         gmailHoraLog(`ronda ${ronda}: Gmail pide sesión (URL: ${_gmailHoraSvc.urlActual()})`);
@@ -803,6 +875,7 @@ async function _gmailHoraBuscar(nombre, manual) {
         if (!cookies || !cookies.length) {
           _gmailHoraUltimoFalloLogin = Date.now();
           _gmailHoraLoginCancelado = true;   // v3.2.15: por el resto de la sesión no se reabre sola
+          gmailProgresoLinea('✖ No se completó el inicio de sesión en Gmail (' + ((login && login.motivo) || 'ventana cerrada') + ')', 'err');
           return { ok: false, error: 'No se completó el inicio de sesión en Gmail (' + ((login && login.motivo) || 'ventana cerrada') + ')', tipo: 'LoginCancelado' };
         }
         _gmailHoraLoginCancelado = false;    // el login sí se completó: se permite de nuevo si la sesión expira
@@ -817,6 +890,7 @@ async function _gmailHoraBuscar(nombre, manual) {
         }
       }
       if (!r) {
+        gmailProgresoLinea('✖ La sesión de Gmail no se pudo transferir al buscador invisible', 'err');
         return { ok: false, error: 'La sesión de Gmail no se pudo transferir al buscador invisible', tipo: 'SesionNoTransferida' };
       }
     }
@@ -825,6 +899,7 @@ async function _gmailHoraBuscar(nombre, manual) {
        cuenta, por defecto Lima UTC−5): se convierte a epoch/UTC */
     const ms = parseHoraGmail(r.horaRecepcion);
     gmailHoraLog(`hora «${r.horaRecepcion}» (fuente: ${r.fuente}) → ${ms ? new Date(ms).toISOString() : 'NO INTERPRETADA (revisar formato)'}`);
+    gmailProgresoLinea(`✔ Hora de recepción de «${nombre}»: ${r.horaRecepcion}${r.asunto ? ' — «' + r.asunto + '»' : ''}`, 'ok');
     return {
       ok: true,
       archivo: nombre,
@@ -839,6 +914,7 @@ async function _gmailHoraBuscar(nombre, manual) {
     };
   } catch (e) {
     gmailHoraLog(`ERROR ${e.name || 'Error'}: ${e.message}`);
+    gmailProgresoLinea(`✖ ${e.name === 'ArchivoNoEncontradoError' ? 'No se encontró el correo del archivo' : e.message}`, 'err');
     return { ok: false, error: e.message, tipo: e.name || 'Error' };
   }
 }
@@ -846,6 +922,7 @@ async function _gmailHoraBuscar(nombre, manual) {
 app.on('before-quit', () => {
   if (_gmailHoraSvc) { try { _gmailHoraSvc.cerrar(true); } catch (e) { /* noop */ } }
   if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) { try { _gmailHoraLoginWin.close(); } catch (e) { /* noop */ } }
+  if (_gmailProgresoWin && !_gmailProgresoWin.isDestroyed()) { try { _gmailProgresoWin.close(); } catch (e) { /* noop */ } }
 });
 
 /* ── v3.1.0 — VERIFICACIÓN DE LICENCIAS DGAC (SIVLAM) ──

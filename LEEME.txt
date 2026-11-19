@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.17 (ventana de progreso de la búsqueda)
+────────────────────────────────────────────────────────────────────
+  1. NUEVA VENTANA DE PROGRESO: una ventana pequeña, independiente
+     y minimizable que muestra EN TEXTO los pasos que va ejecutando
+     la búsqueda de la hora de recepción — qué navegador usa, el
+     estado del inicio de sesión, las cookies, cada consulta EXACTA
+     a Gmail y el recorrido de la bandeja CORREO POR CORREO, hasta
+     el resultado final (✔ hora obtenida / ✖ causa del fallo).
+  2. Se abre sola con cada búsqueda (sin robar el foco de la app);
+     minimizarla o cerrarla NO cancela la búsqueda — es solo un
+     visor, y el historial completo se reenvía al volver a abrirse.
+  3. Los pasos con marca de hora (hora de Lima) y colores: normales
+     en blanco, inicio de sesión en amarillo, resultado en verde y
+     errores en rojo. Botón «Limpiar» para vaciar la vista.
+
 NOVEDADES DE LA VERSIÓN 3.2.16 (match con archivos «(1) (1)»)
 ────────────────────────────────────────────────────────────────────
   1. CAUSA RAÍZ de que la hora no se capturara con archivos

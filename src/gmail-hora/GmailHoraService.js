@@ -174,6 +174,10 @@ class GmailHoraService {
   }
 
   async _buscar(query) {
+    /* v3.2.17 — la consulta se muestra en la ventana de progreso: ver la
+       query EXACTA (in:inbox, filename:"…", texto libre) deja claro qué
+       está haciendo la búsqueda en cada momento */
+    this.opts.onProgress(`Consultando Gmail: ${query}`);
     await this.page.goto(this._urlBusqueda(query), {
       waitUntil: 'domcontentloaded',
       timeout: this.opts.timeout
