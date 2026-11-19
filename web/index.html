@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.7 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.8 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -2645,10 +2645,31 @@ function docTabNew(file){
   else{handleFileOpen(file);}
   return id;
 }
+/* v3.2.8 — Hora Recepción (UTC) y Matrícula (Aeronave / Espacio) son por
+   PESTAÑA: cada documento abierto guarda sus propios valores y al cambiar
+   de pestaña la ficha se actualiza al documento activo (lo pedido: al
+   alternar entre archivos se refrescan ambos campos). Guardar copia los
+   campos actuales de la ficha a la pestaña; Restaurar los vuelve a poner
+   (ficha de escritorio, espejo móvil y vista previa del sello). */
+function _selloCamposGuardar(tab){
+  if(!tab)return;
+  var f=document.getElementById('selloRxDate'),h=document.getElementById('selloRxTime'),m=document.getElementById('selloMatricula');
+  tab.selloFecha=f?f.value:'';tab.selloHora=h?h.value:'';tab.selloMatricula=m?m.value:'';
+}
+function _selloCamposRestaurar(tab){
+  var fecha=(tab&&tab.selloFecha)||'',hora=(tab&&tab.selloHora)||'',mat=(tab&&tab.selloMatricula)||'';
+  var f=document.getElementById('selloRxDate'),h=document.getElementById('selloRxTime'),m=document.getElementById('selloMatricula');
+  if(f)f.value=fecha;if(h)h.value=hora;if(m)m.value=mat;
+  try{fplMatriculaChanged();}catch(e){}          // la sesión sigue a la pestaña activa
+  try{mobSelloSync(false);}catch(e){}            // ficha móvil en espejo
+  try{updateSelloPreview();}catch(e){}
+}
 function docTabSwitch(id){
   if(activeTabId===id)return;
   nvDisarm();   // v2.9.2 — el sello armado no sobrevive al cambio de pestaña
   saveProjectNow();
+  // v3.2.8 — guardar Hora Recepción y Matrícula de la pestaña que se deja
+  var _sal=docTabGet(activeTabId);if(_sal)_selloCamposGuardar(_sal);
   // Save current scroll position
   if(activeTabId){var ct=docTabGet(activeTabId);if(ct){var pb=document.getElementById('pagesBox');if(pb)ct._scrollTop=pb.scrollTop;}}
   activeTabId=id;
@@ -2693,6 +2714,12 @@ function docTabSwitch(id){
     document.getElementById('sbDot').classList.remove('ok');
     document.getElementById('sbStatus').textContent='Sin documento';
   }
+  // v3.2.8 — la ficha refleja el documento ACTIVO: restaurar su Hora
+  // Recepción (UTC) y su Matrícula; si el documento aún no tiene hora y
+  // tiene archivo, se busca en Gmail la de SU correo (al alternar entre
+  // pestañas la búsqueda ya hecha no se repite: la hora viaja con la pestaña)
+  _selloCamposRestaurar(tab);
+  if(!(tab.selloHora||'')&&tab.fileName&&tab.fileName!=='Sin título'){try{gmailHoraAuto();}catch(e){}}
 }
 function docTabGet(id){return docTabs.find(function(t){return t.id===id;});}
 function docTabSaveCurrent(){
@@ -2711,6 +2738,7 @@ function docTabClose(id,e){
     document.getElementById('dropZone').classList.remove('hidden');document.getElementById('pagesBox').classList.add('hidden');
     try{document.body.classList.remove('nativemode');var nbx=document.getElementById('nativeBox');if(nbx){nbx.classList.add('hidden');while(nbx.firstChild)nbx.removeChild(nbx.firstChild);}}catch(e){}
     document.getElementById('sbDot').classList.remove('ok');document.getElementById('sbStatus').textContent='Sin documento';
+    try{_selloCamposRestaurar(null);}catch(e){}   // v3.2.8 — sin documento → ficha limpia
     renderDocTabs();return;
   }
   var idx=docTabs.findIndex(function(t){return t.id===id;});
@@ -5256,6 +5284,8 @@ function _fplSetMatricula(v){
   if(el&&(!el.value||el.value!==v)){el.value=v;fplMatriculaChanged();}
   var mel=document.getElementById('mobSelloMatricula');
   if(mel)mel.value=v;
+  var t=null;try{t=docTabGet(activeTabId);}catch(e){}
+  if(t)t.selloMatricula=v;   // v3.2.8 — la matrícula pertenece a SU pestaña
 }
 /* v3.1.7 — el botón «✈ Detectar» se retiró: la detección de la matrícula
    es AUTOMÁTICA al cargar cualquier documento —
@@ -9345,6 +9375,7 @@ async function openFilesList(files){
       // Si el tab activo ya tiene documento → guardar su estado y abrir tab nuevo
       if(activeTabId&&(pdfDoc||((docTabGet(activeTabId)||{}).kind))){
         docTabSaveCurrent();
+        _selloCamposGuardar(docTabGet(activeTabId));   // v3.2.8 — su Hora Recepción y Matrícula viajan con la pestaña
         var newId='tab_'+(++_tabIdSeq);
         docTabs.push({id:newId,fileName:String(f.name||'').replace(/\.(pdf|xlsx|xlsm|xls|csv|docx?|txt)$/i,''),fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1});
         activeTabId=newId;
@@ -11029,14 +11060,23 @@ function gmailRenderList(){
    UTC sumando 5 h — 07:00 Lima → 12:00 UTC; si cruza la medianoche
    (20:30 Lima), el campo queda en 01:30 UTC y la FECHA también avanza un
    día. El toast muestra la conversión completa para verificarla. */
-function gmailAplicarHora(ms,origen,gmailLocal){
+function gmailAplicarHora(ms,origen,gmailLocal,tab){
   var d=new Date(ms);
   var fecha=d.toISOString().slice(0,10);            // UTC YYYY-MM-DD
   var hora=String(d.getUTCHours()).padStart(2,'0')+String(d.getUTCMinutes()).padStart(2,'0');
-  var f=document.getElementById('selloRxDate');if(f)f.value=fecha;
-  var h=document.getElementById('selloRxTime');if(h)h.value=hora;
-  updateSelloPreview();
-  toast('📥 Recepción aplicada (UTC): '+fecha.split('-').reverse().join('/')+' '+hora+' — '+origen+(gmailLocal?' · Gmail: «'+gmailLocal+'» (hora Lima) +5 h → UTC':''),'ok',9000);
+  /* v3.2.8 — la hora pertenece a SU pestaña (la del archivo buscado): se
+     guarda siempre en ella; la FICHA solo se toca si esa pestaña sigue
+     activa (si el usuario ya cambió de documento, su hora no se pisa) */
+  var t2=tab||null,act=null;
+  try{act=docTabGet(activeTabId);}catch(e){}
+  if(!t2)t2=act;
+  if(t2){t2.selloFecha=fecha;t2.selloHora=hora;}
+  if(!tab||t2===act){
+    var f=document.getElementById('selloRxDate');if(f)f.value=fecha;
+    var h=document.getElementById('selloRxTime');if(h)h.value=hora;
+    updateSelloPreview();
+    toast('📥 Recepción aplicada (UTC): '+fecha.split('-').reverse().join('/')+' '+hora+' — '+origen+(gmailLocal?' · Gmail: «'+gmailLocal+'» (hora Lima) +5 h → UTC':''),'ok',9000);
+  }
 }
 function gmailUsarHora(idx){
   var m=_gmailMsgs[idx];if(!m||!m.recibidoMs)return;
@@ -11101,7 +11141,7 @@ function gmailBuscarHitPorAdjunto(msgs,nombre){
   }
   return null;
 }
-async function gmailHoraApiPorArchivo(nombre){
+async function gmailHoraApiPorArchivo(nombre,tab){
   var base=String(nombre||'').replace(/\.[^.]+$/,'').trim();
   if(!base)return false;
   var qs=gmailQuerysPorArchivo(nombre);
@@ -11122,7 +11162,7 @@ async function gmailHoraApiPorArchivo(nombre){
     if(hit){
       var rxT=document.getElementById('selloRxTime');
       if(rxT&&rxT.value)return true;          // se llenó a mano mientras: no pisar
-      gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs));
+      gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs),tab);
       return true;
     }
     /* hubo resultados pero ninguno con ese adjunto: la consulta siguiente
@@ -11135,14 +11175,14 @@ async function gmailHoraApiPorArchivo(nombre){
    v3.2.6: 1.ª vía API de Gmail (OAuth, web y escritorio); 2.ª vía
    asistida con Playwright (solo escritorio, sin OAuth) */
 async function gmailHoraArchivo(manual){
-  var nombre='';
-  try{var _t=docTabGet(activeTabId);if(_t&&_t.fileName)nombre=_t.fileName;}catch(e){}
+  var nombre='';var _tab=null;
+  try{_tab=docTabGet(activeTabId);if(_tab&&_tab.fileName)nombre=_tab.fileName;}catch(e){}
   if(!nombre)nombre=fileName||'';
   if(!nombre)return;
   var t=document.getElementById('selloRxTime');
   if(t&&t.value&&!manual){gmailLoginBtnOcultar();return;}  // ya hay hora: no se toca
   try{
-    if(await gmailHoraApiPorArchivo(nombre)){gmailLoginBtnOcultar();return;}
+    if(await gmailHoraApiPorArchivo(nombre,_tab)){gmailLoginBtnOcultar();return;}
   }catch(e){/* la API falló (sin conexión/sin sesión): se prueba la vía asistida */}
   if(!gmailHoraPuede())return;
   try{
@@ -11172,7 +11212,7 @@ async function gmailHoraArchivo(manual){
       toast('📧 Hora leída de Gmail pero no interpretada: «'+r.horaRecepcion+'» — repórtala para ajustar el parser','warn',10000);
       return;
     }
-    gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'),r.horaRecepcion);
+    gmailAplicarHora(r.recibidoMs,'correo de '+(r.remitente||r.remitenteCorreo||'Gmail'),r.horaRecepcion,_tab);
   }catch(e){toast('📧 Error buscando el correo: '+e.message,'err',9000);}
 }
 /* enganche tras cargar un documento (con retardo: deja pasar antes la

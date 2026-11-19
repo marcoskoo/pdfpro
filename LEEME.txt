@@ -1,7 +1,27 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.7 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.8 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.8 (múltiples archivos: la ficha sigue a
+la pestaña activa)
+────────────────────────────────────────────────────────────────────
+  1. NUEVO: «Hora Recepción (UTC)» y «Matrícula (Aeronave / Espacio)»
+     son ahora POR PESTAÑA. Al cambiar de archivo o pestaña la ficha
+     del sello se actualiza automáticamente con los valores del
+     documento activo (antes conservaba los del documento anterior).
+  2. Si el documento de la pestaña a la que cambias aún no tiene hora
+     de recepción, se busca automáticamente en Gmail la de SU correo
+     (la búsqueda usa el archivo de esa pestaña). La hora viaja con la
+     pestaña: alternar entre archivos no repite búsquedas ya hechas ni
+     pisa horas — si la respuesta de Gmail llega cuando ya cambiaste
+     de pestaña, la hora se guarda en SU pestaña y no toca la ficha
+     del documento que estás viendo.
+  3. La matrícula detectada al cargar también queda guardada en su
+     pestaña, y los valores escritos a mano se conservan al alternar.
+  4. Al cerrar la última pestaña la ficha queda limpia (sin documento
+     → sin hora ni matrícula), coherente con que el campo refleja
+     siempre el documento cargado.
 
 NOVEDADES DE LA VERSIÓN 3.2.7 (caso real SRU2226 — «PV CIX LIM
 2226» con espacios múltiples)
