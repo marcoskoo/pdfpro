@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.13 (captura de la hora: navegador garantizado)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ corregida: en el instalador el buscador invisible
+     dependía de unos archivos (navegadores de Playwright) que NO van
+     dentro del instalador y no siempre están en el PC. Si faltaban,
+     la búsqueda del correo moría sin explicación. Ahora se intenta
+     en orden: Chrome del sistema → Edge del sistema (presente en
+     TODO Windows 10/11) → Chromium empaquetado → ruta manual de
+     diagnóstico.
+  2. Si aun así no hay navegador, se avisa con la causa real y se
+     ofrece conectar Gmail con «Conectar Gmail» (panel 📧): por Google
+     la hora se busca sin navegador.
+  3. La cadena se verificó de verdad contra gmail.com (lanzamiento →
+     búsqueda por nombre de archivo → detección del inicio de sesión).
+
 NOVEDADES DE LA VERSIÓN 3.2.12 (panel de Gmail restaurado)
 ────────────────────────────────────────────────────────────────────
   1. VUELVE el panel «📧 Monitoreo Gmail» a la ficha del sello:

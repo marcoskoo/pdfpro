@@ -56,7 +56,13 @@ class GmailHoraService {
     this.page = null;
   }
 
-  /** Inicia el navegador (idempotente). Prefiere el Chrome del sistema. */
+  /** Inicia el navegador (idempotente). Prefiere el Chrome del sistema,
+   *  luego el Edge de Windows (presente en todo 10/11), luego el Chromium
+   *  empaquetado de Playwright y por último la ruta manual de diagnóstico
+   *  (PDFPRO_GMAIL_CHROMIUM). Los navegadores de ms-playwright NO van
+   *  dentro del instalador: si la revisión de %LOCALAPPDATA% no coincide
+   *  con la del paquete, «Executable doesn't exist» mataba la captura en
+   *  silencio — con esta cadena siempre hay un navegador en Windows. */
   async iniciar() {
     if (this.context) return this;
     if (!playwright) throw new Error('Playwright no está instalado (npm i playwright).');
@@ -67,16 +73,34 @@ class GmailHoraService {
       viewport: this.opts.viewport,
       args: this.opts.args
     };
-    /* 1.º el Chrome instalado en el sistema (sin descargar nada);
-       si falla, el Chromium empaquetado de Playwright. */
-    try {
-      this.context = await playwright.chromium.launchPersistentContext(this.opts.userDataDir, { ...base, channel: 'chrome' });
-    } catch (e) {
-      this.context = await playwright.chromium.launchPersistentContext(this.opts.userDataDir, base);
+    const intentos = [];
+    if (process.env.PDFPRO_GMAIL_CHROMIUM) {
+      intentos.push({ etiqueta: 'ruta manual (PDFPRO_GMAIL_CHROMIUM)', opts: { ...base, executablePath: process.env.PDFPRO_GMAIL_CHROMIUM } });
+    }
+    intentos.push(
+      { etiqueta: 'Chrome del sistema', opts: { ...base, channel: 'chrome' } },
+      { etiqueta: 'Edge del sistema', opts: { ...base, channel: 'msedge' } },
+      { etiqueta: 'Chromium empaquetado de Playwright', opts: { ...base } }
+    );
+    let ultimoError = null;
+    for (const intento of intentos) {
+      try {
+        this.context = await playwright.chromium.launchPersistentContext(this.opts.userDataDir, intento.opts);
+        this.opts.onProgress('Navegador iniciado (' + intento.etiqueta + ').');
+        break;
+      } catch (e) {
+        ultimoError = e;
+        this.context = null;
+        this.opts.onProgress('Navegador no disponible: ' + intento.etiqueta + ' — ' + (e && e.message ? e.message.split('\n')[0] : e));
+      }
+    }
+    if (!this.context) {
+      throw new Error('Ningún navegador disponible para buscar en Gmail (se probó: ' +
+        intentos.map((i) => i.etiqueta).join('; ') + '). Último error: ' +
+        (ultimoError && ultimoError.message ? ultimoError.message.split('\n')[0] : 'desconocido'));
     }
 
     this.page = this.context.pages()[0] || (await this.context.newPage());
-    this.opts.onProgress('Navegador iniciado.');
     return this;
   }
 

@@ -747,9 +747,15 @@ async function _gmailHoraBuscar(nombre, manual) {
       });
     }
     gmailHoraLog(`buscar «${nombre}»`);
+    /* v3.2.13 — si ningún navegador está disponible (Chrome/Edge/Chromium)
+       el error NO se traga: antes un «Executable doesn't exist» seguía como
+       «aviso» y la búsqueda moría en un error genérico sin explicación. */
     try {
       await _gmailHoraSvc.iniciar();
-    } catch (e) { gmailHoraLog('aviso al iniciar navegador: ' + e.message); }
+    } catch (e) {
+      gmailHoraLog('ERROR al iniciar navegador: ' + e.message);
+      return { ok: false, error: e.message, tipo: 'NavegadorFalta' };
+    }
 
     let r = null;
     try {
