@@ -1,7 +1,26 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.6 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.7 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.7 (caso real SRU2226 — «PV CIX LIM
+2226» con espacios múltiples)
+────────────────────────────────────────────────────────────────────
+  1. CORREGIDO: con planes cuyo nombre de archivo trae ESPACIOS
+     MÚLTIPLES (como «PV CIX LIM        2226.pdf» del SRU2226) Gmail
+     no devolvía resultados con filename:"…" tal cual y la hora NO se
+     capturaba. Ahora la búsqueda prueba, en orden: filename con los
+     espacios colapsados («PV CIX LIM 2226.pdf») → el nombre tal cual
+     llegó → sin extensión (ambas formas) → texto libre con
+     has:attachment. El emparejamiento sigue siendo ESTRICTO: solo se
+     acepta el correo cuyo ADJUNTO coincide con el archivo cargado.
+     Aplica a la vía API de Gmail (web y escritorio) y también a la
+     vía asistida (Playwright) del escritorio.
+  2. La conversión de la hora se muestra completa en el aviso al
+     aplicar: «Gmail: «16:00» (hora Lima) +5 h → UTC». Ejemplo real
+     del SRU2226: Gmail muestra 04:00 pm (= 16:00 Lima) → la app
+     presenta 21:00 en «Hora Recepción (UTC)» (16:00 + 5 h), con la
+     fecha UTC correspondiente (cruza la medianoche si toca).
 
 NOVEDADES DE LA VERSIÓN 3.2.6 (hora de recepción del correo: se busca
 A PARTIR DEL ARCHIVO CARGADO)

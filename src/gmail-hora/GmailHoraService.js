@@ -262,13 +262,22 @@ class GmailHoraService {
 
   async _buscarYExtraer(archivo, copiar) {
     const base = baseDe(archivo);
+    /* v3.2.7 — el nombre real trae espacios múltiples («PV CIX LIM
+       2226»): Gmail puede no devolver resultados con ellos; se
+       reintenta con los espacios colapsados a uno solo antes de caer
+       al texto libre. */
+    const colapsada = base.replace(/\s+/g, ' ').trim();
     this.opts.onProgress(`Buscando «${archivo}»…`);
     await this._buscar(`filename:"${base}"`);
     let modo = 'filename';
 
+    if ((await this._haySinResultados()) && colapsada && colapsada !== base) {
+      this.opts.onProgress('Sin resultados; reintentando con espacios colapsados…');
+      await this._buscar(`filename:"${colapsada}"`);
+    }
     if (await this._haySinResultados()) {
       this.opts.onProgress('Sin resultados con filename:; probando texto libre…');
-      await this._buscar(base);
+      await this._buscar(colapsada || base);
       modo = 'texto';
       if (await this._haySinResultados()) throw new ArchivoNoEncontradoError(archivo);
     }

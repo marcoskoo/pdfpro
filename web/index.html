@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.6 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.7 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -10994,6 +10994,14 @@ function gmailFmtHora(ms){
   }catch(e){return new Date(ms).toISOString();}
 }
 function gmailNombreBase(s){return String(s||'').toLowerCase().replace(/\.[^.]+$/,'').replace(/[\s_\-]+/g,'').trim();}
+/* v3.2.7 — hora de pared de Lima (UTC−5) a partir del epoch: para el
+   toast «Gmail: «16:00» (hora Lima) +5 h → UTC» — la misma regla con la
+   que Gmail muestra la recepción (04:00 pm = 16:00 Lima → 21:00 UTC). */
+function gmailHoraLimaTxt(ms){
+  if(!ms)return '';
+  var d=new Date(ms-300*60000);
+  return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
+}
 function gmailRenderList(){
   var box=document.getElementById('gmailList');if(!box)return;
   if(!_gmailMsgs.length){box.innerHTML='<div style="color:var(--t3);padding:6px 2px">Sin correos con adjunto todavía. Pulsa «Barrer ahora».</div>';return;}
@@ -11066,10 +11074,21 @@ function gmailLoginManual(){
 function gmailQuerysPorArchivo(nombre){
   var n=String(nombre||'').trim();
   if(!n)return [];
+  /* v3.2.7 — el nombre real trae espacios múltiples («PV CIX LIM
+     2226»): Gmail puede no devolver resultados con ellos, así que la
+     1.ª consulta colapsa los espacios a uno solo y luego se prueba el
+     nombre tal cual llegó (con y sin extensión) y el texto libre; el
+     emparejamiento por adjunto es estricto, por lo que las consultas
+     amplias son seguras. */
+  var col=n.replace(/\s+/g,' ');
   var base=n.replace(/\.[^.]+$/,'').trim();
-  var qs=['filename:"'+n+'"'];
-  if(base&&base!==n)qs.push('filename:"'+base+'"');
-  if(base)qs.push('"'+base+'" has:attachment');
+  var baseCol=base.replace(/\s+/g,' ').trim();
+  var qs=[];
+  if(col!==n)qs.push('filename:"'+col+'"');
+  qs.push('filename:"'+n+'"');
+  if(baseCol&&baseCol!==n)qs.push('filename:"'+baseCol+'"');
+  if(base&&base!==n&&base!==baseCol)qs.push('filename:"'+base+'"');
+  if(baseCol)qs.push('"'+baseCol+'" has:attachment');
   return qs;
 }
 function gmailBuscarHitPorAdjunto(msgs,nombre){
@@ -11103,7 +11122,7 @@ async function gmailHoraApiPorArchivo(nombre){
     if(hit){
       var rxT=document.getElementById('selloRxTime');
       if(rxT&&rxT.value)return true;          // se llenó a mano mientras: no pisar
-      gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»','');
+      gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs));
       return true;
     }
     /* hubo resultados pero ninguno con ese adjunto: la consulta siguiente
