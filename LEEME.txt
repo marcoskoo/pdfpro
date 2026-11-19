@@ -1,7 +1,24 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.2 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.3 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.3 (corrige «No se completó el inicio de
+sesión en Gmail»)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ: GOOGLE BLOQUEABA EL LOGIN DENTRO DE LA APP. La ventana
+     interna de Gmail usaba el User-Agent de Electron y Google rechaza
+     iniciar sesión desde navegadores embebidos («Este navegador o
+     aplicación podría no ser seguro»): por eso el inicio nunca
+     completaba y la hora no aparecía. Ahora la ventana se presenta con
+     un User-Agent de Chrome REAL y el login completa con normalidad.
+  2. BOTÓN «🔗 INICIAR SESIÓN EN GMAIL Y BUSCAR LA HORA». Si el inicio
+     de sesión queda sin completar, aparece junto a «Hora Recepción» un
+     botón para reintentarlo en el momento (antes había que cargar otro
+     documento). El reintento manual no espera los 30 s de espera.
+  3. La ventana de login toma el FOCO al abrirse (antes podía quedar
+     detrás) y si dos búsquedas piden login a la vez comparten la misma
+     ventana (antes la segunda se reportaba como «cancelada»).
 
 NOVEDADES DE LA VERSIÓN 3.2.2 (conversión Lima→UTC verificada y visible)
 ────────────────────────────────────────────────────────────────────

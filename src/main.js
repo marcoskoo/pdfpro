@@ -577,6 +577,7 @@ ipcMain.handle('gmail:perfil', async () => {
    (tipo 'login' = ventana de inicio de sesión abierta). */
 let _gmailHoraSvc = null;
 let _gmailHoraLoginWin = null;
+let _gmailHoraLoginPromesa = null;               // login en curso (llamadas concurrentes comparten)
 let _gmailHoraCadena = Promise.resolve();      // una búsqueda a la vez
 let _gmailHoraUltimoFalloLogin = 0;            // cooldown tras cancelar login
 
@@ -602,19 +603,31 @@ function gmailHoraEvento(msg, tipo) {
 /** Abre Gmail DENTRO de la app para iniciar sesión (ventana hija, sesión
     propia persistente 'gmail-login'). Resuelve con las cookies de
     google.com cuando el correo queda abierto (y cierra la ventana sola);
-    null si se cancela o agota el tiempo. */
+    null si se cancela o agota el tiempo.
+    v3.2.3: (1) la ventana usa un User-Agent de Chrome REAL (sin los
+    tokens «Electron/…» ni «PDFPro/…») fijado en la partición y en el
+    webContents ANTES de cargar — Google BLOQUEA el inicio de sesión en
+    navegadores embebidos con UA de Electron («Este navegador o
+    aplicación podría no ser seguro»), causa raíz de los login que nunca
+    completan desde v3.2.0; (2) una llamada concurrente espera la MISMA
+    promesa (antes se resolvía null = «cancelado» y el reintento
+    inmediato fallaba); (3) la ventana toma el foco al mostrarse. */
 function abrirLoginGmailEnApp() {
-  return new Promise((resolve) => {
-    if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) {
-      _gmailHoraLoginWin.focus();
-      resolve(null); // ya hay un login en curso
-      return;
-    }
+  if (_gmailHoraLoginPromesa) return _gmailHoraLoginPromesa;
+  _gmailHoraLoginPromesa = new Promise((resolve) => {
     const { session: ses } = require('electron');
     const particion = ses.fromPartition('persist:gmail-login');
+    /* UA de Chrome real: fuera «Electron/x.y» y «PDFPro/x.y» (Google
+       bloquea los embebidos); antes de loadURL para que valga también en
+       las redirecciones de accounts.google.com */
+    const uaChrome = particion.getUserAgent()
+      .split(' ')
+      .filter((t) => !/^(electron|pdfpro|pdfpro-suite)\/[\d.]+$/i.test(t))
+      .join(' ');
+    particion.setUserAgent(uaChrome);
     _gmailHoraLoginWin = new BrowserWindow({
       width: 1100, height: 780, show: false,
-      title: 'Iniciar sesión en Gmail — una sola vez',
+      title: 'Iniciar sesión en Gmail — PDFPro (una sola vez)',
       autoHideMenuBar: true, backgroundColor: '#ffffff',
       parent: win || undefined,
       webPreferences: {
@@ -622,15 +635,17 @@ function abrirLoginGmailEnApp() {
         partition: 'persist:gmail-login'
       }
     });
+    _gmailHoraLoginWin.webContents.setUserAgent(uaChrome);
     let resuelto = false;
     const finalizar = async (ok, motivo) => {
       if (resuelto) return;
       resuelto = true;
       clearInterval(poll);
       clearTimeout(limite);
+      const salir = (v) => { _gmailHoraLoginPromesa = null; resolve(v); };
       if (!ok) {
         gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})`);
-        resolve(null);
+        salir(null);
         return;
       }
       try {
@@ -641,10 +656,10 @@ function abrirLoginGmailEnApp() {
           return /(^|\.)google\.com$/.test(dom);
         });
         gmailHoraLog(`login completo: ${cookies.length} cookies de google.com cosechadas`);
-        resolve(cookies);
+        salir(cookies);
       } catch (e) {
         gmailHoraLog('error cosechando cookies: ' + e.message);
-        resolve(null);
+        salir(null);
       }
       /* la ventana ya cumplió su misión: se cierra sola */
       try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
@@ -667,7 +682,7 @@ function abrirLoginGmailEnApp() {
     }, 1000);
     const limite = setTimeout(() => finalizar(false, 'tiempo agotado (5 min)'), 5 * 60 * 1000);
     _gmailHoraLoginWin.on('closed', () => { _gmailHoraLoginWin = null; finalizar(false); });
-    _gmailHoraLoginWin.once('ready-to-show', () => _gmailHoraLoginWin.show());
+    _gmailHoraLoginWin.once('ready-to-show', () => { _gmailHoraLoginWin.show(); _gmailHoraLoginWin.focus(); });
     _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch(() => finalizar(false, 'no se pudo cargar Gmail'));
   });
 }
@@ -677,13 +692,16 @@ ipcMain.handle('gmail-hora:estado', () => {
   return { ok: true, disponible: !!d.playwright };
 });
 /* las cargas rápidas de archivos se encolan: una búsqueda a la vez sobre
-   el mismo navegador invisible (evita carreras sobre la misma página) */
-ipcMain.handle('gmail-hora:buscar', (_e, archivo) => {
-  const tarea = _gmailHoraCadena.then(() => _gmailHoraBuscar(String(archivo || '').trim()));
+   el mismo navegador invisible (evita carreras sobre la misma página).
+   v3.2.3: «manual=true» (botón «Iniciar sesión en Gmail») salta el
+   cooldown de 30 s tras un login cancelado — el usuario lo pidió
+   expresamente, no es un rebote automático. */
+ipcMain.handle('gmail-hora:buscar', (_e, archivo, manual) => {
+  const tarea = _gmailHoraCadena.then(() => _gmailHoraBuscar(String(archivo || '').trim(), !!manual));
   _gmailHoraCadena = tarea.then(() => undefined, () => undefined);
   return tarea;
 });
-async function _gmailHoraBuscar(nombre) {
+async function _gmailHoraBuscar(nombre, manual) {
   try {
     if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
     if (!GmailHoraService.disponible().playwright) {
@@ -711,7 +729,7 @@ async function _gmailHoraBuscar(nombre) {
          Hasta 2 rondas: si tras inyectar sigue pidiendo sesión se
          re-cosechan las cookies (Google las rota) y se reintenta. */
       for (let ronda = 1; ronda <= 2 && !r; ronda++) {
-        if (Date.now() - _gmailHoraUltimoFalloLogin < 30000) {
+        if (!manual && Date.now() - _gmailHoraUltimoFalloLogin < 30000) {
           gmailHoraLog('login omitido: se canceló hace menos de 30 s');
           return { ok: false, error: 'Inicio de sesión en Gmail cancelado hace un momento', tipo: 'LoginCancelado' };
         }

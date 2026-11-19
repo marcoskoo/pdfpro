@@ -32,8 +32,10 @@ contextBridge.exposeInMainWorld('pdfproDesktop', {
   gmailClientId: () => ipcRenderer.invoke('gmail:clientId'),
 
   /* ── v3.1.9 — Hora de recepción por archivo cargado (Gmail asistido con
-   *  Playwright; sin OAuth). Progreso por evento 'gmail-hora:evento'. ── */
-  gmailHoraBuscar: (archivo) => ipcRenderer.invoke('gmail-hora:buscar', archivo),
+   *  Playwright; sin OAuth). Progreso por evento 'gmail-hora:evento'.
+   *  v3.2.3: gmailHoraBuscar(archivo, manual) — manual salta el cooldown
+   *  del login (botón «Iniciar sesión en Gmail»). ── */
+  gmailHoraBuscar: (archivo, manual) => ipcRenderer.invoke('gmail-hora:buscar', archivo, manual),
   gmailHoraEstado: () => ipcRenderer.invoke('gmail-hora:estado'),
   onGmailHoraEvento: (cb) => ipcRenderer.on('gmail-hora:evento', (_e, d) => cb(d)),
 
