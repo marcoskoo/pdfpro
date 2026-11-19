@@ -104,4 +104,20 @@ function filaCoincide(textoFila, base) {
   return !!n && normalizar(textoFila).indexOf(n) >= 0;
 }
 
-module.exports = { parseHoraGmail, baseDe, filaCoincide, normalizar, ahoraZona, MESES };
+/** v3.2.14 — Nombre de archivo COMPARABLE: minúsculas, sin extensión, sin
+    el «(n)» con que Gmail renombra adjuntos duplicados y sin espacios ni
+    signos. Es la comparación del ORDEN exigido por el usuario: el nombre
+    del adjunto del correo debe hacer MATCH con el del archivo cargado
+    («PV CIX LIM        2226.pdf» == «pv cix lim 2226» == «PV CIX (1).pdf»). */
+function nombreComparable(s) {
+  return normalizar(String(s || '').replace(/\.[^.\\/]+$/, '').replace(/\s*\(\d+\)\s*$/, ''));
+}
+
+/** v3.2.14 — ¿Algún adjunto de la lista coincide con el archivo cargado? */
+function adjuntoCoincide(archivo, adjuntos) {
+  const n = nombreComparable(archivo);
+  if (!n) return false;
+  return (adjuntos || []).some((a) => nombreComparable(a) === n);
+}
+
+module.exports = { parseHoraGmail, baseDe, filaCoincide, normalizar, ahoraZona, MESES, nombreComparable, adjuntoCoincide };

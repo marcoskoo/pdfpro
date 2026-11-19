@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { nombreComparable } = require('./gmail-hora/hora');
 
 /* ── Credenciales OAuth del cliente Gmail ──
    Se toman de variables de entorno (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET /
@@ -204,6 +205,29 @@ async function poll(userData, query, maxResults) {
   return out;
 }
 
+/** v3.2.14 — recorrido ORDENADO de la bandeja (el orden exigido por el
+ *  usuario): lista los correos RECIBIDOS con adjunto del más nuevo al
+ *  más viejo y, uno por uno, compara el nombre de cada adjunto con el
+ *  del archivo cargado (nombreComparable: mayúsculas, espacios,
+ *  signos, extensión y «(n)» de duplicados no importan). El PRIMER
+ *  correo que hace match se devuelve con su hora de recepción; corta
+ *  ahí, sin descargar los detalles restantes. Los correos sin adjunto
+ *  no pueden hacer match, por eso la lista se filtra con
+ *  has:attachment (el orden de recepción no cambia). */
+async function pollOrdenado(userData, nombre, maxResults = 50) {
+  const objetivo = nombreComparable(nombre);
+  if (!objetivo) return null;
+  const list = await listMessages(userData, 'in:inbox has:attachment', maxResults);
+  const msgs = (list && list.messages) || [];
+  for (const m of msgs) { /* la API los devuelve del más nuevo al más viejo */
+    try {
+      const d = await messageDetail(userData, m.id);
+      if ((d.adjuntos || []).some((a) => nombreComparable(a) === objetivo)) return d;
+    } catch (e) { /* un mensaje fallido no corta el recorrido */ }
+  }
+  return null;
+}
+
 /** Perfil de la cuenta conectada (valida que sea sphiaisaro@gmail.com). */
 async function profile(userData) {
   return gmailFetch(userData, 'https://gmail.googleapis.com/gmail/v1/users/me/profile');
@@ -212,5 +236,5 @@ async function profile(userData) {
 module.exports = {
   ACCOUNT, CLIENT_ID, REDIRECT_URI, SCOPES,
   consentUrl, exchangeCode, loadTokens, saveTokens,
-  getAccessToken, listMessages, messageDetail, poll, profile
+  getAccessToken, listMessages, messageDetail, poll, pollOrdenado, profile
 };

@@ -548,6 +548,18 @@ ipcMain.handle('gmail:barrer', async (_e, query, maxResults) => {
   }
 });
 
+/* v3.2.14 — el ORDEN del usuario: recorre los correos recibidos del más
+   nuevo al más viejo comparando el nombre de cada adjunto con el del
+   archivo cargado; el primer match entrega su hora (corta ahí). */
+ipcMain.handle('gmail:buscar-por-adjunto', async (_e, archivo, maxResults) => {
+  try {
+    const mensaje = await gmail.pollOrdenado(app.getPath('userData'), String(archivo || '').trim(), maxResults || 50);
+    return { ok: true, mensaje };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 ipcMain.handle('gmail:perfil', async () => {
   try {
     const p = await gmail.profile(app.getPath('userData'));

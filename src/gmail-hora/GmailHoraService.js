@@ -31,7 +31,7 @@ const {
   HoraNoExtraidaError,
   ServicioNoIniciadoError
 } = require('./errores');
-const { baseDe, filaCoincide } = require('./hora');
+const { baseDe, filaCoincide, nombreComparable, adjuntoCoincide } = require('./hora');
 
 const DEFAULTS = {
   userDataDir: path.join(process.cwd(), '.gmail-playwright-profile'),
@@ -321,6 +321,107 @@ class GmailHoraService {
     });
   }
 
+  /* v3.2.14 — Nombres de los adjuntos del correo ABIERTO. Gmail los
+     muestra en chips: span.aV3 (nombre visible) y .brc[title] (el nombre
+     en el title del chip); se recogen ambos y, por si el DOM cambia,
+     también aria-label que contengan algo con extensión de archivo. */
+  async _adjuntosAbiertos() {
+    return this.page.evaluate(() => {
+      const nombres = [];
+      document.querySelectorAll('span.aV3').forEach((e) => {
+        const t = (e.textContent || '').trim();
+        if (t) nombres.push(t);
+      });
+      document.querySelectorAll('.brc[title]').forEach((e) => {
+        const t = (e.getAttribute('title') || '').trim();
+        if (t) nombres.push(t);
+      });
+      document.querySelectorAll('[aria-label]').forEach((e) => {
+        const m = (e.getAttribute('aria-label') || '').match(/[\w\sÁÉÍÓÚáéíóúÑñ().,'\-]+\.[A-Za-z0-9]{2,5}\b/);
+        if (m) nombres.push(m[0]);
+      });
+      return nombres;
+    });
+  }
+
+  /* Espera hasta `ms` a que el correo abierto muestre sus adjuntos: el
+     mensaje puede seguir renderizando y sin esta espera un correo con el
+     adjunto correcto se saltaría por leer demasiado pronto. */
+  async _esperarAdjuntos(ms = 4000) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      const n = await this.page
+        .evaluate(() => document.querySelectorAll('span.aV3, .brc[title]').length)
+        .catch(() => 0);
+      if (n > 0) return;
+      await this.page.waitForTimeout(300);
+    }
+  }
+
+  /** v3.2.14 — EL ORDEN EXIGIDO POR EL USUARIO: recorre los correos
+   *  RECIBIDOS del MÁS NUEVO al más VIEJO; abre cada correo y compara el
+   *  nombre de CADA adjunto con el del archivo cargado (comparación
+   *  normalizada: mayúsculas, espacios múltiples, signos, extensión y el
+   *  «(n)» de duplicados de Gmail no importan). El PRIMER correo que
+   *  hace match queda abierto y devuelve true; si en los últimos
+   *  `limite` correos no está, devuelve false.
+   *  Los correos sin adjunto no pueden hacer match, por eso la bandeja
+   *  se filtra con has:attachment (el orden de recepción no cambia). */
+  async _recorrerBandeja(archivo, limite = 40) {
+    const objetivo = nombreComparable(archivo);
+    if (!objetivo) return false;
+    const QUERY = 'in:inbox has:attachment';
+    this.opts.onProgress('Recorriendo los correos recibidos del más nuevo al más viejo…');
+    await this._buscar(QUERY);
+    for (let i = 0; i < limite; i++) {
+      const abrio = await this.page.evaluate((idx) => {
+        const todas = document.querySelectorAll('tr.zA');
+        const filas = todas.length ? todas : document.querySelectorAll('[role="row"]');
+        if (!filas[idx]) return false;
+        filas[idx].click();
+        return true;
+      }, i);
+      if (!abrio) return false;                // no hay más correos que recorrer
+      await this.page.waitForTimeout(1500);    // render del correo abierto
+      await this._esperarAdjuntos();
+      const adjuntos = await this._adjuntosAbiertos();
+      this.opts.onProgress(`Correo ${i + 1} de la bandeja: ${adjuntos.length ? adjuntos.join(', ') : 'sin adjuntos legibles'}`);
+      if (adjuntoCoincide(archivo, adjuntos)) {
+        this.opts.onProgress('¡El adjunto coincide con el archivo cargado! Extrayendo la hora de recepción…');
+        return true;
+      }
+      /* volver a la lista SIN recargar: history.back() deja la bandeja
+         lista para la siguiente fila; si no volvió, se recarga la búsqueda */
+      try { await this.page.goBack({ timeout: 8000 }); } catch (_) { /* abajo se recarga */ }
+      let hay = false;
+      try {
+        hay = await this.page.evaluate(() => document.querySelectorAll('tr.zA, [role="row"]').length > 0);
+      } catch (_) { /* ídem */ }
+      if (!hay) await this._buscar(QUERY);
+    }
+    return false;
+  }
+
+  /* El correo ya está abierto en la página: extrae la hora y los metadatos
+     y arma el resultado común a ambas vías (recorrido ordenado y
+     búsqueda por filename:). */
+  async _resultadoDeCorreoAbierto(archivo, copiar) {
+    const { hora, fuente } = await this._extraerHora();
+    const meta = await this._extraerMeta();
+    const copiado = copiar ? await this.copiarAlPortapapeles(hora) : false;
+    this.opts.onProgress(`Hora obtenida: ${hora}`);
+    return {
+      archivo,
+      asunto: meta.asunto || (await this.page.title()),
+      horaRecepcion: hora,
+      fuente,
+      remitente: meta.remitenteNombre,
+      remitenteCorreo: meta.remitenteCorreo,
+      archivoAdjunto: meta.archivoAdjunto,
+      copiadoAlPortapapeles: copiado
+    };
+  }
+
   async _buscarYExtraer(archivo, copiar) {
     const base = baseDe(archivo);
     /* v3.2.7 — el nombre real trae espacios múltiples («PV CIX LIM
@@ -329,6 +430,18 @@ class GmailHoraService {
        al texto libre. */
     const colapsada = base.replace(/\s+/g, ' ').trim();
     this.opts.onProgress(`Buscando «${archivo}»…`);
+
+    /* v3.2.14 — ORDEN EXIGIDO POR EL USUARIO: primero se recorren los
+       correos recibidos del más nuevo al más viejo comparando el nombre
+       de cada adjunto con el archivo cargado; el primer match entrega su
+       hora. Si en los últimos 40 no está, cae a la búsqueda por
+       filename:/texto libre (correos más antiguos, o archivados por
+       filtros y fuera de la bandeja de recibidos). */
+    if (await this._recorrerBandeja(archivo, 40)) {
+      return this._resultadoDeCorreoAbierto(archivo, copiar);
+    }
+    this.opts.onProgress('No estaba en los correos recientes; buscando por filename:…');
+
     await this._buscar(`filename:"${base}"`);
     let modo = 'filename';
 
@@ -347,20 +460,7 @@ class GmailHoraService {
     const abrio = await this._abrirCorreo(base, modo === 'texto');
     if (!abrio) throw new ArchivoNoEncontradoError(archivo);
 
-    const { hora, fuente } = await this._extraerHora();
-    const meta = await this._extraerMeta();
-    const copiado = copiar ? await this.copiarAlPortapapeles(hora) : false;
-    this.opts.onProgress(`Hora obtenida: ${hora}`);
-    return {
-      archivo,
-      asunto: meta.asunto || (await this.page.title()),
-      horaRecepcion: hora,
-      fuente,
-      remitente: meta.remitenteNombre,
-      remitenteCorreo: meta.remitenteCorreo,
-      archivoAdjunto: meta.archivoAdjunto,
-      copiadoAlPortapapeles: copiado
-    };
+    return this._resultadoDeCorreoAbierto(archivo, copiar);
   }
 
   /**

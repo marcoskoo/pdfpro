@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.13 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.14 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -10916,6 +10916,44 @@ async function gmailWebBarrido(query,maxResults){
   return out;
 }
 
+/* v3.2.14 — recorrido ORDENADO de la bandeja (el orden exigido por el
+   usuario): lista los correos RECIBIDOS con adjunto —la API los devuelve
+   del más nuevo al más viejo— y, uno por uno, compara el nombre de cada
+   adjunto con el del archivo cargado. El PRIMER correo que hace match se
+   devuelve con su hora de recepción; corta ahí, sin descargar los
+   detalles restantes. Los correos sin adjunto no pueden hacer match,
+   por eso la lista se filtra con has:attachment (el orden no cambia). */
+async function gmailWebBarridoOrdenado(nombre,maxResults){
+  var nd=gmailNombreBase(nombre);
+  if(!nd)return null;
+  var q=encodeURIComponent('in:inbox has:attachment');
+  var list=await gmailWebFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults='+(maxResults||50)+'&q='+q);
+  var msgs=(list&&list.messages)||[];
+  for(var i=0;i<msgs.length;i++){
+    try{
+      var m=await gmailWebFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+msgs[i].id+'?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date');
+      var headers=(m.payload&&m.payload.headers)||[];
+      var h=function(k){var x=null;for(var j=0;j<headers.length;j++){if(headers[j].name.toLowerCase()===k.toLowerCase()){x=headers[j].value;break;}}return x||'';};
+      var adj=[];
+      (function walk(p){if(!p)return;if(p.filename)adj.push(p.filename);var ps=p.parts||[];for(var j=0;j<ps.length;j++)walk(ps[j]);})(m.payload);
+      var coincide=adj.some(function(a){return gmailNombreBase(a)===nd;});
+      if(coincide){
+        var ms=parseInt(m.internalDate||'0',10);
+        return {id:m.id,threadId:m.threadId||'',de:h('From'),asunto:h('Subject'),fechaHeader:h('Date'),recibidoMs:ms,recibidoISO:ms?new Date(ms).toISOString():'',adjuntos:adj};
+      }
+    }catch(e){/* un mensaje fallido no corta el recorrido */}
+  }
+  return null;
+}
+
+/* aplica la hora del hit de la API: nunca pisa una hora escrita a mano */
+function gmailAplicarHitApi(hit,nombre,tab){
+  var rxT=document.getElementById('selloRxTime');
+  if(rxT&&rxT.value)return true;          // se llenó a mano mientras: no pisar
+  gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs),tab);
+  return true;
+}
+
 /* ── Estado ── */
 async function gmailRefreshState(){
   if(gmailIsDesktop()){
@@ -11034,7 +11072,11 @@ function gmailFmtHora(ms){
     return d.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' h';
   }catch(e){return new Date(ms).toISOString();}
 }
-function gmailNombreBase(s){return String(s||'').toLowerCase().replace(/\.[^.]+$/,'').replace(/[\s_\-]+/g,'').trim();}
+/* v3.2.14 — comparación del ORDEN del usuario: minúsculas, sin extensión,
+   sin el «(n)» de duplicados de Gmail y sin espacios/signos. Idéntica a
+   nombreComparable() de src/gmail-hora/hora.js (la vía asistida usa la
+   misma regla). */
+function gmailNombreBase(s){return String(s||'').toLowerCase().replace(/\.[^.\\/]+$/,'').replace(/\s*\(\d+\)\s*$/,'').replace(/[\s_\-.,;:()"'¿?¡!]+/g,'').trim();}
 /* v3.2.7 — hora de pared de Lima (UTC−5) a partir del epoch: para el
    toast «Gmail: «16:00» (hora Lima) +5 h → UTC» — la misma regla con la
    que Gmail muestra la recepción (04:00 pm = 16:00 Lima → 21:00 UTC). */
@@ -11169,6 +11211,30 @@ function gmailBuscarHitPorAdjunto(msgs,nombre){
 async function gmailHoraApiPorArchivo(nombre,tab){
   var base=String(nombre||'').replace(/\.[^.]+$/,'').trim();
   if(!base)return false;
+  /* v3.2.14 — ORDEN EXIGIDO POR EL USUARIO: primero se recorren los
+     correos RECIBIDOS del MÁS NUEVO al más VIEJO y se compara el nombre
+     de cada adjunto con el del archivo cargado; el PRIMER correo que
+     hace match entrega su hora de recepción. (Sin adjunto no puede haber
+     match: la lista se filtra con has:attachment; el orden no cambia.)
+     Corta en el primer acierto, sin descargar el resto. */
+  try{
+    if(gmailIsDesktop()){
+      var ro=await window.pdfproDesktop.gmailBuscarPorAdjunto(nombre,50);
+      if(ro&&ro.ok&&ro.mensaje&&ro.mensaje.recibidoMs){
+        if(gmailAplicarHitApi(ro.mensaje,nombre,tab))return true;
+      }
+    }else{
+      var to=gmailWebTokens();
+      if(!(to&&to.access_token))return false;  // web sin conectar: nada que buscar
+      var hitO=await gmailWebBarridoOrdenado(nombre,50);
+      if(hitO&&hitO.recibidoMs){
+        if(gmailAplicarHitApi(hitO,nombre,tab))return true;
+      }
+    }
+  }catch(e){/* la vía ordenada falló (sin sesión/conexión): respaldo filename: */}
+  /* RESPALDO: consultas filename: (con/sin extensión, espacios
+     colapsados) y texto libre — para correos más antiguos que el
+     recorrido o archivados por filtros (fuera de la bandeja). */
   var qs=gmailQuerysPorArchivo(nombre);
   for(var i=0;i<qs.length;i++){
     var msgs=null;
@@ -11185,10 +11251,7 @@ async function gmailHoraApiPorArchivo(nombre,tab){
     if(!msgs||!msgs.length)continue;           // sin resultados: consulta siguiente
     var hit=gmailBuscarHitPorAdjunto(msgs,nombre);
     if(hit){
-      var rxT=document.getElementById('selloRxTime');
-      if(rxT&&rxT.value)return true;          // se llenó a mano mientras: no pisar
-      gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs),tab);
-      return true;
+      if(gmailAplicarHitApi(hit,nombre,tab))return true;
     }
     /* hubo resultados pero ninguno con ese adjunto: la consulta siguiente
        es más amplia (filename sin extensión → texto libre) */

@@ -3,6 +3,22 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.14 (búsqueda en el ORDEN correcto)
+────────────────────────────────────────────────────────────────────
+  1. La hora de recepción ahora se busca EXACTAMENTE en el orden
+     pedido: se verifica primero el ÚLTIMO correo recibido y se
+     compara el nombre de su adjunto con el del archivo cargado;
+     si hacen match, esa es la hora; si no, se repite con el
+     penúltimo correo y así sucesivamente (hasta los 40 más
+     recientes; después, respaldo por nombre de archivo).
+  2. La comparación de nombres es estricta pero tolerante: no
+     importan mayúsculas, espacios múltiples, signos, la extensión
+     ni el «(1)» que Gmail añade a adjuntos duplicados.
+  3. El mismo orden y la misma comparación en las dos vías: por
+     Google (con «Conectar Gmail», sin navegador) y por el buscador
+     invisible de la app. En ambas se toma el correo MÁS RECIENTE
+     que tenga el adjunto.
+
 NOVEDADES DE LA VERSIÓN 3.2.13 (captura de la hora: navegador garantizado)
 ────────────────────────────────────────────────────────────────────
   1. CAUSA RAÍZ corregida: en el instalador el buscador invisible

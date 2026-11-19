@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('pdfproDesktop', {
   gmailCodigo: (code) => ipcRenderer.invoke('gmail:codigo', code),
   gmailDesconectar: () => ipcRenderer.invoke('gmail:desconectar'),
   gmailBarrer: (query, maxResults) => ipcRenderer.invoke('gmail:barrer', query, maxResults),
+  /* v3.2.14 — recorrido ordenado de la bandeja: del más nuevo al más
+     viejo, primer adjunto que hace match entrega la hora */
+  gmailBuscarPorAdjunto: (archivo, maxResults) => ipcRenderer.invoke('gmail:buscar-por-adjunto', archivo, maxResults),
   gmailPerfil: () => ipcRenderer.invoke('gmail:perfil'),
   /** v3.1.2 — clientId público de Gmail (para la capa web embebida); vacío si
    *  no hay credenciales configuradas. */
