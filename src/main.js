@@ -695,6 +695,32 @@ function gmailProgresoAbrir(archivo) {
     pantalla de carga inicial mail.google.com aparece SIN sesión 1-3 s
     antes del redirect al login: se exige sesión real (cookies
     SID/SAPISID/…) con la navegación terminada, 2 sondeos seguidos. */
+/* v3.2.20 — ¿La partición de login ('persist:gmail-login') ya tiene una
+   sesión de google.com? Devuelve las cookies de google.com si hay
+   cookies de SESIÓN (SID/SAPISID/HSID/SSID/APISID), o null si no. Así la
+   búsqueda puede transferir la sesión SIN abrir la ventana de login: el
+   usuario lo vio en pantalla — la ventana abría con el buzón YA visible
+   (sesión válida) y aun así la búsqueda fallaba con «ventana cerrada»,
+   porque la sesión nunca se cosechaba: se dependía de que la ventana
+   viviera los ~3,5 s que tarda el sondeo en confirmarla. */
+async function _gmailHoraSesionYaValida() {
+  try {
+    const { session: ses } = require('electron');
+    const particion = ses.fromPartition('persist:gmail-login');
+    const todas = await particion.cookies.getAll({});
+    const deGoogle = todas.filter((c) => {
+      const dom = String(c.domain || '').replace(/^\./, '');
+      return /(^|\.)google\.com$/.test(dom);
+    });
+    const nombres = new Set(deGoogle.map((c) => c.name));
+    const conSesion = ['SID', 'SAPISID', 'HSID', 'SSID', 'APISID'].some((n) => nombres.has(n));
+    return conSesion ? deGoogle : null;
+  } catch (e) {
+    gmailHoraLog('error comprobando la sesión previa: ' + e.message);
+    return null;
+  }
+}
+
 function abrirLoginGmailEnApp() {
   if (_gmailHoraLoginPromesa) return _gmailHoraLoginPromesa;
   _gmailHoraLoginPromesa = new Promise((resolve) => {
@@ -817,9 +843,15 @@ function abrirLoginGmailEnApp() {
        «ventana cerrada» y disparaba el candado de sesión. */
     _gmailHoraLoginWin.on('closed', () => {
       const edad = (Date.now() - nacio) / 1000;
-      const anomal = !vista && edad < 5;
-      gmailHoraLog(`login: ventana cerrada a los ${edad.toFixed(1)} s (visible: ${vista ? 'sí' : 'no'})${anomal ? ' — CIERRE ANÓMALO: nadie la cierra a mano tan rápido (¿antivirus o bloqueador?)' : ''}`);
       _gmailHoraLoginWin = null;
+      if (resuelto) return;   /* v3.2.20: cierre normal tras completar el login — no es fallo */
+      /* v3.2.20 — ANOMALÍA = cierre a los <5 s, la haya visto o no: en la
+         máquina del usuario la ventana murió en <1 s HABIENDO sesión
+         válida detrás; exigir además «nunca vista» (v3.2.19) dejaba ese
+         caso fuera. Nadie cierra a mano una ventana de login en menos de
+         5 segundos. */
+      const anomal = edad < 5;
+      gmailHoraLog(`login: ventana cerrada a los ${edad.toFixed(1)} s (visible: ${vista ? 'sí' : 'no'})${anomal ? ' — CIERRE ANÓMALO: nadie la cierra a mano tan rápido (¿antivirus o bloqueador?)' : ''}`);
       finalizar(false, anomal ? `la ventana de inicio de sesión se cerró sola a los ${edad.toFixed(1)} s` : undefined, anomal);
     });
     _gmailHoraLoginWin.once('ready-to-show', () => { vista = true; _gmailHoraLoginWin.show(); _gmailHoraLoginWin.focus(); });
@@ -939,6 +971,32 @@ async function _gmailHoraBuscarNucleo(nombre, manual) {
          Hasta 2 rondas: si tras inyectar sigue pidiendo sesión se
          re-cosechan las cookies (Google las rota) y se reintenta. */
       for (let ronda = 1; ronda <= 2 && !r; ronda++) {
+        /* v3.2.20 — ANTES de abrir cualquier ventana (y antes del candado:
+           una sesión válida guardada no es una cancelación): ¿la partición
+           de login ya tiene sesión de google.com? El usuario lo vio en
+           pantalla — la ventana abría con el buzón YA visible (sesión
+           válida) y aun así la búsqueda fallaba con «ventana cerrada»,
+           porque la sesión solo se cosechaba si la ventana sobrevivía los
+           ~3,5 s del sondeo. Con sesión previa se cosechan las cookies
+           DIRECTAMENTE del almacén y se transfieren SIN abrir nada: no hay
+           ventana que cerrarse sola, nada que cancelar, cero ceremonia. */
+        const previas = await _gmailHoraSesionYaValida();
+        if (previas && previas.length) {
+          gmailHoraLog(`ronda ${ronda}: sesión ya activa en la partición de login — ${previas.length} cookies de google.com, se transfieren sin abrir ventana`);
+          gmailProgresoLinea(`La sesión de Gmail ya estaba activa — se transfiere (${previas.length} cookies) sin abrir la ventana…`, 'ok');
+          _gmailHoraLoginCancelado = false;
+          const inj0 = await _gmailHoraSvc.inyectarCookies(previas);
+          gmailHoraLog(`cookies previas: ${inj0.total} cosechadas, ${inj0.ok} inyectadas${inj0.fallos.length ? ' · fallos: ' + inj0.fallos.join(' | ') : ''}`);
+          gmailHoraEvento('Sesión transferida; buscando de nuevo…');
+          try {
+            r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+          } catch (e3) {
+            if (e3.name !== 'LoginRequeridoError') throw e3;
+            gmailHoraLog('las cookies previas no bastaron (Gmail sigue pidiendo sesión) — se abre la ventana de login');
+            gmailProgresoLinea('La sesión guardada no bastó — se abre la ventana de inicio de sesión…', 'login');
+          }
+          if (r) break;
+        }
         /* v3.2.15 — candado por sesión: tras UN login cancelado, las
            búsquedas AUTOMÁTICAS no vuelven a abrir la ventana. Antes el
            cooldown era de solo 30 s: cada PDF cargado reabría la ventana,

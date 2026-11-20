@@ -3,6 +3,23 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.20 (la sesión activa ya no necesita ventana)
+────────────────────────────────────────────────────────────────────
+  1. Usted lo vio: la ventana de inicio de sesión abría con el buzón
+     YA visible (la sesión de Gmail estaba activa) y aun así la
+     búsqueda fallaba con «ventana cerrada» — la sesión solo se
+     aprovechaba si esa ventana sobrevivía unos segundos. Ahora, al
+     pedir Gmail la sesión, el programa comprueba PRIMERO su almacén
+     interno: si la sesión ya está activa, transfiere las cookies
+     DIRECTAMENTE y sigue buscando SIN abrir ninguna ventana.
+  2. Con sesión activa ya no se abre (ni se cierra) ventana alguna:
+     no hay nada que pueda cerrarse solo ni cancelar la búsqueda.
+  3. Un cierre de la ventana a los <5 segundos se considera anómalo
+     (antivirus/bloqueador) la haya visto o no: se reintenta una vez
+     y no bloquea los archivos siguientes.
+  4. El cierre normal de la ventana tras completar el acceso ya no
+     se anota como fallo en el log de diagnóstico.
+
 NOVEDADES DE LA VERSIÓN 3.2.19 (blindaje del inicio de sesión en Gmail)
 ────────────────────────────────────────────────────────────────────
   1. La ventana de inicio de sesión se estaba cerrando «sola» en
