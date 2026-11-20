@@ -722,12 +722,22 @@ function abrirLoginGmailEnApp() {
       }
     });
     _gmailHoraLoginWin.webContents.setUserAgent(uaChrome);
+    /* v3.2.19 — instrumentación del ciclo de vida: en la máquina de un
+       usuario la ventana se cerró sola en <1 s («ventana cerrada» al
+       instante, imposible de hacer a mano). Se anota cuándo nació y si
+       llegó a verse, para distinguir un cierre REAL del usuario de uno
+       ANÓMALO (antivirus, bloqueador, proceso del renderer muerto). */
+    const nacio = Date.now();
+    let vista = false;
     let resuelto = false;
-    /* v3.2.15 — resuelve { cookies, motivo }: el PORQUÉ del fallo («ventana
-       cerrada», «tiempo agotado (5 min)», «no se pudo cargar Gmail») llega
-       al aviso del usuario; antes todo se reportaba igual y no se podía
-       diagnosticar nada desde la pantalla. */
-    const finalizar = async (ok, motivo) => {
+    /* v3.2.15 — resuelve { cookies, motivo, anomalia? }: el PORQUÉ del
+       fallo («ventana cerrada», «tiempo agotado (5 min)», «no se pudo
+       cargar Gmail») llega al aviso del usuario; antes todo se reportaba
+       igual y no se podía diagnosticar nada desde la pantalla.
+       v3.2.19: «anomalia» = la ventana murió sin que el usuario pudiera
+       cerrarla (cierra sola en <5 s o el proceso se cae) — el llamador
+       la reintenta una vez y NO dispara el candado de sesión. */
+    const finalizar = async (ok, motivo, anomalia) => {
       if (resuelto) return;
       resuelto = true;
       clearInterval(poll);
@@ -741,7 +751,7 @@ function abrirLoginGmailEnApp() {
           if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) urlLogin = _gmailHoraLoginWin.webContents.getURL();
         } catch (e) { /* ventana ya cerrada */ }
         gmailHoraLog(`login no completado (${motivo || 'ventana cerrada'})${urlLogin ? ' · URL: ' + urlLogin : ''}`);
-        salir({ cookies: null, motivo: motivo || 'ventana cerrada' });
+        salir({ cookies: null, motivo: motivo || 'ventana cerrada', anomalia: !!anomalia });
         return;
       }
       try {
@@ -752,10 +762,12 @@ function abrirLoginGmailEnApp() {
           return /(^|\.)google\.com$/.test(dom);
         });
         gmailHoraLog(`login completo: ${cookies.length} cookies de google.com cosechadas`);
-        salir({ cookies, motivo: '' });
+        /* v3.2.19 — motivo SIEMPRE informado: antes venía vacío y el
+           llamador imprimía «ventana cerrada» (una mentira) con '' || … */
+        salir({ cookies, motivo: cookies.length ? 'sesión ok' : 'sesión detectada pero sin cookies de google.com', anomalia: false });
       } catch (e) {
         gmailHoraLog('error cosechando cookies: ' + e.message);
-        salir({ cookies: null, motivo: 'no se pudieron leer las cookies de la sesión' });
+        salir({ cookies: null, motivo: 'no se pudieron leer las cookies de la sesión', anomalia: false });
       }
       /* la ventana ya cumplió su misión: se cierra sola */
       try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
@@ -798,9 +810,44 @@ function abrirLoginGmailEnApp() {
       }).catch(() => { confirmaciones = 0; });
     }, 1000);
     const limite = setTimeout(() => finalizar(false, 'tiempo agotado (5 min)'), 5 * 60 * 1000);
-    _gmailHoraLoginWin.on('closed', () => { _gmailHoraLoginWin = null; finalizar(false); });
-    _gmailHoraLoginWin.once('ready-to-show', () => { _gmailHoraLoginWin.show(); _gmailHoraLoginWin.focus(); });
-    _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch(() => finalizar(false, 'no se pudo cargar Gmail'));
+    /* v3.2.19 — al cerrarse se anota la EDAD y si llegó a VERSE: un cierre
+       a los <5 s sin haberse mostrado es ANÓMALO (antivirus, bloqueador,
+       crash) y se reintenta; uno del usuario (ventana visible, abierta un
+       rato) es una cancelación real. Antes TODO cierre se reportaba como
+       «ventana cerrada» y disparaba el candado de sesión. */
+    _gmailHoraLoginWin.on('closed', () => {
+      const edad = (Date.now() - nacio) / 1000;
+      const anomal = !vista && edad < 5;
+      gmailHoraLog(`login: ventana cerrada a los ${edad.toFixed(1)} s (visible: ${vista ? 'sí' : 'no'})${anomal ? ' — CIERRE ANÓMALO: nadie la cierra a mano tan rápido (¿antivirus o bloqueador?)' : ''}`);
+      _gmailHoraLoginWin = null;
+      finalizar(false, anomal ? `la ventana de inicio de sesión se cerró sola a los ${edad.toFixed(1)} s` : undefined, anomal);
+    });
+    _gmailHoraLoginWin.once('ready-to-show', () => { vista = true; _gmailHoraLoginWin.show(); _gmailHoraLoginWin.focus(); });
+    /* v3.2.19 — si el proceso del renderer muere (GPU/sandbox/antivirus)
+       la ventana queda muerta sin pasar por 'closed': se reporta con la
+       CAUSA y se marca anómala para que el llamador reintente */
+    _gmailHoraLoginWin.webContents.on('render-process-gone', (_e, det) => {
+      gmailHoraLog(`login: proceso del navegador muerto (${det && det.reason})`);
+      finalizar(false, 'la ventana de inicio de sesión falló (' + ((det && det.reason) || 'proceso muerto') + ')', true);
+      try { if (!_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e) { /* noop */ }
+    });
+    /* v3.2.19 — loadURL ya NO rinde al primer fallo: el redirect de Google
+       a accounts.google.com puede abortar la carga inicial (ERR_ABORTED)
+       sin que nada esté roto. Se reintenta una vez tras 1,5 s; solo un
+       segundo fallo termina el intento con la causa exacta. */
+    const cargar = (n) => {
+      _gmailHoraLoginWin.loadURL('https://mail.google.com/').catch((e) => {
+        gmailHoraLog(`login: loadURL falló (intento ${n}): ${e && e.message}`);
+        if (n < 2) {
+          setTimeout(() => {
+            try { if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) cargar(2); } catch (e2) { /* cerrada */ }
+          }, 1500);
+        } else {
+          finalizar(false, 'no se pudo cargar Gmail (' + ((e && e.message) || 'error de red') + ')');
+        }
+      });
+    };
+    cargar(1);
   });
 }
 
@@ -905,13 +952,32 @@ async function _gmailHoraBuscarNucleo(nombre, manual) {
         }
         gmailHoraLog(`ronda ${ronda}: Gmail pide sesión (URL: ${_gmailHoraSvc.urlActual()})`);
         gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
-        const login = await abrirLoginGmailEnApp();
+        /* v3.2.19 — reintento ante CIERRE ANÓMALO de la ventana de login
+           (se cerró sola en <5 s o su proceso murió: antivirus, bloqueador,
+           crash): se reabre UNA vez antes de rendirse. Un cierre REAL del
+           usuario (ventana visible, abierta un rato) NO se reintenta y sí
+           activa el candado v3.2.15. */
+        let login = null;
+        for (let intento = 1; intento <= 2; intento++) {
+          login = await abrirLoginGmailEnApp();
+          if (login && login.cookies && login.cookies.length) break;
+          if (login && login.anomalia && intento === 1) {
+            gmailHoraLog('login: cierre anómalo — se reabre la ventana una vez');
+            gmailProgresoLinea('⚠ ' + login.motivo + ' — se reabre la ventana una vez…', 'login');
+            continue;
+          }
+          break;
+        }
         const cookies = login && login.cookies;
         if (!cookies || !cookies.length) {
+          const motivo = (login && login.motivo) || 'ventana cerrada';
           _gmailHoraUltimoFalloLogin = Date.now();
-          _gmailHoraLoginCancelado = true;   // v3.2.15: por el resto de la sesión no se reabre sola
-          gmailProgresoLinea('✖ No se completó el inicio de sesión en Gmail (' + ((login && login.motivo) || 'ventana cerrada') + ')', 'err');
-          return { ok: false, error: 'No se completó el inicio de sesión en Gmail (' + ((login && login.motivo) || 'ventana cerrada') + ')', tipo: 'LoginCancelado' };
+          if (!(login && login.anomalia)) {
+            _gmailHoraLoginCancelado = true;   // v3.2.15: por el resto de la sesión no se reabre sola
+          }
+          gmailProgresoLinea('✖ No se completó el inicio de sesión en Gmail (' + motivo + ')', 'err');
+          gmailProgresoLinea('Cuando pueda, pulse «🔗 Iniciar sesión en Gmail» en la app y complete el acceso — con la sesión lista, la hora se capturará sola en los siguientes archivos.', 'login');
+          return { ok: false, error: 'No se completó el inicio de sesión en Gmail (' + motivo + ')', tipo: 'LoginCancelado' };
         }
         _gmailHoraLoginCancelado = false;    // el login sí se completó: se permite de nuevo si la sesión expira
         const inj = await _gmailHoraSvc.inyectarCookies(cookies);

@@ -3,6 +3,23 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.19 (blindaje del inicio de sesión en Gmail)
+────────────────────────────────────────────────────────────────────
+  1. La ventana de inicio de sesión se estaba cerrando «sola» en
+     menos de 1 segundo y el programa lo reportaba como «ventana
+     cerrada», bloqueando el login de TODOS los archivos siguientes.
+     Ahora se distingue un cierre REAL del usuario de uno ANÓMALO
+     (antivirus, bloqueador, fallo del navegador): el anómalo se
+     REINTENTA una vez y ya no bloquea los archivos siguientes.
+  2. Todo el ciclo de la ventana queda anotado en el log de
+     diagnóstico (gmail-hora.log): a los cuántos segundos se cerró,
+     si llegó a verse y, si el navegador falló, la causa exacta.
+  3. La carga de Gmail reintenta sola: la primera redirección de
+     Google podía abortarla sin que nada estuviera roto.
+  4. Mensajes honestos: una sesión completada ya nunca se reporta
+     como «ventana cerrada», y tras un fallo la ventana de progreso
+     indica el paso siguiente (botón «🔗 Iniciar sesión en Gmail»).
+
 NOVEDADES DE LA VERSIÓN 3.2.18 (corrección de la ventana de progreso)
 ────────────────────────────────────────────────────────────────────
   1. CORRECCIÓN CRÍTICA: la ventana de progreso quedaba VACÍA («no
