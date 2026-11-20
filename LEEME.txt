@@ -3,6 +3,24 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.26 (todas las pestañas buscan su hora)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «solo actualizó la hora de recepción en dos
+     pestañas/archivos de las 04 que cargué». La causa: al abrir varios
+     archivos en ráfaga, cargar el siguiente CANCELABA la búsqueda
+     pendiente del anterior — solo el último archivo era buscado (y
+     otro, si lo visitabas, porque cambiar de pestaña re-dispara la
+     búsqueda).
+  2. Ahora CADA pestaña agenda su propia búsqueda: los N archivos que
+     cargues reciben cada uno la hora de su correo, uno tras otro (se
+     ejecutan en cola, de a una). Ya no importa cuántos abras ni en qué
+     orden.
+  3. La re-búsqueda automática (correo que aún no llega) también
+     pertenece al archivo que la necesita, no a la pestaña que esté
+     abierta.
+  4. Una hora ESCRITA A MANO (ficha de escritorio o móvil) queda
+     blindada: jamás se borra ni se rebusca.
+
 NOVEDADES DE LA VERSIÓN 3.2.25 (la hora ya no viaja a la pestaña nueva)
 ────────────────────────────────────────────────────────────────────
   1. Reporte del usuario: «Hora Recepción (UTC) no actualiza cuando se
