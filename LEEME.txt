@@ -3,6 +3,20 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.27 (la hora que se aplica es del correo de ESE archivo)
+─────────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «solo buscó la hora de recepción de 1, y lo
+     repite en las demás pestañas/archivos». La causa: al encolarse las
+     búsquedas de varios archivos sobre el mismo navegador invisible, la
+     página no se recargaba de verdad entre consultas — la 2.ª, 3.ª y
+     4.ª terminaban leyendo el correo que quedaba abierto (el del 1.er
+     archivo) y repetían SU hora en todas las pestañas.
+  2. Ahora cada consulta recarga la página de verdad: lo que aparece en
+     pantalla pertenece siempre a la consulta de ESE archivo.
+  3. Y la doble verificación final: si el correo abierto no trae el
+     archivo como adjunto, SU HORA NO SE USA (se reintenta solo). Ya no
+     es posible que un archivo reciba la hora del correo de otro.
+
 NOVEDADES DE LA VERSIÓN 3.2.26 (todas las pestañas buscan su hora)
 ────────────────────────────────────────────────────────────────────
   1. Reporte del usuario: «solo actualizó la hora de recepción en dos

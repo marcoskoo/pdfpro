@@ -271,6 +271,19 @@ class GmailHoraService {
        query EXACTA (in:inbox, filename:"…", texto libre) deja claro qué
        está haciendo la búsqueda en cada momento */
     this.opts.onProgress(`Consultando Gmail: ${query}`);
+    /* v3.2.27 — recarga REAL entre consultas: navegar de #search/a a
+       #search/b es solo un cambio de hash (mismo documento) y el sondeo de
+       abajo podía dar por buena la vista ANTERIOR (los resultados de otra
+       consulta, o el correo abierto de la búsqueda previa). Con varios
+       archivos abiertos las búsquedas se encolan una tras otra sobre el
+       mismo navegador: la 2.ª leía las filas de la 1.ª y extraía la hora
+       del correo EQUIVOCADO (reporte: «solo buscó la hora de 1 y la
+       repite en las demás pestañas/archivos»). Pasando por about:blank se
+       fuerza una carga completa: lo que aparece en pantalla pertenece
+       siempre a ESTA consulta. */
+    try {
+      await this.page.goto('about:blank', { waitUntil: 'domcontentloaded', timeout: this.opts.timeout });
+    } catch (_) { /* se fuerza la carga igual con el goto de abajo */ }
     await this.page.goto(this._urlBusqueda(query), {
       waitUntil: 'domcontentloaded',
       timeout: this.opts.timeout
@@ -581,6 +594,20 @@ class GmailHoraService {
        nunca iba a contenerlo) */
     const abrio = await this._abrirCorreo(modo === 'texto' ? (sinMarcas || base) : base, modo === 'texto');
     if (!abrio) throw new ArchivoNoEncontradoError(archivo);
+
+    /* v3.2.27 — el correo abierto DEBE ser el de ESTE archivo antes de usar
+       su hora: si la vista quedó mostrando el correo de una búsqueda
+       anterior (las consultas de varios archivos se encolan sobre el mismo
+       navegador), la hora extraída sería la de OTRO vuelo. Con filename:
+       los resultados traen el adjunto buscado; en texto libre el correo
+       lo menciona. Si el adjunto no coincide, no es este correo: no se
+       usa su hora (la re-búsqueda lo intentará de nuevo). */
+    await this._esperarAdjuntos();
+    const adjuntosAbiertos = await this._adjuntosAbiertos();
+    if (!adjuntoCoincide(archivo, adjuntosAbiertos)) {
+      this.opts.onProgress(`El correo abierto no trae «${archivo}» como adjunto — no se usa su hora`);
+      throw new ArchivoNoEncontradoError(archivo);
+    }
 
     return this._resultadoDeCorreoAbierto(archivo, copiar);
   }
