@@ -1030,6 +1030,35 @@ async function _gmailHoraBuscarNucleo(nombre, manual) {
           return { ok: false, error: 'Inicio de sesión en Gmail cancelado — pulsa «🔗 Iniciar sesión en Gmail» para completarlo cuando quieras', tipo: 'LoginCancelado' };
         }
         gmailHoraLog(`ronda ${ronda}: Gmail pide sesión (URL: ${_gmailHoraSvc.urlActual()})`);
+        /* v3.2.22 — LOGIN VISIBLE EN CHROME REAL, CON EL PERFIL DEL
+           BUSCADOR. Las capturas del usuario lo demostraron: la ventana
+           de login de Electron moría en <2 s (algo la cerraba antes de
+           poder verse) y su sesión de Chrome normal NO es visible para
+           la app — el almacén quedaba vacío y la búsqueda siempre chocaba
+           con el muro. Se abre una ventana de Chrome/Edge REAL con el
+           MISMO perfil persistente del buscador: el usuario inicia
+           sesión ahí una sola vez, la sesión queda en el perfil y NO se
+           transfiere cookie alguna. La ventana de Electron queda solo
+           como respaldo. */
+        gmailHoraEvento('Gmail pide iniciar sesión: se abre una ventana de Chrome — inicie sesión ahí (solo la primera vez)…', 'login');
+        const vis = await _gmailHoraSvc.loginVisible();
+        if (vis && vis.ok) {
+          gmailHoraLog('loginVisible: sesión iniciada y guardada en el perfil del buscador');
+          gmailProgresoLinea('✔ Sesión iniciada en Chrome — queda guardada: la hora se buscará sola desde ahora', 'ok');
+          _gmailHoraLoginCancelado = false;   // v3.2.22: el acceso sí se completó
+          await _gmailHoraSvc.iniciar();
+          try {
+            r = await _gmailHoraSvc.buscarHoraPorArchivo(nombre, { copiar: false });
+          } catch (e4) {
+            if (e4.name !== 'LoginRequeridoError') throw e4;
+            gmailHoraLog(`ronda ${ronda}: aun con sesión en el perfil, Gmail volvió a pedir login (URL: ${_gmailHoraSvc.urlActual()})`);
+          }
+          if (r) break;
+        } else {
+          gmailHoraLog('loginVisible no completó: ' + ((vis && vis.motivo) || 'falló') + ' — se usa la ventana dentro de la app como respaldo');
+          gmailProgresoLinea('⚠ La ventana de Chrome no completó el acceso (' + ((vis && vis.motivo) || 'falló') + ') — se abre Gmail dentro de la app…', 'login');
+        }
+        /* respaldo: la ventana de login DENTRO de la app (Electron) */
         gmailHoraEvento('Gmail pide iniciar sesión: se abrió Gmail dentro de la app — inicie sesión (solo la primera vez)…', 'login');
         /* v3.2.19 — reintento ante CIERRE ANÓMALO de la ventana de login
            (se cerró sola en <5 s o su proceso murió: antivirus, bloqueador,

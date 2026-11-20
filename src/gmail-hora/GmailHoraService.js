@@ -114,6 +114,84 @@ class GmailHoraService {
     }
   }
 
+  /** v3.2.22 — LOGIN VISIBLE EN EL NAVEGADOR REAL DEL SISTEMA, CON EL
+      MISMO PERFIL PERSISTENTE DEL BUSCADOR INVISIBLE. La ventana de
+      login de Electron moría en <2 s en la máquina del usuario (algo la
+      cerraba antes de que pudiera verse) y la sesión de SU Chrome normal
+      no es visible para la app: el almacén quedaba vacío y la búsqueda
+      siempre chocaba con el muro. Aquí NO se transfiere cookie alguna:
+      se abre una ventana de Chrome/Edge REAL con el perfil de búsqueda,
+      el usuario inicia sesión ahí UNA vez y la sesión queda guardada en
+      el perfil — la siguientes búsquedas (y los reinicios de la app) la
+      encuentran activa. Devuelve {ok:true} o {ok:false, motivo}.
+      Requiere llamar iniciar() de nuevo tras el éxito. */
+  async loginVisible({ minutos = 5 } = {}) {
+    if (!playwright) return { ok: false, motivo: 'Playwright no está instalado' };
+    await this.cerrar(true);              // libera el perfil para la ventana visible
+    fs.mkdirSync(this.opts.userDataDir, { recursive: true });
+    const base = { headless: false, viewport: null, args: ['--start-maximized'] };
+    const intentos = [];
+    if (process.env.PDFPRO_GMAIL_CHROMIUM) {
+      intentos.push({ etiqueta: 'ruta manual (PDFPRO_GMAIL_CHROMIUM)', opts: { ...base, executablePath: process.env.PDFPRO_GMAIL_CHROMIUM } });
+    }
+    intentos.push(
+      { etiqueta: 'Chrome del sistema', opts: { ...base, channel: 'chrome' } },
+      { etiqueta: 'Edge del sistema', opts: { ...base, channel: 'msedge' } },
+      { etiqueta: 'Chromium empaquetado de Playwright', opts: { ...base } }
+    );
+    let ctx = null;
+    let ultimoError = null;
+    for (const intento of intentos) {
+      try {
+        ctx = await playwright.chromium.launchPersistentContext(this.opts.userDataDir, intento.opts);
+        this.opts.onProgress('Ventana de acceso abierta (' + intento.etiqueta + ').');
+        break;
+      } catch (e) {
+        ultimoError = e;
+        ctx = null;
+      }
+    }
+    if (!ctx) {
+      return { ok: false, motivo: 'no se pudo abrir la ventana del navegador (' + String((ultimoError && ultimoError.message) || ultimoError || '').split('\n')[0] + ')' };
+    }
+    let cerrada = false;
+    ctx.on('close', () => { cerrada = true; });
+    try {
+      const page = ctx.pages()[0] || await ctx.newPage();
+      try {
+        await page.goto('https://mail.google.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+      } catch (e) { /* el usuario navega/redirige mientras carga: no es fatal */ }
+      const SESION = ['SID', 'SAPISID', 'HSID', 'SSID', 'APISID'];
+      const limite = Date.now() + minutos * 60 * 1000;
+      let confirmaciones = 0;
+      while (Date.now() < limite) {
+        if (cerrada) return { ok: false, motivo: 'ventana cerrada antes de completar el acceso' };
+        let conSesion = false;
+        try {
+          const todas = await ctx.cookies('https://mail.google.com/');
+          const nombres = new Set(todas.filter((c) => /(^|\.)google\.com$/.test(String(c.domain || '').replace(/^\./, ''))).map((c) => c.name));
+          conSesion = SESION.some((n) => nombres.has(n));
+        } catch (e) { /* el contexto se está cerrando */ }
+        if (conSesion) {
+          confirmaciones++;
+          if (confirmaciones >= 2) {
+            try { await ctx.close(); } catch (e) { /* ya cerrada */ }
+            this.opts.onProgress('Sesión de Gmail iniciada en la ventana de acceso — queda guardada en el perfil.');
+            return { ok: true };
+          }
+        } else {
+          confirmaciones = 0;
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      try { await ctx.close(); } catch (e) { /* ya cerrada */ }
+      return { ok: false, motivo: 'tiempo agotado (' + minutos + ' min) sin completar el acceso' };
+    } catch (e) {
+      try { await ctx.close(); } catch (e2) { /* ya cerrada */ }
+      return { ok: false, motivo: String((e && e.message) || e).split('\n')[0] };
+    }
+  }
+
   /** URL actual de la página (para el registro de diagnóstico). */
   urlActual() {
     try { return this.page ? this.page.url() : ''; } catch (e) { return ''; }

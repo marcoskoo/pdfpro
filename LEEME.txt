@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.22 (inicio de sesión en una ventana de Chrome real)
+────────────────────────────────────────────────────────────────────
+  1. Sus capturas revelaron la causa raíz de una vez: la ventana de
+     Gmail con su buzón que veía era SU Chrome normal — la app no
+     puede usar esa sesión. La ventana de login interna de la app se
+     cerraba sola en menos de 2 segundos (algo en el equipo la mataba)
+     y el acceso nunca se completaba.
+  2. Ahora, cuando Gmail pide sesión, la app abre una VENTANA DE
+     CHROME/EDGE REAL (del sistema) con el perfil propio del buscador:
+     inicie sesión ahí UNA sola vez. La sesión queda guardada en ese
+     perfil — no se transfiere ninguna cookie y sobrevive a reinicios
+     de la app: los siguientes PDF buscan la hora solos, sin ventanas.
+  3. La ventana interna de la app queda solo como respaldo si la
+     ventana real no puede abrirse.
+
 NOVEDADES DE LA VERSIÓN 3.2.21 (el botón «Conectar Gmail» ya no abre una ventana rota)
 ────────────────────────────────────────────────────────────────────
   1. Su captura reveló que el botón «CONECTAR GMAIL» abría un
