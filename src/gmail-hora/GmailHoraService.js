@@ -125,11 +125,26 @@ class GmailHoraService {
       el perfil — la siguientes búsquedas (y los reinicios de la app) la
       encuentran activa. Devuelve {ok:true} o {ok:false, motivo}.
       Requiere llamar iniciar() de nuevo tras el éxito. */
-  async loginVisible({ minutos = 5 } = {}) {
+  async loginVisible({ minutos = 10 } = {}) {
     if (!playwright) return { ok: false, motivo: 'Playwright no está instalado' };
     await this.cerrar(true);              // libera el perfil para la ventana visible
     fs.mkdirSync(this.opts.userDataDir, { recursive: true });
-    const base = { headless: false, viewport: null, args: ['--start-maximized'] };
+    /* v3.2.23 — SIN MARCA DE AUTOMATIZACIÓN: el usuario de las 09:27
+       ingresó sus credenciales en la ventana de Chrome y Google las
+       DENEGÓ con «este navegador o aplicación no es seguro» — Playwright
+       lanza Chrome con --enable-automation (navigator.webdriver=true) y
+       Google bloquea el acceso justo por eso. Se elimina esa marca
+       (se descarta --enable-automation de los argumentos por defecto y
+       se apaga AutomationControlled): Google ve un Chrome normal. El
+       plazo sube de 5 a 10 min: credenciales + verificación en dos
+       pasos + avisos toman su tiempo y el usuario quedó cortado a mitad
+       del acceso. */
+    const base = {
+      headless: false,
+      viewport: null,
+      ignoreDefaultArgs: ['--enable-automation'],
+      args: ['--start-maximized', '--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check']
+    };
     const intentos = [];
     if (process.env.PDFPRO_GMAIL_CHROMIUM) {
       intentos.push({ etiqueta: 'ruta manual (PDFPRO_GMAIL_CHROMIUM)', opts: { ...base, executablePath: process.env.PDFPRO_GMAIL_CHROMIUM } });

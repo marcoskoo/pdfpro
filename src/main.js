@@ -710,18 +710,24 @@ function gmailProgresoAbrir(archivo) {
     pantalla de carga inicial mail.google.com aparece SIN sesión 1-3 s
     antes del redirect al login: se exige sesión real (cookies
     SID/SAPISID/…) con la navegación terminada, 2 sondeos seguidos. */
-/* v3.2.20 — ¿La partición de login ('persist:gmail-login') ya tiene una
+/* v3.2.20 — ¿La partición de login ('persist:gmail-correo1') ya tiene una
    sesión de google.com? Devuelve las cookies de google.com si hay
    cookies de SESIÓN (SID/SAPISID/HSID/SSID/APISID), o null si no. Así la
    búsqueda puede transferir la sesión SIN abrir la ventana de login: el
    usuario lo vio en pantalla — la ventana abría con el buzón YA visible
    (sesión válida) y aun así la búsqueda fallaba con «ventana cerrada»,
    porque la sesión nunca se cosechaba: se dependía de que la ventana
-   viviera los ~3,5 s que tarda el sondeo en confirmarla. */
+   viviera los ~3,5 s que tarda el sondeo en confirmarla.
+   v3.2.23 — PARTICIÓN NUEVA ('gmail-correo1', antes 'gmail-login'): en la
+   máquina del usuario la ventana interna moría en <2 s EN TODAS las
+   versiones mientras las demás ventanas de la app vivían meses — síntoma
+   clásico de partición corrompida (GPUCache) que sobrevive a las
+   reinstalaciones en %APPDATA%\PDFPro\Partitions; con nombre nuevo se
+   arranca con un almacén limpio. */
 async function _gmailHoraSesionYaValida() {
   try {
     const { session: ses } = require('electron');
-    const particion = ses.fromPartition('persist:gmail-login');
+    const particion = ses.fromPartition('persist:gmail-correo1');
     const todas = await particion.cookies.getAll({});
     const deGoogle = todas.filter((c) => {
       const dom = String(c.domain || '').replace(/^\./, '');
@@ -740,7 +746,7 @@ function abrirLoginGmailEnApp() {
   if (_gmailHoraLoginPromesa) return _gmailHoraLoginPromesa;
   _gmailHoraLoginPromesa = new Promise((resolve) => {
     const { session: ses } = require('electron');
-    const particion = ses.fromPartition('persist:gmail-login');
+    const particion = ses.fromPartition('persist:gmail-correo1');
     /* UA de Chrome real: fuera «Electron/x.y» y «PDFPro/x.y» (Google
        bloquea los embebidos); antes de loadURL para que valga también en
        las redirecciones de accounts.google.com */
@@ -759,7 +765,7 @@ function abrirLoginGmailEnApp() {
         minutos y aparecía «No se completó el inicio de sesión» */
       webPreferences: {
         contextIsolation: true, nodeIntegration: false, sandbox: true,
-        partition: 'persist:gmail-login'
+        partition: 'persist:gmail-correo1'
       }
     });
     _gmailHoraLoginWin.webContents.setUserAgent(uaChrome);
@@ -930,19 +936,24 @@ async function _gmailHoraBuscar(nombre, manual) {
      búsqueda: el usuario VE los pasos en texto en vez de toasts fugaces */
   gmailProgresoAbrir(nombre);
   gmailProgresoLinea(`Búsqueda de la hora de recepción de «${nombre}» (vía asistida)…`);
-  /* v3.2.18 — GUARDIA GLOBAL de 7 min: si algo se cuelga de verdad (un
-     arranque de Playwright que nunca responde, una navegación eterna con
-     el antivirus frenando el navegador), la cola de búsquedas quedaba
-     bloqueada PARA SIEMPRE: cada PDF cargado se encolaba detrás y no
-     pasaba nada. Al vencer el plazo se cierra el navegador de búsqueda y
-     la ventana de login, y la siguiente búsqueda arranca limpia. */
+  /* v3.2.18 — GUARDIA GLOBAL: si algo se cuelga de verdad (un arranque de
+     Playwright que nunca responde, una navegación eterna con el antivirus
+     frenando el navegador), la cola de búsquedas quedaba bloqueada PARA
+     SIEMPRE: cada PDF cargado se encolaba detrás y no pasaba nada. Al
+     vencer el plazo se cierra el navegador de búsqueda y la ventana de
+     login, y la siguiente búsqueda arranca limpia.
+     v3.2.23 — de 7 a 20 MIN: el login visible puede durar hasta 10 min
+     (credenciales + verificación en dos pasos + avisos de Google) y el
+     usuario de la 09:28 quedó cortado a mitad del acceso; cada fase
+     interna sigue con su propio límite (loginVisible 10 min, ventana
+     interna 5 min, navegaciones ~45 s). */
   let timer = null;
   const guardia = new Promise((_, rej) => {
     timer = setTimeout(() => {
-      const e = new Error('La búsqueda de la hora excedió 7 minutos — se canceló para no bloquear las siguientes');
+      const e = new Error('La búsqueda de la hora excedió 20 minutos — se canceló para no bloquear las siguientes');
       e.name = 'GmailHoraTimeout';
       rej(e);
-    }, 7 * 60 * 1000);
+    }, 20 * 60 * 1000);
   });
   const nucleo = _gmailHoraBuscarNucleo(nombre, manual);
   nucleo.catch(() => {});   /* fallos tardíos tras vencer la guardia: el timeout ya se reportó */

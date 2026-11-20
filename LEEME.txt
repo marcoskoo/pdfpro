@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.23 (Google ya no deniega el acceso en la ventana de Chrome)
+────────────────────────────────────────────────────────────────────
+  1. Su captura de las 09:27 mostró el paso exacto que fallaba: la
+     ventana de Chrome se abrió, usted ingresó cuenta y clave, y Google
+     DENEGÓ el acceso con «este navegador o aplicación no es seguro»:
+     el Chrome que abre la app viajaba marcado como automatizado. Se
+     quitó esa marca — Google ahora ve un Chrome normal.
+  2. El plazo para completar el acceso sube de 5 a 10 minutos
+     (credenciales + verificación en dos pasos toman su tiempo) y el
+     límite global de la búsqueda pasa de 7 a 20 minutos: antes el
+     acceso quedaba cortado a mitad.
+  3. La ventana de respaldo dentro de la app muere en <2 s en su
+     equipo desde siempre (mientras las demás ventanas viven): síntoma
+     de almacén interno dañado. Se le asignó un almacén nuevo y limpio.
+
 NOVEDADES DE LA VERSIÓN 3.2.22 (inicio de sesión en una ventana de Chrome real)
 ────────────────────────────────────────────────────────────────────
   1. Sus capturas revelaron la causa raíz de una vez: la ventana de
