@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.23 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.24 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -9407,8 +9407,25 @@ async function openFilesList(files){
 
 async function loadPDF(file){
   // Si no hay tab activo, crear uno nuevo
-  if(!activeTabId){var newId='tab_'+(++_tabIdSeq);var newTab={id:newId,fileName:'Sin título',fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:{},undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};docTabs.push(newTab);activeTabId=newId;}
-  fileName=file.name.replace(/\.pdf$/i,'');fileSize=(file.size/1024).toFixed(1)+' KB';setProg(10);
+  if(!activeTabId){var newId='tab_'+(++_tabIdSeq);var newTab={id:newId,fileName:'Sin título',fileSize:'−',pdfDoc:null,pageOrder:[],annotations:{},pageTexts:{},pageItems:{},textBoxes:[],undoStack:[],redoStack:[],rawPdfBytes:null,scale:1.2,rotation:0,curPage:1};docTabs.push(newTab);activeTabId=newId;}
+  /* v3.2.24 — la HORA DE RECEPCIÓN pertenece al ARCHIVO, no a la pestaña:
+     al cargar un archivo DISTINTO en la misma pestaña, la fecha/hora que
+     quedaron en la ficha son del archivo ANTERIOR — con ellas puestas, el
+     guard de gmailHoraArchivo («ya hay hora: no se toca») cancelaba la
+     búsqueda y el usuario sellaba con la hora del correo de OTRO vuelo.
+     Se limpian campo, ficha móvil y pestaña; la búsqueda automática (más
+     abajo, gmailHoraAuto) llena la de ESTE archivo, y si no hay correo la
+     ficha queda vacía, como debe ser. */
+  var _tabV=docTabGet(activeTabId);
+  var _nuevoNombre=file.name.replace(/\.pdf$/i,'');
+  if(!_tabV||!_tabV.fileName||_tabV.fileName!==_nuevoNombre||_tabV.fileName==='Sin título'){
+    var _fdL=document.getElementById('selloRxDate'),_htL=document.getElementById('selloRxTime');
+    if(_fdL)_fdL.value='';if(_htL)_htL.value='';
+    if(_tabV){_tabV.selloFecha='';_tabV.selloHora='';_tabV.selloHoraArchivo='';}
+    try{updateSelloPreview();}catch(e){}
+    try{mobSelloSync(false);}catch(e){}
+  }
+  fileName=_nuevoNombre;fileSize=(file.size/1024).toFixed(1)+' KB';setProg(10);
   rawPdfBytes=new Uint8Array(await file.arrayBuffer());
   // v2.2.0 — copia defensiva: pdf.js TRANSFIERE el buffer al worker (lo detacha).
   // Mantener rawPdfBytes intacto arregla además la exportación vectorial (pdf-lib).
@@ -11127,7 +11144,7 @@ function gmailAplicarHora(ms,origen,gmailLocal,tab){
   var t2=tab||null,act=null;
   try{act=docTabGet(activeTabId);}catch(e){}
   if(!t2)t2=act;
-  if(t2){t2.selloFecha=fecha;t2.selloHora=hora;}
+  if(t2){t2.selloFecha=fecha;t2.selloHora=hora;t2.selloHoraArchivo=(t2.fileName||'');} /* v3.2.24: la hora queda firmada con el archivo al que pertenece */
   if(!tab||t2===act){
     var f=document.getElementById('selloRxDate');if(f)f.value=fecha;
     var h=document.getElementById('selloRxTime');if(h)h.value=hora;
@@ -11272,7 +11289,20 @@ async function gmailHoraArchivo(manual,reintento){
   if(!nombre)nombre=fileName||'';
   if(!nombre)return;
   var t=document.getElementById('selloRxTime');
-  if(t&&t.value&&!manual){gmailLoginBtnOcultar();return;}  // ya hay hora: no se toca
+  /* v3.2.24 — el guard «ya hay hora» distingue de qué ARCHIVO es el valor
+     del campo: si la pestaña cambió de archivo, la fecha/hora que quedaron
+     son del ANTERIOR (se sellaría con la hora del correo de otro vuelo) —
+     se limpian y se busca la de ESTE archivo. La hora escrita a MANO por
+     el usuario (sin archivo firmado) se respeta como siempre. */
+  if(t&&t.value&&!manual){
+    var _horaDeOtro=!!(_tab&&_tab.selloHoraArchivo&&_tab.selloHoraArchivo!==nombre);
+    if(!_horaDeOtro){gmailLoginBtnOcultar();return;}   // ya hay hora (de este archivo o escrita a mano): no se toca
+    t.value='';
+    var _fdG=document.getElementById('selloRxDate');if(_fdG)_fdG.value='';
+    if(_tab){_tab.selloHora='';_tab.selloFecha='';_tab.selloHoraArchivo='';}
+    try{updateSelloPreview();}catch(e){}
+    try{mobSelloSync(false);}catch(e){}
+  }
   try{
     if(await gmailHoraApiPorArchivo(nombre,_tab)){gmailLoginBtnOcultar();return;}
   }catch(e){/* la API falló (sin conexión/sin sesión): se prueba la vía asistida */}
@@ -11391,7 +11421,10 @@ function gmailHoraReintentoAgendar(){
     var nombre='';var _tab=null;
     try{_tab=docTabGet(activeTabId);if(_tab&&_tab.fileName)nombre=_tab.fileName;}catch(e){}
     if(!nombre||!_tab)return;
-    if(t&&t.value)return;                        // ya hay hora (a mano o capturada): nada que reintentar
+    /* v3.2.24 — nada que reintentar si ya hay hora de ESTE archivo o
+       escrita a mano; si la del campo es del archivo ANTERIOR, sí: la de
+       este archivo aún no se ha conseguido */
+    if(t&&t.value&&!(_tab.selloHoraArchivo&&_tab.selloHoraArchivo!==nombre))return;
     try{
       if(await gmailHoraApiPorArchivo(nombre,_tab))return;
       if(_gmailAsistidaSesionOk&&gmailHoraPuede()){await gmailHoraArchivo(false,true);return;}

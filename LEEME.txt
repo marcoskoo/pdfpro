@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.24 (la hora de recepción pertenece al archivo, no a la pestaña)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario tras el acceso exitoso: «ahora ya carga la
+     hora, pero al cargar otro archivo la hora de recepción no se
+     actualiza de acuerdo al archivo seleccionado». La causa: al abrir
+     otro PDF en la misma pestaña, la fecha/hora del archivo ANTERIOR
+     quedaban puestas en la ficha y el sistema las respetaba («ya hay
+     hora: no se toca») — se corría el riesgo de sellar con la hora del
+     correo de OTRO vuelo.
+  2. Ahora la hora queda firmada con el archivo al que pertenece: al
+     cargar un archivo distinto la ficha se limpia y se busca la hora
+     del correo de ESE archivo. Recargar el MISMO archivo conserva su
+     hora (no se rebusca sin necesidad) y una hora escrita a mano se
+     respeta como siempre.
+
 NOVEDADES DE LA VERSIÓN 3.2.23 (Google ya no deniega el acceso en la ventana de Chrome)
 ────────────────────────────────────────────────────────────────────
   1. Su captura de las 09:27 mostró el paso exacto que fallaba: la
