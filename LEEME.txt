@@ -3,6 +3,21 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.25 (la hora ya no viaja a la pestaña nueva)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «Hora Recepción (UTC) no actualiza cuando se
+     cambia de pestaña/archivo dentro de la app, sigue mostrando la hora
+     de recepción del primer pestaña/archivo». La causa: al abrir un
+     archivo con otro documento ya cargado, la app crea una pestaña
+     nueva — pero el formulario seguía mostrando la fecha/hora del
+     documento anterior, el sistema la daba por buena y no buscaba la
+     del archivo nuevo (y al alternar pestañas, la hora ajena quedaba
+     guardada como suya).
+  2. Ahora la pestaña nueva nace limpia: fecha, hora y matrícula en
+     blanco (la matrícula la detecta el auto-OCR del nuevo archivo) y se
+     busca la hora del correo de ESE archivo. Al alternar entre
+     pestañas, cada una muestra su propia hora.
+
 NOVEDADES DE LA VERSIÓN 3.2.24 (la hora de recepción pertenece al archivo, no a la pestaña)
 ────────────────────────────────────────────────────────────────────
   1. Reporte del usuario tras el acceso exitoso: «ahora ya carga la

@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.24 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.25 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -9391,6 +9391,18 @@ async function openFilesList(files){
         activeTabId=newId;
         pdfDoc=null;pageOrder=[];annotations={};pageTexts={};pageItems={};textBoxes={};undoStack=[];redoStack=[];
         renderDocTabs();
+        /* v3.2.25 — la ficha de sello pertenece a la pestaña ACTIVA: la
+           pestaña nueva nace SIN fecha/hora y SIN matrícula (la detecta el
+           auto-OCR del nuevo archivo). Sin esta limpieza, la hora del
+           documento que se dejó quedaba pegada en el campo — el guard de
+           gmailHoraArchivo la daba por suya (la pestaña nueva no tiene
+           rastro de hora propia) y cancelaba la búsqueda; además, al
+           alternar pestañas esa hora ajena quedaba guardada como si
+           fuera de esta pestaña. */
+        var _fdN=document.getElementById('selloRxDate'),_htN=document.getElementById('selloRxTime'),_mtN=document.getElementById('selloMatricula');
+        if(_fdN)_fdN.value='';if(_htN)_htN.value='';if(_mtN)_mtN.value='';
+        try{mobSelloSync(false);}catch(e){}
+        try{updateSelloPreview();}catch(e){}
       }
       if(await handleFileOpen(f))okList.push(f.name);else failList.push(f.name);
     }catch(e){
@@ -11293,10 +11305,16 @@ async function gmailHoraArchivo(manual,reintento){
      del campo: si la pestaña cambió de archivo, la fecha/hora que quedaron
      son del ANTERIOR (se sellaría con la hora del correo de otro vuelo) —
      se limpian y se busca la de ESTE archivo. La hora escrita a MANO por
-     el usuario (sin archivo firmado) se respeta como siempre. */
+     el usuario (sin archivo firmado) se respeta como siempre.
+     v3.2.25 — también es de OTRO archivo el valor del que la pestaña no
+     guarda ningún rastro: una pestaña recién creada (al abrir un archivo
+     con otro documento ya cargado) nace sin fecha/hora propia — cualquier
+     valor visible en el campo es del documento que se dejó, y se busca la
+     de ESTE archivo. Solo se respeta la hora firmada con este archivo o
+     la guardada en la pestaña sin firma de archivo (escrita a mano). */
   if(t&&t.value&&!manual){
-    var _horaDeOtro=!!(_tab&&_tab.selloHoraArchivo&&_tab.selloHoraArchivo!==nombre);
-    if(!_horaDeOtro){gmailLoginBtnOcultar();return;}   // ya hay hora (de este archivo o escrita a mano): no se toca
+    var _horaDeEste=!!(_tab&&((_tab.selloHoraArchivo&&_tab.selloHoraArchivo===nombre)||(_tab.selloHora&&!_tab.selloHoraArchivo)));
+    if(_horaDeEste){gmailLoginBtnOcultar();return;}   // ya hay hora (de este archivo o escrita a mano): no se toca
     t.value='';
     var _fdG=document.getElementById('selloRxDate');if(_fdG)_fdG.value='';
     if(_tab){_tab.selloHora='';_tab.selloFecha='';_tab.selloHoraArchivo='';}
