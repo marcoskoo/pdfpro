@@ -3,6 +3,23 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.21 (el botón «Conectar Gmail» ya no abre una ventana rota)
+────────────────────────────────────────────────────────────────────
+  1. Su captura reveló que el botón «CONECTAR GMAIL» abría un
+     consentimiento de Google que moría con «Error 400: Missing
+     required parameter: client_id»: las credenciales de ese monitor
+     no viajan en el instalador. Ahora el botón avisa la verdad SIN
+     abrir nada — y aclara que PARA LA HORA DE RECEPCIÓN NO HACE
+     FALTA: basta cargar el PDF (la sesión de Gmail se usa directa).
+  2. La ventana de progreso ahora muestra la versión en su título
+     («PDFPro — Progreso Gmail (v3.2.21)»): toda captura delata qué
+     build corre.
+  3. La comprobación de sesión previa queda SIEMPRE anotada en el
+     log de diagnóstico (gmail-hora.log): «previa: N cookies» o
+     «sin sesión en el almacén».
+  4. El aviso de «ningún navegador disponible» ya no remite al botón
+     del monitor (callejón sin salida): pide instalar Chrome/Edge.
+
 NOVEDADES DE LA VERSIÓN 3.2.20 (la sesión activa ya no necesita ventana)
 ────────────────────────────────────────────────────────────────────
   1. Usted lo vio: la ventana de inicio de sesión abría con el buzón

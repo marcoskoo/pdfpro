@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.20 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.21 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK) · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -10983,6 +10983,7 @@ async function gmailConnect(){
     try{
       var r=await window.pdfproDesktop.gmailConectar();
       if(r&&r.ok){toast('✅ Gmail conectado ('+r.cuenta+')','ok');gmailRefreshState();try{gmailHoraAuto();}catch(e){}}
+      else if(r&&r.error==='sin-credenciales'){toast('Este instalador no trae las credenciales del monitor OAuth (client_id) — no hacen falta para la hora: carga el PDF o usa «Iniciar sesión en Gmail y buscar la hora» y la sesión de Gmail se usará directamente','warn',14000);}
       else if(r&&r.error==='cancelled'){toast('Conexión cancelada','warn');}
       else{toast('No se pudo conectar: '+((r&&r.error)||'')+' — usa el cuadro de código manual','err');}
     }catch(e){toast('Error conectando Gmail: '+e.message,'err');}
@@ -11344,9 +11345,11 @@ async function gmailHoraArchivo(manual,reintento){
       else if(r.tipo==='PlaywrightFalta')toast('📧 Falta Playwright en la instalación de escritorio','err',9000);
       else if(r.tipo==='NavegadorFalta'){
         /* v3.2.13 — ningún navegador disponible (Chrome/Edge/Chromium):
-           se dice la causa REAL y se ofrece la vía por Google (OAuth), que
-           no necesita navegador */
-        toast('🌐 '+((r&&r.error)||'ningún navegador disponible')+' — pulsa «Conectar Gmail» en el panel 📧 y la hora se buscará por Google sin navegador','err',16000);
+           se dice la causa REAL. v3.2.21 — ya NO se deriva al botón
+           «Conectar Gmail»: el monitor OAuth necesita credenciales que
+           este instalador no incluye (client_id vacío) y el consejo era
+           un callejón sin salida; la vía real es instalar un navegador. */
+        toast('🌐 '+((r&&r.error)||'ningún navegador disponible')+' — instala Google Chrome o Microsoft Edge y vuelve a cargar el PDF: la hora se buscará sola con cualquiera de los dos','err',16000);
       }
       else toast('📧 '+((r&&r.error)||'no se pudo buscar el correo'),'err',9000);
       return;

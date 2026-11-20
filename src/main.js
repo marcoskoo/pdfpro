@@ -466,6 +466,17 @@ ipcMain.handle('gmail:estado', () => {
 ipcMain.handle('gmail:clientId', () => gmail.CLIENT_ID || '');
 
 ipcMain.handle('gmail:conectar', async () => {
+  /* v3.2.21 — este instalador no incluye las credenciales OAuth del
+     monitor (src/gmail-credentials.json no viaja en el build): abrir el
+     consentimiento con el client_id VACÍO solo producía el «Error 400:
+     invalid_request — Missing required parameter: client_id» de Google
+     (captura del usuario). Ahora se responde con un error claro y SIN
+     abrir ventana alguna. La búsqueda de la hora NO necesita este flujo:
+     usa la sesión de Gmail directamente (cargando el PDF). */
+  if (!gmail.CLIENT_ID || !gmail.CLIENT_SECRET) {
+    gmailHoraLog('gmail:conectar rechazado: build sin credenciales OAuth del monitor (client_id vacío) — la búsqueda de la hora no las necesita');
+    return { error: 'sin-credenciales' };
+  }
   const state = Math.random().toString(36).slice(2);
   const authUrl = gmail.consentUrl(state);
   // La ventana de OAuth nativa captura redirects a GMAIL_REDIRECT
@@ -663,7 +674,11 @@ function gmailProgresoAbrir(archivo) {
     minWidth: 320, minHeight: 200,
     minimizable: true, maximizable: false, resizable: true,
     autoHideMenuBar: true,
-    title: 'PDFPro — Progreso Gmail',
+    /* v3.2.21 — la versión en el título: cada captura de pantalla del
+       usuario delata qué build corre (la captura de las 08:41 mostraba
+       el flujo de la v3.2.19 sin la línea «sesión ya activa» de la
+       v3.2.20 — imposible saberlo sin este dato) */
+    title: 'PDFPro — Progreso Gmail (v' + app.getVersion() + ')',
     backgroundColor: '#15171c',
     show: false,                         /* se muestra al cargar (sin flash blanco) */
     webPreferences: {
@@ -981,6 +996,12 @@ async function _gmailHoraBuscarNucleo(nombre, manual) {
            DIRECTAMENTE del almacén y se transfieren SIN abrir nada: no hay
            ventana que cerrarse sola, nada que cancelar, cero ceremonia. */
         const previas = await _gmailHoraSesionYaValida();
+        /* v3.2.21 — la comprobación previa SIEMPRE queda registrada: el
+           log del usuario mostraba el flujo de la ventana de login sin la
+           línea «sesión ya activa» y era imposible distinguir «corre una
+           versión sin sesión previa» de «la sesión previa no encontró
+           cookies». Ahora gmail-hora.log lo cuenta en cada ronda. */
+        gmailHoraLog('previa: ' + (previas ? previas.length + ' cookies de google.com — sesión válida en el almacén de login' : 'sin sesión de google.com en el almacén de login'));
         if (previas && previas.length) {
           gmailHoraLog(`ronda ${ronda}: sesión ya activa en la partición de login — ${previas.length} cookies de google.com, se transfieren sin abrir ventana`);
           gmailProgresoLinea(`La sesión de Gmail ya estaba activa — se transfiere (${previas.length} cookies) sin abrir la ventana…`, 'ok');
