@@ -819,24 +819,59 @@ ipcMain.handle('gmail-hora:buscar', (_e, archivo, manual) => {
   return tarea;
 });
 async function _gmailHoraBuscar(nombre, manual) {
+  if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
+  if (!GmailHoraService.disponible().playwright) {
+    return { ok: false, error: 'Playwright no está instalado en la app (npm i playwright)', tipo: 'PlaywrightFalta' };
+  }
+  if (!_gmailHoraSvc) {
+    _gmailHoraSvc = new GmailHoraService({
+      userDataDir: path.join(app.getPath('userData'), 'gmail-playwright-profile'),
+      headless: true,
+      onProgress: (m) => gmailHoraEvento(m),
+      onLoginRequired: (m) => gmailHoraEvento(m, 'login')
+    });
+  }
+  gmailHoraLog(`buscar «${nombre}»`);
+  /* v3.2.17 — la ventana de progreso se abre (o refresca) con cada
+     búsqueda: el usuario VE los pasos en texto en vez de toasts fugaces */
+  gmailProgresoAbrir(nombre);
+  gmailProgresoLinea(`Búsqueda de la hora de recepción de «${nombre}» (vía asistida)…`);
+  /* v3.2.18 — GUARDIA GLOBAL de 7 min: si algo se cuelga de verdad (un
+     arranque de Playwright que nunca responde, una navegación eterna con
+     el antivirus frenando el navegador), la cola de búsquedas quedaba
+     bloqueada PARA SIEMPRE: cada PDF cargado se encolaba detrás y no
+     pasaba nada. Al vencer el plazo se cierra el navegador de búsqueda y
+     la ventana de login, y la siguiente búsqueda arranca limpia. */
+  let timer = null;
+  const guardia = new Promise((_, rej) => {
+    timer = setTimeout(() => {
+      const e = new Error('La búsqueda de la hora excedió 7 minutos — se canceló para no bloquear las siguientes');
+      e.name = 'GmailHoraTimeout';
+      rej(e);
+    }, 7 * 60 * 1000);
+  });
+  const nucleo = _gmailHoraBuscarNucleo(nombre, manual);
+  nucleo.catch(() => {});   /* fallos tardíos tras vencer la guardia: el timeout ya se reportó */
   try {
-    if (!nombre) return { ok: false, error: 'No hay archivo cargado', tipo: 'SinArchivo' };
-    if (!GmailHoraService.disponible().playwright) {
-      return { ok: false, error: 'Playwright no está instalado en la app (npm i playwright)', tipo: 'PlaywrightFalta' };
+    return await Promise.race([nucleo, guardia]);
+  } catch (e) {
+    if (e && e.name === 'GmailHoraTimeout') {
+      gmailHoraLog('TIMEOUT global: se cierra el navegador de búsqueda y la ventana de login');
+      gmailProgresoLinea('✖ ' + e.message, 'err');
+      try { _gmailHoraSvc.cerrar(true); } catch (e2) { /* ya cerrado */ }
+      _gmailHoraSvc = null;                    /* la próxima búsqueda lanza navegador nuevo */
+      try { if (_gmailHoraLoginWin && !_gmailHoraLoginWin.isDestroyed()) _gmailHoraLoginWin.close(); } catch (e2) { /* noop */ }
+      return { ok: false, error: e.message, tipo: 'GmailHoraTimeout' };
     }
-    if (!_gmailHoraSvc) {
-      _gmailHoraSvc = new GmailHoraService({
-        userDataDir: path.join(app.getPath('userData'), 'gmail-playwright-profile'),
-        headless: true,
-        onProgress: (m) => gmailHoraEvento(m),
-        onLoginRequired: (m) => gmailHoraEvento(m, 'login')
-      });
-    }
-    gmailHoraLog(`buscar «${nombre}»`);
-    /* v3.2.17 — la ventana de progreso se abre (o refresca) con cada
-       búsqueda: el usuario VE los pasos en texto en vez de toasts fugaces */
-    gmailProgresoAbrir(nombre);
-    gmailProgresoLinea(`Búsqueda de la hora de recepción de «${nombre}» (vía asistida)…`);
+    return { ok: false, error: (e && e.message) || String(e), tipo: (e && e.name) || 'Error' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+/* Cuerpo de la búsqueda (todo lo que puede colgarse), protegido por la
+   guardia de 7 min de _gmailHoraBuscar. */
+async function _gmailHoraBuscarNucleo(nombre, manual) {
+  try {
     /* v3.2.13 — si ningún navegador está disponible (Chrome/Edge/Chromium)
        el error NO se traga: antes un «Executable doesn't exist» seguía como
        «aviso» y la búsqueda moría en un error genérico sin explicación. */

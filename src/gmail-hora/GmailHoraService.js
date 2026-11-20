@@ -198,8 +198,20 @@ class GmailHoraService {
         const re = /no se encontraron coincidencias|no se encontraron mensajes|no matches found/i;
         return document.querySelectorAll('tr.zA, [role="row"]').length > 0 || re.test(document.body.innerText || '');
       });
-      if (listo) return;
+      if (listo) {
+        /* v3.2.18 — visibilidad en la ventana de progreso: cuántos correos
+           trajo la consulta (o el aviso de vacío de Gmail) */
+        const n = await this.page.evaluate(() => document.querySelectorAll('tr.zA, [role="row"]').length);
+        this.opts.onProgress(n > 0
+          ? `Bandeja: ${n} correo(s) traídos por la consulta.`
+          : 'Gmail responde: sin resultados para esta consulta.');
+        return;
+      }
     }
+    /* v3.2.18 — 12 s sin filas NI aviso de vacío: la página no cargó bien
+       o el DOM de Gmail cambió; antes este caso era INVISIBLE (la app
+       parecía no hacer nada) */
+    this.opts.onProgress('12 s sin resultados ni aviso de Gmail — la página no cargó del todo; se continúa con lo que haya…');
   }
 
   async _haySinResultados() {

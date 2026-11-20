@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  PDFPro v3.2.17 - Compilar instalador + portable (Windows)
+REM  PDFPro v3.2.18 - Compilar instalador + portable (Windows)
 REM  Requiere Node.js LTS (https://nodejs.org) con npm
 REM ============================================================
 cd /d "%~dp0"
@@ -13,8 +13,8 @@ call npx electron-builder --win nsis portable --x64 || goto :error
 echo.
 echo ============================================================
 echo  LISTO. Archivos generados en la carpeta "dist":
-echo   - PDFPro-Setup-3.2.17.exe    (instalador de un clic)
-echo   - PDFPro-Portable-3.2.17.exe (version portable)
+echo   - PDFPro-Setup-3.2.18.exe    (instalador de un clic)
+echo   - PDFPro-Portable-3.2.18.exe (version portable)
 echo ============================================================
 explorer dist
 pause

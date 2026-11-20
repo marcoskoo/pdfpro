@@ -3,6 +3,22 @@
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.18 (corrección de la ventana de progreso)
+────────────────────────────────────────────────────────────────────
+  1. CORRECCIÓN CRÍTICA: la ventana de progreso quedaba VACÍA («no
+     indica nada») — el puente interno usaba una asignación que, con
+     el aislamiento de contextos de Electron, nunca llegaba a la
+     página. Ahora sí se ven todos los pasos en texto, en vivo.
+  2. Las líneas ya no se duplican: solo se añaden las nuevas.
+  3. Más detalle por consulta: «Bandeja: N correos traídos», «sin
+     resultados para esta consulta» y un aviso si Gmail no responde
+     tras 12 segundos (antes ese caso era invisible).
+  4. GUARDIA GLOBAL DE 7 MINUTOS: si algo se cuelga de verdad, la
+     búsqueda se cancela, se cierra el navegador y la siguiente
+     arranca limpia — antes la cola de búsquedas podía quedar
+     bloqueada para siempre: cada PDF cargado se encolaba detrás y
+     «no pasaba nada».
+
 NOVEDADES DE LA VERSIÓN 3.2.17 (ventana de progreso de la búsqueda)
 ────────────────────────────────────────────────────────────────────
   1. NUEVA VENTANA DE PROGRESO: una ventana pequeña, independiente

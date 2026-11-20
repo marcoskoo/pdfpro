@@ -54,10 +54,19 @@
     return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
   }
 
+  /* v3.2.18 — el proceso principal reenvía el historial COMPLETO en cada
+     línea nueva: solo se añaden las NUEVAS (v3.2.17 re-pegaba todo y las
+     líneas salían duplicadas). Si el historial se recortó (tope de 400 en
+     el principal), el contador queda mayor y se re-renderiza desde cero. */
+  var vistos = 0;
   function render(lineas) {
     if (!lineas || !lineas.length) return;
+    if (lineas.length < vistos) { log.innerHTML = ''; vistos = 0; }
+    var nuevas = lineas.slice(vistos);
+    vistos = lineas.length;
+    if (!nuevas.length) return;
     var frag = document.createDocumentFragment();
-    lineas.forEach(function (L) {
+    nuevas.forEach(function (L) {
       var div = document.createElement('div');
       var ts = document.createElement('span');
       ts.className = 'ts';
