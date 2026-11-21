@@ -1,7 +1,35 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.29 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.30 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.30 (hora de recepción: la captura ya no se rinde)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: con varias cargas (en ráfaga o de una en una sin
+     cerrar el primer archivo) la hora de recepción seguía sin completarse
+     en varios archivos.
+  2. La re-búsqueda (correo que aún no llega) moría a los 4 minutos (4
+     rondas × 60 s) aunque el correo llegase después. Ahora son 4 rondas a
+     60 s y 4 a 5 minutos (≈ 24 min de cobertura) y el presupuesto se
+     renueva al cargar un archivo o al entrar a su pestaña.
+  3. El error 429 de la API (cuota por segundo) se amplificaba: cada fallo
+     de cuota disparaba además las 5 consultas de respaldo «filename:» —
+     más barridos, más cuota quemada, la ráfaga nunca se recuperaba. Ahora
+     un 429 NO lanza respaldos: espera a la siguiente ronda (60 s). En el
+     escritorio cada consulta espera 1,5 s y reintenta una vez (igual que
+     la web), y la cola de barridos respira 350 ms entre tareas.
+  4. El aviso de la hora muestra AHORA LA VERSIÓN que la capturó
+     («📥 Recepción aplicada … · v3.2.30»). Si vuelve a fallar, la captura
+     de pantalla dice sin duda qué build estaba corriendo — el instalador
+     NO reemplaza un PDFPro que seguía ABIERTO: el proceso viejo sigue con
+     el código viejo. Tras instalar, ciérralo del todo y ábrelo de nuevo.
+  5. Registro forense: la app anota cada búsqueda, fallo y hora aplicada
+     (pestaña por pestaña) en window._gmailHoraLog y en la consola (Ctrl +
+     Shift + I) — con eso un reporte futuro muestra la causa exacta.
+  6. Verificado con la app real en navegador (agente headless): uno a uno,
+     en ráfaga, alternando pestañas, con OAuth y con la vía asistida,
+     correos que llegan tarde y ráfagas de 429 — todos los archivos
+     completaron SU propia hora.
 
 NOVEDADES DE LA VERSIÓN 3.2.29 (varias pestañas: cada archivo completa SU hora)
 ──────────────────────────────────────────────────────────────────────────────

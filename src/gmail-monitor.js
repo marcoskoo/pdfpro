@@ -135,7 +135,15 @@ async function getAccessToken(userData) {
 
 async function gmailFetch(userData, url) {
   const token = await getAccessToken(userData);
-  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  /* v3.2.30 — 429 (cuota por segundo, típico al abrir varios archivos en
+     ráfaga): espera breve y UN reintento, igual que gmailWebFetch en la web.
+     Sin esto un 429 hacía fallar el barrido entero y la hora del archivo
+     quedaba «sin correo» aunque estuviera en la bandeja. */
+  let r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  if (r.status === 429) {
+    await new Promise((res) => setTimeout(res, 1500));
+    r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  }
   if (r.status === 401) {
     // token inválido a pesar del refresh → forzar un refresh y reintentar una vez
     const t = loadTokens(userData);

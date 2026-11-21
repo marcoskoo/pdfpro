@@ -554,12 +554,16 @@ ipcMain.handle('gmail:desconectar', () => {
    en ráfaga, cada pestaña disparaba su gmail:buscar-por-adjunto / gmail:barrer
    a la vez y la cuota por segundo de la API de Gmail se agotaba (error 429);
    los correos salteados hacían que el del archivo figurase como «no llegado».
-   Mismo patrón que _gmailHoraCadena (búsqueda asistida). */
+   Mismo patrón que _gmailHoraCadena (búsqueda asistida).
+   v3.2.30 — PAUSA de 350 ms entre tareas de la cola: los barridos en serie
+   sin respiro mantenían la cuota agotada (cada barrido = 1 lista + hasta 50
+   detalles); el respiro deja que la cuota por segundo se recupere. */
 let _gmailApiCadena = Promise.resolve();
+const _gmailApiPausa = (ms) => new Promise((res) => setTimeout(res, ms));
 
 ipcMain.handle('gmail:barrer', async (_e, query, maxResults) => {
   const tarea = _gmailApiCadena.then(() => gmail.poll(app.getPath('userData'), query, maxResults));
-  _gmailApiCadena = tarea.then(() => undefined, () => undefined);
+  _gmailApiCadena = tarea.then(() => _gmailApiPausa(350), () => _gmailApiPausa(350));
   try {
     const mensajes = await tarea;
     return { ok: true, mensajes };
@@ -573,7 +577,7 @@ ipcMain.handle('gmail:barrer', async (_e, query, maxResults) => {
    archivo cargado; el primer match entrega su hora (corta ahí). */
 ipcMain.handle('gmail:buscar-por-adjunto', async (_e, archivo, maxResults) => {
   const tarea = _gmailApiCadena.then(() => gmail.pollOrdenado(app.getPath('userData'), String(archivo || '').trim(), maxResults || 50));
-  _gmailApiCadena = tarea.then(() => undefined, () => undefined);
+  _gmailApiCadena = tarea.then(() => _gmailApiPausa(350), () => _gmailApiPausa(350));
   try {
     const mensaje = await tarea;
     return { ok: true, mensaje };
