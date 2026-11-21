@@ -1,0 +1,837 @@
+════════════════════════════════════════════════════════════════════
+  PDFPro Suite 3.2.32 — Versión de escritorio para Windows
+  PDF Editor Pro · CORPAC AIS/ARO SPHI
+════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.32 (recorrido de la bandeja POR FECHA: del correo más reciente al penúltimo y sucesivos)
+──────────────────────────────────────────────────────────────────────────────
+  1. Requisito del usuario: la búsqueda de la hora de recepción debe
+     recorrer los correos DESDE EL MÁS RECIENTE, luego el penúltimo y
+     sucesivamente. El recorrido ya iba «del más nuevo al más viejo»,
+     pero se confiaba en el ORDEN DEL DOM de la lista de Gmail — y Gmail
+     puede pinchar secciones NO cronológicas («Resultados principales»
+     antes que los «Más recientes»): un correo viejo podía visitarse
+     antes que el más nuevo y su hora ganar.
+  2. Ahora el orden es EXPLÍCITO: antes de recorrer, se lee la FECHA de
+     cada fila de la lista (los títulos de fecha de Gmail: «2:45 p. m.»,
+     «sáb, 21 nov, 9:02 a. m.», «20 nov», «14 nov 2025»…), se ordenan
+     del MÁS RECIENTE al más VIEJO y se visitan en ESE orden. La ventana
+     de progreso muestra la fecha de cada correo visitado: «Correo 1 de
+     la bandeja · 2:45 p. m.: …». Las filas sin fecha legible quedan al
+     final, en su orden de pantalla. Lo mismo en la búsqueda por
+     filename: si varias filas mencionan el archivo, se abre la más
+     reciente.
+  3. Bug latente corregido en la interpretación de fechas: la hora
+     «de pared» de la zona de la cuenta (Lima) tenía el signo invertido;
+     entre las 14:00 y las 19:00 de Lima (la franja de trabajo) una hora
+     sin fecha («2:45 p. m.») se atribuía al día SIGUIENTE (+24 h).
+  4. Verificado: 12/12 casos de fechas de fila y ordenación; 13/13
+     formatos de fecha/hora de Gmail; extracción de la fecha por fila
+     sin confundirse con remitentes ni adjuntos; lista NO cronológica
+     (un «Resultado principal» viejo pinchado primero) se recorre
+     2:45 p. m. → 9:02 a. m. → 20 nov → 14 nov, como exige la regla.
+
+NOVEDADES DE LA VERSIÓN 3.2.31 (hilos de Gmail: la hora del MENSAJE que trae el adjunto)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «se realiza la búsqueda pero la hora no
+     actualiza». Con las capturas y el registro de progreso se vio que la
+     hora SÍ se aplicaba (19:45 en las tres pestañas), pero SIEMPRE ERA
+     LA MISMA: la del correo más nuevo.
+  2. La causa: el correo era un HILO (conversación con respuestas y 58
+     adjuntos). El match del adjunto en el hilo es correcto, pero la hora
+     se leía de la cabecera del hilo (su ÚLTIMO mensaje, 2:45 p. m.)
+     aunque el adjunto estuviera en un mensaje ANTERIOR (p. ej. 10:15
+     a. m.) — todos los archivos del hilo recibían la hora del último.
+  3. Ahora la vía asistida expande el hilo, localiza el chip del adjunto
+     que coincide con el archivo cargado, sube hasta SU mensaje y lee la
+     fecha completa de la cabecera de ESE mensaje. Si hay varios mensajes
+     con el mismo adjunto, gana el más nuevo (la regla del usuario). Si
+     no se logra leer, queda la hora del hilo (comportamiento anterior,
+     nunca peor). La ventana de progreso lo indica: «Hora obtenida: …
+     (del mensaje que trae el adjunto)».
+  4. Verificado con una réplica del hilo real (3 mensajes con horas
+     9:02 / 10:15 / 2:45 y los adjuntos repartidos): cada archivo
+     resuelve la hora de SU mensaje (4/4 casos), y los 13 formatos de
+     fecha/hora de Gmail siguen interpretándose.
+
+NOVEDADES DE LA VERSIÓN 3.2.30 (hora de recepción: la captura ya no se rinde)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: con varias cargas (en ráfaga o de una en una sin
+     cerrar el primer archivo) la hora de recepción seguía sin completarse
+     en varios archivos.
+  2. La re-búsqueda (correo que aún no llega) moría a los 4 minutos (4
+     rondas × 60 s) aunque el correo llegase después. Ahora son 4 rondas a
+     60 s y 4 a 5 minutos (≈ 24 min de cobertura) y el presupuesto se
+     renueva al cargar un archivo o al entrar a su pestaña.
+  3. El error 429 de la API (cuota por segundo) se amplificaba: cada fallo
+     de cuota disparaba además las 5 consultas de respaldo «filename:» —
+     más barridos, más cuota quemada, la ráfaga nunca se recuperaba. Ahora
+     un 429 NO lanza respaldos: espera a la siguiente ronda (60 s). En el
+     escritorio cada consulta espera 1,5 s y reintenta una vez (igual que
+     la web), y la cola de barridos respira 350 ms entre tareas.
+  4. El aviso de la hora muestra AHORA LA VERSIÓN que la capturó
+     («📥 Recepción aplicada … · v3.2.30»). Si vuelve a fallar, la captura
+     de pantalla dice sin duda qué build estaba corriendo — el instalador
+     NO reemplaza un PDFPro que seguía ABIERTO: el proceso viejo sigue con
+     el código viejo. Tras instalar, ciérralo del todo y ábrelo de nuevo.
+  5. Registro forense: la app anota cada búsqueda, fallo y hora aplicada
+     (pestaña por pestaña) en window._gmailHoraLog y en la consola (Ctrl +
+     Shift + I) — con eso un reporte futuro muestra la causa exacta.
+  6. Verificado con la app real en navegador (agente headless): uno a uno,
+     en ráfaga, alternando pestañas, con OAuth y con la vía asistida,
+     correos que llegan tarde y ráfagas de 429 — todos los archivos
+     completaron SU propia hora.
+
+NOVEDADES DE LA VERSIÓN 3.2.29 (varias pestañas: cada archivo completa SU hora)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: al abrir varias pestañas con archivos
+     distintos, la hora de recepción del correo quedaba sin actualizarse
+     en algunas de ellas.
+  2. La causa: la re-búsqueda automática (cuando el correo aún no llegó)
+     tenía UN solo temporizador global — cada archivo que fallaba CANCELABA
+     la re-búsqueda del anterior, y cuando cualquier archivo recibía su
+     hora se cancelaban las re-búsquedas pendientes de todos los demás.
+  3. Ahora cada pestaña tiene SU propia cadena de re-búsqueda (cada 60 s,
+     hasta 4 rondas por archivo, con presupuesto propio): las N pestañas
+     se reintentan de forma independiente y una hora aplicada ya no
+     corta las que faltan. La pestaña que reciba su hora limpia solo SU
+     cadena; cerrar una pestaña termina la suya sin tocar a las demás.
+  4. Además, las consultas a la API de Gmail ahora van en COLA (de a
+     una, en la web y en el escritorio): al abrir varios archivos a la
+     vez ya no se agota la cuota por segundo (error 429), que hacía que
+     un correo existente figurase como «todavía no llegado» porque sus
+     mensajes quedaban salteados. Si aun así aparece un 429, la consulta
+     espera 1,5 s y se reintenta una vez.
+
+NOVEDADES DE LA VERSIÓN 3.2.28 (vuelos que NO son tipo «S»: matrícula + EOBT + iniciales)
+────────────────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: en un plan de vuelo tipo G el campo «Matrícula
+     (Aeronave / Espacio)» quedó «OB2147 MK» — le faltaba la hora (EOBT),
+     que debía ser «OB2147 1850 MK».
+  2. La causa: el formulario traía la hora de salida como «18:50» (con
+     dos puntos, junto al aeródromo de salida) y el detector del EOBT
+     solo entendía 4 dígitos seguidos («1850»). Al no encontrarla, se
+     armaba el campo sin la hora.
+  3. Ahora la hora con dos puntos se entiende en TODAS las vías: texto
+     del PDF, OCR, formulario electrónico y télex («SPHI 18:50» → 1850,
+     «8:30» → 0830), y también en la lectura por geometría de casillas
+     («18:50» entero, «18» «50» partido o el «:» suelto).
+  4. Los vuelos tipo «S» no cambian: ID de vuelo + REG/ + iniciales
+     («SRU2226 OB2176P MK»), igual que antes.
+
+NOVEDADES DE LA VERSIÓN 3.2.27 (la hora que se aplica es del correo de ESE archivo)
+─────────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «solo buscó la hora de recepción de 1, y lo
+     repite en las demás pestañas/archivos». La causa: al encolarse las
+     búsquedas de varios archivos sobre el mismo navegador invisible, la
+     página no se recargaba de verdad entre consultas — la 2.ª, 3.ª y
+     4.ª terminaban leyendo el correo que quedaba abierto (el del 1.er
+     archivo) y repetían SU hora en todas las pestañas.
+  2. Ahora cada consulta recarga la página de verdad: lo que aparece en
+     pantalla pertenece siempre a la consulta de ESE archivo.
+  3. Y la doble verificación final: si el correo abierto no trae el
+     archivo como adjunto, SU HORA NO SE USA (se reintenta solo). Ya no
+     es posible que un archivo reciba la hora del correo de otro.
+
+NOVEDADES DE LA VERSIÓN 3.2.26 (todas las pestañas buscan su hora)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «solo actualizó la hora de recepción en dos
+     pestañas/archivos de las 04 que cargué». La causa: al abrir varios
+     archivos en ráfaga, cargar el siguiente CANCELABA la búsqueda
+     pendiente del anterior — solo el último archivo era buscado (y
+     otro, si lo visitabas, porque cambiar de pestaña re-dispara la
+     búsqueda).
+  2. Ahora CADA pestaña agenda su propia búsqueda: los N archivos que
+     cargues reciben cada uno la hora de su correo, uno tras otro (se
+     ejecutan en cola, de a una). Ya no importa cuántos abras ni en qué
+     orden.
+  3. La re-búsqueda automática (correo que aún no llega) también
+     pertenece al archivo que la necesita, no a la pestaña que esté
+     abierta.
+  4. Una hora ESCRITA A MANO (ficha de escritorio o móvil) queda
+     blindada: jamás se borra ni se rebusca.
+
+NOVEDADES DE LA VERSIÓN 3.2.25 (la hora ya no viaja a la pestaña nueva)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «Hora Recepción (UTC) no actualiza cuando se
+     cambia de pestaña/archivo dentro de la app, sigue mostrando la hora
+     de recepción del primer pestaña/archivo». La causa: al abrir un
+     archivo con otro documento ya cargado, la app crea una pestaña
+     nueva — pero el formulario seguía mostrando la fecha/hora del
+     documento anterior, el sistema la daba por buena y no buscaba la
+     del archivo nuevo (y al alternar pestañas, la hora ajena quedaba
+     guardada como suya).
+  2. Ahora la pestaña nueva nace limpia: fecha, hora y matrícula en
+     blanco (la matrícula la detecta el auto-OCR del nuevo archivo) y se
+     busca la hora del correo de ESE archivo. Al alternar entre
+     pestañas, cada una muestra su propia hora.
+
+NOVEDADES DE LA VERSIÓN 3.2.24 (la hora de recepción pertenece al archivo, no a la pestaña)
+────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario tras el acceso exitoso: «ahora ya carga la
+     hora, pero al cargar otro archivo la hora de recepción no se
+     actualiza de acuerdo al archivo seleccionado». La causa: al abrir
+     otro PDF en la misma pestaña, la fecha/hora del archivo ANTERIOR
+     quedaban puestas en la ficha y el sistema las respetaba («ya hay
+     hora: no se toca») — se corría el riesgo de sellar con la hora del
+     correo de OTRO vuelo.
+  2. Ahora la hora queda firmada con el archivo al que pertenece: al
+     cargar un archivo distinto la ficha se limpia y se busca la hora
+     del correo de ESE archivo. Recargar el MISMO archivo conserva su
+     hora (no se rebusca sin necesidad) y una hora escrita a mano se
+     respeta como siempre.
+
+NOVEDADES DE LA VERSIÓN 3.2.23 (Google ya no deniega el acceso en la ventana de Chrome)
+────────────────────────────────────────────────────────────────────
+  1. Su captura de las 09:27 mostró el paso exacto que fallaba: la
+     ventana de Chrome se abrió, usted ingresó cuenta y clave, y Google
+     DENEGÓ el acceso con «este navegador o aplicación no es seguro»:
+     el Chrome que abre la app viajaba marcado como automatizado. Se
+     quitó esa marca — Google ahora ve un Chrome normal.
+  2. El plazo para completar el acceso sube de 5 a 10 minutos
+     (credenciales + verificación en dos pasos toman su tiempo) y el
+     límite global de la búsqueda pasa de 7 a 20 minutos: antes el
+     acceso quedaba cortado a mitad.
+  3. La ventana de respaldo dentro de la app muere en <2 s en su
+     equipo desde siempre (mientras las demás ventanas viven): síntoma
+     de almacén interno dañado. Se le asignó un almacén nuevo y limpio.
+
+NOVEDADES DE LA VERSIÓN 3.2.22 (inicio de sesión en una ventana de Chrome real)
+────────────────────────────────────────────────────────────────────
+  1. Sus capturas revelaron la causa raíz de una vez: la ventana de
+     Gmail con su buzón que veía era SU Chrome normal — la app no
+     puede usar esa sesión. La ventana de login interna de la app se
+     cerraba sola en menos de 2 segundos (algo en el equipo la mataba)
+     y el acceso nunca se completaba.
+  2. Ahora, cuando Gmail pide sesión, la app abre una VENTANA DE
+     CHROME/EDGE REAL (del sistema) con el perfil propio del buscador:
+     inicie sesión ahí UNA sola vez. La sesión queda guardada en ese
+     perfil — no se transfiere ninguna cookie y sobrevive a reinicios
+     de la app: los siguientes PDF buscan la hora solos, sin ventanas.
+  3. La ventana interna de la app queda solo como respaldo si la
+     ventana real no puede abrirse.
+
+NOVEDADES DE LA VERSIÓN 3.2.21 (el botón «Conectar Gmail» ya no abre una ventana rota)
+────────────────────────────────────────────────────────────────────
+  1. Su captura reveló que el botón «CONECTAR GMAIL» abría un
+     consentimiento de Google que moría con «Error 400: Missing
+     required parameter: client_id»: las credenciales de ese monitor
+     no viajan en el instalador. Ahora el botón avisa la verdad SIN
+     abrir nada — y aclara que PARA LA HORA DE RECEPCIÓN NO HACE
+     FALTA: basta cargar el PDF (la sesión de Gmail se usa directa).
+  2. La ventana de progreso ahora muestra la versión en su título
+     («PDFPro — Progreso Gmail (v3.2.21)»): toda captura delata qué
+     build corre.
+  3. La comprobación de sesión previa queda SIEMPRE anotada en el
+     log de diagnóstico (gmail-hora.log): «previa: N cookies» o
+     «sin sesión en el almacén».
+  4. El aviso de «ningún navegador disponible» ya no remite al botón
+     del monitor (callejón sin salida): pide instalar Chrome/Edge.
+
+NOVEDADES DE LA VERSIÓN 3.2.20 (la sesión activa ya no necesita ventana)
+────────────────────────────────────────────────────────────────────
+  1. Usted lo vio: la ventana de inicio de sesión abría con el buzón
+     YA visible (la sesión de Gmail estaba activa) y aun así la
+     búsqueda fallaba con «ventana cerrada» — la sesión solo se
+     aprovechaba si esa ventana sobrevivía unos segundos. Ahora, al
+     pedir Gmail la sesión, el programa comprueba PRIMERO su almacén
+     interno: si la sesión ya está activa, transfiere las cookies
+     DIRECTAMENTE y sigue buscando SIN abrir ninguna ventana.
+  2. Con sesión activa ya no se abre (ni se cierra) ventana alguna:
+     no hay nada que pueda cerrarse solo ni cancelar la búsqueda.
+  3. Un cierre de la ventana a los <5 segundos se considera anómalo
+     (antivirus/bloqueador) la haya visto o no: se reintenta una vez
+     y no bloquea los archivos siguientes.
+  4. El cierre normal de la ventana tras completar el acceso ya no
+     se anota como fallo en el log de diagnóstico.
+
+NOVEDADES DE LA VERSIÓN 3.2.19 (blindaje del inicio de sesión en Gmail)
+────────────────────────────────────────────────────────────────────
+  1. La ventana de inicio de sesión se estaba cerrando «sola» en
+     menos de 1 segundo y el programa lo reportaba como «ventana
+     cerrada», bloqueando el login de TODOS los archivos siguientes.
+     Ahora se distingue un cierre REAL del usuario de uno ANÓMALO
+     (antivirus, bloqueador, fallo del navegador): el anómalo se
+     REINTENTA una vez y ya no bloquea los archivos siguientes.
+  2. Todo el ciclo de la ventana queda anotado en el log de
+     diagnóstico (gmail-hora.log): a los cuántos segundos se cerró,
+     si llegó a verse y, si el navegador falló, la causa exacta.
+  3. La carga de Gmail reintenta sola: la primera redirección de
+     Google podía abortarla sin que nada estuviera roto.
+  4. Mensajes honestos: una sesión completada ya nunca se reporta
+     como «ventana cerrada», y tras un fallo la ventana de progreso
+     indica el paso siguiente (botón «🔗 Iniciar sesión en Gmail»).
+
+NOVEDADES DE LA VERSIÓN 3.2.18 (corrección de la ventana de progreso)
+────────────────────────────────────────────────────────────────────
+  1. CORRECCIÓN CRÍTICA: la ventana de progreso quedaba VACÍA («no
+     indica nada») — el puente interno usaba una asignación que, con
+     el aislamiento de contextos de Electron, nunca llegaba a la
+     página. Ahora sí se ven todos los pasos en texto, en vivo.
+  2. Las líneas ya no se duplican: solo se añaden las nuevas.
+  3. Más detalle por consulta: «Bandeja: N correos traídos», «sin
+     resultados para esta consulta» y un aviso si Gmail no responde
+     tras 12 segundos (antes ese caso era invisible).
+  4. GUARDIA GLOBAL DE 7 MINUTOS: si algo se cuelga de verdad, la
+     búsqueda se cancela, se cierra el navegador y la siguiente
+     arranca limpia — antes la cola de búsquedas podía quedar
+     bloqueada para siempre: cada PDF cargado se encolaba detrás y
+     «no pasaba nada».
+
+NOVEDADES DE LA VERSIÓN 3.2.17 (ventana de progreso de la búsqueda)
+────────────────────────────────────────────────────────────────────
+  1. NUEVA VENTANA DE PROGRESO: una ventana pequeña, independiente
+     y minimizable que muestra EN TEXTO los pasos que va ejecutando
+     la búsqueda de la hora de recepción — qué navegador usa, el
+     estado del inicio de sesión, las cookies, cada consulta EXACTA
+     a Gmail y el recorrido de la bandeja CORREO POR CORREO, hasta
+     el resultado final (✔ hora obtenida / ✖ causa del fallo).
+  2. Se abre sola con cada búsqueda (sin robar el foco de la app);
+     minimizarla o cerrarla NO cancela la búsqueda — es solo un
+     visor, y el historial completo se reenvía al volver a abrirse.
+  3. Los pasos con marca de hora (hora de Lima) y colores: normales
+     en blanco, inicio de sesión en amarillo, resultado en verde y
+     errores en rojo. Botón «Limpiar» para vaciar la vista.
+
+NOVEDADES DE LA VERSIÓN 3.2.16 (match con archivos «(1) (1)»)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ de que la hora no se capturara con archivos
+     descargados dos veces: el archivo queda «ATC CM468 11NOV
+     (1) (1).pdf» y la comparación solo quitaba UN «(1)» → el
+     nombre nunca hacía match con el adjunto del correo. Ahora
+     se quitan TODOS los «(n)» finales, en las tres vías (Google
+     web, Google escritorio y buscador asistido).
+  2. La búsqueda filename:/texto libre también reintenta con el
+     nombre SIN los «(n)» (el correo menciona el adjunto
+     original, no la copia renombrada).
+  3. El año de la hora, cuando Gmail no lo muestra, se toma de
+     la hora de Lima (antes de la de UTC: el 31 dic por la noche
+     daba un año de más).
+
+NOVEDADES DE LA VERSIÓN 3.2.15 (fin del aviso en bucle del inicio de sesión)
+────────────────────────────────────────────────────────────────────
+  1. El aviso «No se completó el inicio de sesión en Gmail» ya no
+     sale en bucle: si cierras la ventana de inicio de sesión, la
+     app NO la vuelve a abrir sola (antes se reabría cada 30 s con
+     cada PDF cargado). Se abre solo cuando TÚ lo pidas con el botón
+     «🔗 Iniciar sesión en Gmail».
+  2. El aviso ahora dice el MOTIVO real: «ventana cerrada», «tiempo
+     agotado» o «no se pudo cargar Gmail» — antes no decía nada y no
+     se podía saber qué pasó.
+  3. La ventana de inicio de sesión ya no puede quedar escondida
+     detrás de otras ventanas (siempre queda a la vista).
+  4. Si ya conectaste Google («Conectar Gmail» o el botón «🔗»), la
+     ventana del buscador NO se abre nunca: la búsqueda por Google es
+     la vía autorizada y se re-intenta sola hasta que el correo
+     llegue.
+
+NOVEDADES DE LA VERSIÓN 3.2.14 (búsqueda en el ORDEN correcto)
+────────────────────────────────────────────────────────────────────
+  1. La hora de recepción ahora se busca EXACTAMENTE en el orden
+     pedido: se verifica primero el ÚLTIMO correo recibido y se
+     compara el nombre de su adjunto con el del archivo cargado;
+     si hacen match, esa es la hora; si no, se repite con el
+     penúltimo correo y así sucesivamente (hasta los 40 más
+     recientes; después, respaldo por nombre de archivo).
+  2. La comparación de nombres es estricta pero tolerante: no
+     importan mayúsculas, espacios múltiples, signos, la extensión
+     ni el «(1)» que Gmail añade a adjuntos duplicados.
+  3. El mismo orden y la misma comparación en las dos vías: por
+     Google (con «Conectar Gmail», sin navegador) y por el buscador
+     invisible de la app. En ambas se toma el correo MÁS RECIENTE
+     que tenga el adjunto.
+
+NOVEDADES DE LA VERSIÓN 3.2.13 (captura de la hora: navegador garantizado)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ corregida: en el instalador el buscador invisible
+     dependía de unos archivos (navegadores de Playwright) que NO van
+     dentro del instalador y no siempre están en el PC. Si faltaban,
+     la búsqueda del correo moría sin explicación. Ahora se intenta
+     en orden: Chrome del sistema → Edge del sistema (presente en
+     TODO Windows 10/11) → Chromium empaquetado → ruta manual de
+     diagnóstico.
+  2. Si aun así no hay navegador, se avisa con la causa real y se
+     ofrece conectar Gmail con «Conectar Gmail» (panel 📧): por Google
+     la hora se busca sin navegador.
+  3. La cadena se verificó de verdad contra gmail.com (lanzamiento →
+     búsqueda por nombre de archivo → detección del inicio de sesión).
+
+NOVEDADES DE LA VERSIÓN 3.2.12 (panel de Gmail restaurado)
+────────────────────────────────────────────────────────────────────
+  1. VUELVE el panel «📧 Monitoreo Gmail» a la ficha del sello:
+     estado de la conexión (punto de color + texto), botones
+     «Conectar Gmail» / «Desconectar», «🔄 Barrer ahora (últimos
+     7 días)» y la lista de correos con adjunto. Se había retirado
+     en la 3.2.9 y con él se perdieron las funciones visibles de
+     conexión — sin ellas no había forma de ver si Gmail estaba
+     conectado ni de conectarlo a mano.
+  2. La captura de la hora de recepción sigue siendo 100 %
+     automática al cargar el documento, y al pulsar «Conectar
+     Gmail» la hora del archivo cargado se rebusca sola.
+  3. Se conservan TODAS las correcciones de captura de las
+     versiones 3.2.10 y 3.2.11 (espera real a que Gmail renderice,
+     relectura de la hora, re-búsquedas cada 60 s, avisos en vez
+     de silencios).
+
+NOVEDADES DE LA VERSIÓN 3.2.11 (captura de la hora: causa raíz corregida)
+────────────────────────────────────────────────────────────────────
+  1. Causa raíz de que «la captura no se da»: la búsqueda en Gmail
+     esperaba 2,5 segundos fijos a que la lista de resultados
+     apareciera. Gmail es una aplicación web y en arranque en frío
+     (primer uso del día, máquina lenta, antivirus) la lista aún no
+     existía: la app concluía «no hay correo con este archivo»
+     aunque el correo SÍ estaba. Ahora espera hasta 12 s a que la
+     lista o el aviso de «sin resultados» aparezca de verdad.
+  2. Lo mismo al leer la hora del correo abierto: antes una sola
+     lectura (fallaba en silencio si el mensaje aún renderizaba);
+     ahora reintenta hasta 8 s y, si no logra leerla, lo AVISA y
+     reintenta la captura completa.
+  3. La re-búsqueda automática cada 60 s ya no depende de OAuth:
+     si la sesión de Gmail respondió, también rebusca por la vía
+     asistida (antes solo usaba la API y sin OAuth las rondas no
+     hacían nada). Nunca abre ventanas de login sin que estés
+     delante de la app.
+
+NOVEDADES DE LA VERSIÓN 3.2.10 (la captura de la hora, garantizada)
+────────────────────────────────────────────────────────────────────
+  1. Se cerraron los puntos por los que la captura de la hora de
+     recepción podía quedar sin cumplirse:
+       - En la WEB (o en el escritorio sin el servicio asistido), la
+         búsqueda terminaba en silencio si no había sesión de Google.
+         Ahora aparece el botón «🔗 Iniciar sesión en Gmail» con un
+         aviso claro, y al conectar se rebusca sola la hora.
+       - En el escritorio sin el servicio asistido, ese botón caía de
+         nuevo en la misma vía bloqueada; ahora conecta por OAuth con
+         el navegador del sistema.
+  2. Si el correo con el archivo todavía no llegó a Gmail cuando
+     abres el PDF, la app lo vuelve a buscar sola cada 60 s (hasta 4
+     veces, en silencio, sin abrir ventanas) y avisa que lo
+     reintentará.
+  3. Al capturarse la hora, la re-búsqueda se cancela sola; cada
+     carga de documento o cambio de pestaña la renueva.
+
+NOVEDADES DE LA VERSIÓN 3.2.9 (interfaz más limpia)
+────────────────────────────────────────────────────────────────────
+  1. Se retiró el panel «📧 Monitoreo Gmail» de la ficha del sello
+     (estado «Sin conectar», botones «Conectar Gmail» / «Desconectar»,
+     «🔄 Barrer ahora (últimos 7 días)» y la lista de correos) —
+     pedido del usuario. Todo lo demás sigue igual.
+  2. La búsqueda de la hora de recepción del correo sigue siendo
+     100 % automática al cargar el documento (por el nombre del
+     archivo adjunto, +5 h → UTC), igual que antes.
+  3. El inicio de sesión pasa por el botón «🔗 Iniciar sesión en
+     Gmail y buscar la hora» (junto a Hora Recepción): en el
+     escritorio abre Gmail dentro de la app, como siempre; en la web
+     inicia la conexión de Google. Tras conectar se vuelve a buscar
+     sola la hora del archivo cargado.
+  4. La caja para pegar el código de Google (si el flujo lo pide)
+     vive ahora junto a ese botón, oculta; solo aparece cuando una
+     conexión la necesita.
+
+NOVEDADES DE LA VERSIÓN 3.2.8 (múltiples archivos: la ficha sigue a
+la pestaña activa)
+────────────────────────────────────────────────────────────────────
+  1. NUEVO: «Hora Recepción (UTC)» y «Matrícula (Aeronave / Espacio)»
+     son ahora POR PESTAÑA. Al cambiar de archivo o pestaña la ficha
+     del sello se actualiza automáticamente con los valores del
+     documento activo (antes conservaba los del documento anterior).
+  2. Si el documento de la pestaña a la que cambias aún no tiene hora
+     de recepción, se busca automáticamente en Gmail la de SU correo
+     (la búsqueda usa el archivo de esa pestaña). La hora viaja con la
+     pestaña: alternar entre archivos no repite búsquedas ya hechas ni
+     pisa horas — si la respuesta de Gmail llega cuando ya cambiaste
+     de pestaña, la hora se guarda en SU pestaña y no toca la ficha
+     del documento que estás viendo.
+  3. La matrícula detectada al cargar también queda guardada en su
+     pestaña, y los valores escritos a mano se conservan al alternar.
+  4. Al cerrar la última pestaña la ficha queda limpia (sin documento
+     → sin hora ni matrícula), coherente con que el campo refleja
+     siempre el documento cargado.
+
+NOVEDADES DE LA VERSIÓN 3.2.7 (caso real SRU2226 — «PV CIX LIM
+2226» con espacios múltiples)
+────────────────────────────────────────────────────────────────────
+  1. CORREGIDO: con planes cuyo nombre de archivo trae ESPACIOS
+     MÚLTIPLES (como «PV CIX LIM        2226.pdf» del SRU2226) Gmail
+     no devolvía resultados con filename:"…" tal cual y la hora NO se
+     capturaba. Ahora la búsqueda prueba, en orden: filename con los
+     espacios colapsados («PV CIX LIM 2226.pdf») → el nombre tal cual
+     llegó → sin extensión (ambas formas) → texto libre con
+     has:attachment. El emparejamiento sigue siendo ESTRICTO: solo se
+     acepta el correo cuyo ADJUNTO coincide con el archivo cargado.
+     Aplica a la vía API de Gmail (web y escritorio) y también a la
+     vía asistida (Playwright) del escritorio.
+  2. La conversión de la hora se muestra completa en el aviso al
+     aplicar: «Gmail: «16:00» (hora Lima) +5 h → UTC». Ejemplo real
+     del SRU2226: Gmail muestra 04:00 pm (= 16:00 Lima) → la app
+     presenta 21:00 en «Hora Recepción (UTC)» (16:00 + 5 h), con la
+     fecha UTC correspondiente (cruza la medianoche si toca).
+
+NOVEDADES DE LA VERSIÓN 3.2.6 (hora de recepción del correo: se busca
+A PARTIR DEL ARCHIVO CARGADO)
+────────────────────────────────────────────────────────────────────
+  1. AL CARGAR UN DOCUMENTO la app busca en Gmail el correo que trae
+     ese archivo como adjunto y llena sola «Hora Recepción»: consulta
+     dirigida filename:"nombre del archivo" (y luego texto libre si no
+     aparece), por la API de Gmail — funciona en la WEB y en el
+     ESCRITORIO. Solo se acepta un correo cuyo ADJUNTO coincida con el
+     archivo cargado (nunca uno al azar) y no se pisa una hora escrita
+     a mano. Antes: en la web cargar un documento NO buscaba nada y en
+     el escritorio dependía de la vía asistida (Playwright).
+  2. La vía asistida (Playwright, sin OAuth) sigue de respaldo en el
+     escritorio cuando la API no está conectada.
+  3. Se quitaron los 4 textos de ayuda de la ficha del sello
+     (monitoreo Gmail, recepción, iniciales, armado de la matrícula):
+     los campos funcionan igual, sin las explicaciones debajo.
+
+NOVEDADES DE LA VERSIÓN 3.2.5 (plan StarPerú SRU 2226: el campo
+«Matrícula» ahora muestra «SRU2226 OB2176P MK»)
+────────────────────────────────────────────────────────────────────
+  Regla OACI aplicada (Doc 4444, Apéndice 2): en los vuelos de
+  aerolínea (tipo S = programado) el casillero 7 lleva el designador
+  ICAO + número de vuelo (SRU2226) y la matrícula viaja en REG/ del
+  casillero 18; el campo compone AMBOS más las iniciales. Cuando el
+  casillero 7 ya ES la matrícula (OB2134), sigue mostrándose
+  matrícula + hora + iniciales («OB2134 1120 MK»).
+  1. PLAN SRU 2226: la identificación «SRU 2226» viene como un solo
+     texto con espacio, 19 puntos bajo el rótulo — la geometría del
+     casillero 7 ahora la captura (antes el campo terminaba en
+     «OB-2176P 0145 MK», robando la matrícula del REG/).
+  2. REG/ CON PUNTO («REG./OB-2176P», formulario CORPAC): el patrón
+     ahora tolera puntos y espacios alrededor de la barra.
+  3. MATRÍCULA DEL REG/ SIN GUION: como la escribe el Doc 4444
+     («OB2176P», no «OB-2176P»), también en el nombre al exportar.
+  Los planes JAP 7361 («JAP7361 CCDIU MK») y los de casillero 7 con
+  matrícula propia no cambian (probados con los PDF reales).
+
+NOVEDADES DE LA VERSIÓN 3.2.4 (corrige «la ventana de Gmail se cerró
+al segundo» y la matrícula de planes de aerolínea como SRU 2226)
+────────────────────────────────────────────────────────────────────
+  1. VENTANA DE GMAIL: YA NO SE CIERRA SOLA ANTES DE TIEMPO. Gmail
+     muestra su pantalla de carga en mail.google.com durante 1-3
+     segundos TAMBIÉN SIN sesión (antes de saltar al formulario de
+     acceso) y la app tomaba eso por «sesión lista»: cerraba la
+     ventana al segundo y el inicio de sesión nunca se completaba.
+     Ahora exige sesión real (cookies SID/SAPISID de Google) con la
+     página terminada de cargar, confirmada dos veces; sin sesión la
+     ventana queda ABIERTA esperando a que inicies sesión.
+  2. MATRÍCULA DE PLANES DE AEROLÍNEA (SRU 2226, JAP 7163…): el
+     casillero 7 con designador de empresa + número de vuelo ahora se
+     reconoce también cuando el rótulo del formulario llega revuelto
+     por el texto interno del PDF.
+  3. EL CAMPO «MATRÍCULA» SIEMPRE REFLEJA EL DOCUMENTO CARGADO: si la
+     detección no encuentra nada se LIMPIA (antes conservaba la
+     matrícula del documento ANTERIOR — un «OB-2176P…» viejo en un
+     plan SRU 2226 — y terminaba en el nombre del archivo exportado) y
+     se avisa con «✈ Matrícula no detectada».
+
+NOVEDADES DE LA VERSIÓN 3.2.3 (corrige «No se completó el inicio de
+sesión en Gmail»)
+────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ: GOOGLE BLOQUEABA EL LOGIN DENTRO DE LA APP. La ventana
+     interna de Gmail usaba el User-Agent de Electron y Google rechaza
+     iniciar sesión desde navegadores embebidos («Este navegador o
+     aplicación podría no ser seguro»): por eso el inicio nunca
+     completaba y la hora no aparecía. Ahora la ventana se presenta con
+     un User-Agent de Chrome REAL y el login completa con normalidad.
+  2. BOTÓN «🔗 INICIAR SESIÓN EN GMAIL Y BUSCAR LA HORA». Si el inicio
+     de sesión queda sin completar, aparece junto a «Hora Recepción» un
+     botón para reintentarlo en el momento (antes había que cargar otro
+     documento). El reintento manual no espera los 30 s de espera.
+  3. La ventana de login toma el FOCO al abrirse (antes podía quedar
+     detrás) y si dos búsquedas piden login a la vez comparten la misma
+     ventana (antes la segunda se reportaba como «cancelada»).
+
+NOVEDADES DE LA VERSIÓN 3.2.2 (conversión Lima→UTC verificada y visible)
+────────────────────────────────────────────────────────────────────
+  1. LA HORA DE GMAIL SE CONVIERTE A UTC SUMANDO 5 HORAS. Gmail muestra
+     la hora local de Lima (UTC−5): al llenar «Hora Recepción (UTC)» se
+     le suman 5 h — un correo recibido a las 07:00 queda como 12:00; si
+     cruza la medianoche (20:30 Lima), el campo pasa a 01:30 UTC del día
+     siguiente y la FECHA también avanza. (Regla aeronáutica +05.)
+  2. LA CONVERSIÓN AHORA SE VE. El toast de confirmación muestra la hora
+     tal como la presentó Gmail y la hora UTC aplicada, para verificarla
+     de un vistazo: «Gmail: «7:00 a. m.» (hora Lima) +5 h → UTC».
+
+NOVEDADES DE LA VERSIÓN 3.2.1 (corrección de la 3.2.0)
+────────────────────────────────────────────────────────────────────
+  1. LA BÚSQUEDA YA NO FALLA EN SILENCIO. En la 3.2.0, si algo fallaba
+     después de iniciar sesión en Gmail (sesión no transferida, u hora
+     leída en un formato no reconocido), no aparecía NADA y parecía que
+     la búsqueda no ocurría. Ahora todo fallo real se muestra en
+     pantalla con su causa.
+  2. TRANSFERENCIA DE SESIÓN MÁS ROBUSTA. Las cookies se inyectan una
+     por una (una rechazada ya no arrastra a las demás) y las
+     SameSite=None viajan con Secure forzado, como exige Chrome. Si
+     Gmail sigue pidiendo sesión se hace una segunda ronda automática
+     (Google rota algunas cookies al validar).
+  3. LA VENTANA DE LOGIN SE CIERRA SOLA al completar el inicio de
+     sesión (antes quedaba abierta).
+  4. REGISTRO DE DIAGNÓSTICO. Todo el flujo queda anotado en
+     %APPDATA%\PDFPro\gmail-hora.log — si algo vuelve a fallar, basta
+     enviar ese archivo para ver exactamente qué pasó.
+
+NOVEDADES DE LA VERSIÓN 3.2.0
+────────────────────────────────────────────────────────────────────
+  1. HORA DEL CORREO 100% AUTOMÁTICA, SIN BOTÓN. Se retiró el botón
+     «🕐 Hora del correo del archivo cargado» y su casilla «Automático
+     al cargar»: ahora la búsqueda en Gmail se hace sola cada vez que
+     carga un documento, sin pasos intermedios. Si el archivo no vino
+     por correo, o ya hay una hora escrita a mano, no pasa nada
+     (silencioso, no molesta al operador).
+  2. INICIO DE SESIÓN DE GMAIL DENTRO DE LA APP. Antes, la primera vez
+     se abría una ventana aparte de Chrome para iniciar sesión. Ahora
+     Gmail se abre DENTRO de la propia aplicación (ventana hija): usted
+     inicia sesión ahí — una sola vez — y la sesión se transfiere
+     automáticamente al buscador invisible. Solo ocurre la primera vez;
+     después ya no vuelve a pedir sesión.
+
+NOVEDADES DE LA VERSIÓN 3.1.9
+────────────────────────────────────────────────────────────────────
+  1. HORA DE RECEPCIÓN DEL CORREO POR ARCHIVO CARGADO (Gmail
+     asistido, SIN OAuth — integra el módulo «gmail-hora-recepcion»
+     que usted proveyó). Al cargar un FPL, licencia o cualquier
+     documento, la app busca en Gmail el correo que trajo ESE archivo
+     y llena sola la «Fecha/Hora Recepción (UTC)» de la ficha del
+     sello.
+     · Cómo funciona: abre Gmail con su Chrome (perfil persistente).
+       La PRIMERA vez se abre una ventana para que inicie sesión en
+       sphiaisaro@gmail.com — una sola vez; después todo es invisible
+       (headless) y la sesión queda guardada en el perfil.
+     · No necesita las credenciales OAuth de Google (siguen siendo
+       opcionales para el «Barrer ahora»).
+     · Búsqueda: filename:"nombre sin extensión" y, si no hay nada,
+       texto libre — en texto libre NUNCA abre un correo que no
+       mencione el archivo (el original abría el primero de la lista).
+     · La hora que muestra Gmail está en hora de Lima (UTC−5): se
+       convierte a UTC antes de llenar el sello (también se corrigió
+       la ruta OAuth, que llenaba hora local en un campo rotulado
+       UTC — al cruzar medianoche cambiaba el día).
+     · Panel «Correo»: botón «🕐 Hora del correo del archivo cargado»
+       y casilla «Automático al cargar el documento» (activada por
+       defecto; si ya hay hora escrita no se toca).
+     · Requisito: tener Google Chrome instalado (no descarga
+       Chromium). El portapapeles ya no se usa (el original copiaba
+       la hora automáticamente).
+
+NOVEDADES DE LA VERSIÓN 3.1.8
+────────────────────────────────────────────────────────────────────
+  1. CORREGIDO EL REG/ DE LOS FORMULARIOS ELECTRÓNICOS (StarPerú y
+     similares). Con un FPL de vuelo programado (tipo S) el campo
+     «Matrícula (Aeronave / Espacio)» armaba «SRU2226 MK» y perdía la
+     matrícula del casillero 18 (REG/ OB-2176P); el valor correcto es
+     «SRU2226 OB-2176P MK». Causa: estos formularios imprimen una
+     casilla por carácter y el guion de la matrícula quedaba suelto
+     tras compactar el texto («OB - 2176P»). Arreglos:
+     · REG/ reconstruido por GEOMETRÍA: la fila visual del rótulo se
+       reordena por posición (igual que las casillas del formulario
+       CORPAC impreso) y admite el rótulo arriba / valor abajo.
+     · La regex de texto ahora tolera el guion rodeado de espacios.
+     · El respaldo de forma exige dígitos: «REG/ GNSS» ya no se
+       acepta como matrícula.
+     · TIPO DE VUELO: la letra puede estar en su casilla DEBAJO del
+       rótulo (antes solo se miraba la línea del rótulo) y se separa
+       la lista de opciones (S N G M X contiguas) de campos distintos
+       (el tipo «S» y la categoría de estela «M» quedan lejos).
+     · EOBT: admite un rótulo intermedio («EOBT / TIME 0145»).
+
+NOVEDADES DE LA VERSIÓN 3.1.7
+────────────────────────────────────────────────────────────────────
+  1. DETECCIÓN DE LA MATRÍCULA 100% AUTOMÁTICA — SE RETIRÓ EL BOTÓN
+     «✈ Detectar» dejó de existir: ahora el campo «Matrícula (Aeronave /
+     Espacio)» se llena solo al cargar CUALQUIER documento:
+     · PDF con texto → análisis instantáneo de todas las páginas
+     · PDF escaneado → OCR automático de la 1.ª página
+     · Imagen suelta (jpg/png) → OCR de la foto
+     · Word y Excel nativos → análisis del texto visible
+     Además la detección ahora SOBRESCRIBE: si cargas otro FPL, el
+     campo refleja el nuevo documento (antes solo llenaba si estaba
+     vacío y el valor del anterior se quedaba pegado). Si el documento
+     no tiene matrícula, no toca lo que hayas escrito a mano.
+     Las reglas de armado siguen en «ⓘ reglas de armado» (al pasar el
+     mouse bajo el campo).
+
+NOVEDADES DE LA VERSIÓN 3.1.6
+────────────────────────────────────────────────────────────────────
+  1. REGLAS DEL CAMPO «MATRÍCULA» — AHORA SÍ CON LOS FORMULARIOS
+     IMPRESOS CORPAC/ICAO (PLAN DE VUELO / FLIGHT PLAN)
+     Reporte del usuario: con el formulario impreso el campo quedaba
+     solo con la matrícula («OB2066») en vez de «OB2066 2020 MK».
+     Causa: esos formularios traen UNA CASILLA POR CARÁCTER y el orden
+     interno del texto llega revuelto («OB» lejos de «2 2 0 3», la
+     hora partida «1 3 … 0 … 0»), así que los patrones de texto no
+     veían nada. Solución (la del escáner v2.9.21, recuperada):
+     · GEOMETRÍA: con las coordenadas de pdf.js se reconstruye la fila
+       de casillas en orden visual (izquierda→derecha) → casillero 7
+       (identificación) y casillero 13 (EOBT, la fila de dígitos bajo
+       «Aeródromo de salida»).
+     · TEXTO COMPACTADO: se unen los caracteres sueltos («OB 2 2 0 3»
+       → «OB2203»); si el casillero 8 quedó pegado («OB2203YG») se
+       separa y de paso da el tipo de vuelo.
+     · Tipo de vuelo: letra bajo «TIPO DE VUELO / TYPE OF FLIGHT»;
+       si el formulario imprime la lista de opciones (S N G M X) se
+       busca la marcada (☒/✓/×) y si no se puede saber se aplica la
+       regla de matrícula+EOBT (nunca se asume «S» a ciegas).
+     · Validadores del escáner v2.9.21: «CCDII» (alfabética) ya se
+       acepta como matrícula de REG/; «JAP7163» se reconoce como
+       designador + nº de vuelo (no matrícula).
+     Ejemplo del reporte: OB2066, tipo G, salida SPHI 2020 → el
+     campo y el archivo quedan «OB2066 2020 MK».
+
+  2. AYUDA DEL CAMPO CONTRAÍDA
+     El texto con las reglas bajo «Matrícula (Aeronave / Espacio)»
+     quedó contraído en «ⓘ reglas de armado»: pasa el mouse (o toca)
+     y se muestra completo en un recuadro.
+
+NOVEDADES DE LA VERSIÓN 3.1.5
+────────────────────────────────────────────────────────────────────
+  1. INICIALES DEL OPERADOR — ORDEN «APELLIDOS Y NOMBRES» (MK, NO KM)
+     Se recuperó el fix de la v2.9.20 que se había perdido en la
+     reescritura v3.0.0: si la cuenta guardó el nombre al revés
+     («Koo Paz, Marcos Roberto», «Koo Paz Marcos Roberto»,
+     «Koo Marcos»), las iniciales ahora salen MK igual que con el
+     orden normal («Marcos Roberto Koo Paz» → MK). Regla del
+     usuario: inicial del primer nombre + inicial del primer
+     apellido, siempre 2 letras.
+
+  2. CAMPO «MATRÍCULA (AERONAVE / ESPACIO)» — REGLAS DEL USUARIO
+     El botón ✈ Detectar (y la detección automática al cargar)
+     arma ahora el valor completo del campo según el plan de vuelo:
+     · Tipo de vuelo «S» (casillero 8): ID de vuelo (casillero 7)
+       + matrícula REG/ (casillero 18, sin el prefijo) + iniciales
+       → «JAP7163 CCDII MK».
+     · Otro tipo (matrícula en el casillero 7): matrícula + EOBT
+       (casillero 13 — hora propuesta fuera de calzos, la que
+       acompaña al aeródromo de salida: «SPHI 1100» → 1100) +
+       iniciales → «OB2032 1100 MK». Sin hora detectable:
+       «OB2032 MK».
+     Al guardar/exportar, el archivo se nombra con ese valor SIN
+     duplicar las iniciales («OB2032 1100 MK.pdf», no «… MK MK»).
+     El campo admite ahora 24 caracteres y su texto de ayuda
+     documenta las reglas.
+
+NOVEDADES DE LA VERSIÓN 3.1.4
+────────────────────────────────────────────────────────────────────
+  1. ABRIR PDF DESDE UNA URL CAÍDA — LECTOR CON RESPALDO
+     Si la app web se abre desde una URL vieja/en caché de un
+     deploy borrado (todos sus archivos dan 404), abrir un PDF
+     fallaba con «Setting up fake worker failed: Cannot load
+     script at …». Ahora el lector PDF reintenta con la raíz del
+     sitio y, como último recurso, con el CDN (misma versión
+     3.11.174 del vendor local): el PDF abre igual. Si nada
+     carga, el mensaje indica usar la URL vigente:
+     https://licencias-firmas.vercel.app
+  2. CAMPOS DE FORMULARIO WORD (CONTROLES DE TEXTO) EDITABLES
+     Los campos hechos con controles de contenido de texto ya se
+     pueden editar de verdad: lo escrito DENTRO del campo se
+     guarda dentro del campo (antes el guardado no veía esos
+     runs: la edición se perdía, se duplicaba o se partía entre
+     el campo y el texto de alrededor).
+     Los checkbox siguen intactos en su lugar exacto (v3.1.3).
+
+NOVEDADES DE LA VERSIÓN 3.1.3
+────────────────────────────────────────────────────────────────────
+  CHECKBOX INCRUSTADOS DE WORD — SIEMPRE EN SU LUGAR ORIGINAL
+  Los formularios Word con casillas de verificación (controles de
+  contenido ☒/☐) ya no se distorsionan al guardar el .docx:
+  · Sin editar nada: el archivo queda idéntico byte a byte al
+    original (antes el guardado reportaba cambios falsos y duplicaba
+    los glifos ☒/☐ como texto suelto en otra posición).
+  · Al editar otro texto del documento: las casillas permanecen
+    exactamente donde estaban, con su formato y sin duplicados.
+  · Marcar/desmarcar (☒↔☐) en la vista actualiza el control real
+    (glifo + estado w14:checked) en su misma posición.
+  · Borrar una casilla en la vista la elimina limpiamente.
+  · Casillas dentro de celdas de tabla y bloques sdt completos:
+    soportados (antes esos párrafos se duplicaban o vaciaban).
+  (Verificado con suite de regresión: 19/19 casos.)
+
+NOVEDADES DE LA VERSIÓN 3.0.0
+────────────────────────────────────────────────────────────────────
+  1. INICIALES DEL OPERADOR — REGLA DE 2 LETRAS (AUTOMÁTICAS)
+     Las iniciales ahora se calculan solas al iniciar sesión y siguen
+     exactamente la regla pedida: 2 letras, la primera es la inicial
+     del PRIMER NOMBRE y la segunda es la inicial del PRIMER APELLIDO
+     (apellido paterno).
+       Ejemplo: el operador es Marcos Roberto Koo Paz → iniciales: MK
+     (Antes salían mal: tomaba las iniciales de las dos primeras
+     palabras, «MR», y hasta 4 letras.)
+     · Se muestran en la CABECERA del editor junto al nombre.
+     · En «Mi Cuenta» (con la regla explicada).
+     · Se precargan en la ficha del SELLO (pestaña SELLO) y en el
+       panel móvil; el campo admite máximo 2 letras.
+     · Se usan al nombrar el archivo guardado: «MATRÍCULA INICIALES»
+       (ej. OB2147 MK.pdf).
+     · Nombres con «de/del/la/las/los» se tratan bien: Pedro de la
+       Cruz Villa → PC.
+
+  2. MATRÍCULA (AERONAVE / ESPACIO) — DETECCIÓN AUTOMÁTICA POR OCR
+     Al cargar un documento (PDF, imagen escaneada o foto), PDFPro
+     analiza el contenido y rellena solo el campo «Matrícula
+     (Aeronave / Espacio)» de la ficha del sello:
+     · PDF con texto: se lee el texto embebido (instantáneo).
+     · PDF escaneado o imagen: OCR local (Tesseract, español, sin
+       internet) sobre la primera página/foto.
+     Reconoce los rótulos de plan de vuelo (REG/, AIRCRAFT
+     IDENTIFICATION, IDENTIFICACIÓN DE AERONAVE, MATRÍCULA), las
+     matrículas peruanas OB/EP/HP (con o sin guion, incluso con
+     letras espaciadas «O B - 2 1 4 7») y corrige errores típicos del
+     OCR (0B2147 → OB2147). También toma la matrícula del nombre del
+     archivo si lo trae (ej. «FPL OB2147.pdf»).
+     El botón «▶ Ejecutar OCR» de la pestaña EXPORTAR sigue
+     disponible para escanear cualquier página manualmente.
+
+  3. MONITOREO GMAIL — sphiaisaro@gmail.com (HORA DE RECEPCIÓN)
+     Nueva sección «📧 Monitoreo Gmail» en la pestaña SELLO:
+     · «Conectar Gmail» abre el consentimiento de Google (OAuth con
+       las credenciales del cliente Gmail creadas para PDFPro).
+       Autoriza el acceso a sphiaisaro@gmail.com una sola vez.
+     · Cada 5 minutos (o con «Barrer ahora») revisa la bandeja y
+       lista los correos CON ARCHIVO ADJUNTO de los últimos 7 días
+       con su HORA DE RECEPCIÓN exacta (la que registra Gmail).
+     · Si el archivo adjunto coincide con el documento cargado, el
+       correo se resalta («coincide con el archivo cargado»).
+     · Botón «Usar hora en el sello»: copia la fecha y hora de
+       recepción del correo a los campos «Fecha/Hora Recepción» del
+       sello de recepción.
+     · Cada correo se archiva en Supabase (tabla correos_gmail) si
+       ejecutas el script supabase_setup_v3.sql (incluido).
+     Nota: Google solo permite el redirect autorizado; si la ventana
+     nativa no cierra sola tras autorizar, la página
+     licencias-firmas.vercel.app muestra un código para pegar en el
+     cuadro «Pega el código» del panel Gmail.
+
+  Además se conservan TODAS las funciones de la serie 2.9:
+  Word y Excel editables en su formato original, fotos con la hoja
+  como foto completa, sello de recepción + sello personal, guardado
+  en REGISTROS FPL NOTAM\FPL\año\mes\día con nombre
+  «MATRÍCULA INICIALES», Google Drive, OCR, comparador de PDFs,
+  METAR/TAF, apertura con doble clic desde Windows, etc.
+
+INSTALACIÓN
+────────────────────────────────────────────────────────────────────
+  PDFPro-Setup-3.0.0.exe    Instalador de un clic (recomendado)
+                            Crea acceso directo y asocia .pdf, .docx,
+                            .xlsx e imágenes con PDFPro.
+  PDFPro-Portable-3.1.4.exe Versión portable sin instalación.
+
+  La app funciona 100% offline para edición, sello, OCR y guardado.
+  Solo necesita internet para: iniciar sesión (Supabase), conectar
+  Gmail/Drive y guardar en la nube.
+
+SUPABASE (OPCIONAL, PARA EL REGISTRO DE CORREOS)
+────────────────────────────────────────────────────────────────────
+  1. Entra a https://supabase.com → tu proyecto → SQL Editor.
+  2. Pega el contenido de supabase_setup_v3.sql y ejecútalo (Run).
+  3. Crea la tabla correos_gmail con la hora de recepción de cada
+     correo con adjunto; la app la llena sola al barrer Gmail.
+
+COMPILAR DESDE EL CÓDIGO FUENTE
+────────────────────────────────────────────────────────────────────
+  Requiere Node.js LTS. En la carpeta del proyecto:
+     npm install
+     npm run dist          (genera dist\PDFPro-Setup-3.1.4.exe y
+                            dist\PDFPro-Portable-3.1.4.exe)
+  En Windows también puedes usar build-windows.bat.
+
+  © 2026 CORPAC AIS/ARO SPHI · PDFPro Suite 3.1.4
