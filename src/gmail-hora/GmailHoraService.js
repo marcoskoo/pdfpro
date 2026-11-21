@@ -718,7 +718,12 @@ class GmailHoraService {
    *  es un correo suelto), la fila muestra la recepción de ESE mensaje y
    *  manda siempre que traiga hora; si el adjunto está en un mensaje
    *  ANTERIOR (regla 3.2.31), la fila marca la recepción de OTRO más
-   *  nuevo y se mantiene la hora de la cabecera de ese mensaje. */
+   *  nuevo y se mantiene la hora de la cabecera de ese mensaje.
+   *  v3.2.36 — pero esa cabecera es la hora de ENVÍO del remitente: si el
+   *  adjunto está en un mensaje anterior del hilo, se RE-BUSCA por
+   *  filename:"…" para leer en su propia fila de resultados (por mensaje,
+   *  con su RECEPCIÓN) la hora del correo que trae el archivo
+   *  (ver _horaFilaDelMensaje) y solo si falla se queda con la cabecera. */
   _decidirHoraCorreo(delMensaje, esUltimo, horaFila) {
     if (esUltimo && horaFila && /\d{1,2}:\d{2}/.test(horaFila)) {
       return { hora: horaFila, fuente: 'fila-recepcion' };
@@ -726,10 +731,67 @@ class GmailHoraService {
     return { hora: delMensaje, fuente: 'mensaje-del-adjunto' };
   }
 
+  /* v3.2.36 — consultas filename:"…" para re-buscar el MENSAJE que trae el
+   *  archivo: la base tal cual, la de espacios colapsados y la sin los
+   *  «(n)» de duplicados del archivo descargado (el adjunto del correo no
+   *  los tiene — «pv2066 1200 (2)» vs «pv2066 1200.pdf»). Únicas y en ese
+   *  orden de preferencia. */
+  _consultasFilename(archivo) {
+    const base = baseDe(archivo);
+    const lista = [base, base.replace(/\s+/g, ' ').trim(), base.replace(/(?:\s*\(\d+\))+\s*$/, '').trim()]
+      .filter((q) => q && q.length > 2);
+    return [...new Set(lista)];
+  }
+
+  /* v3.2.36 — hora de RECEPCIÓN del MENSAJE que trae el archivo cuando es
+   *  un mensaje ANTERIOR de un hilo: la fila de la bandeja marca la
+   *  recepción del ÚLTIMO correo del hilo (otro mensaje), así que se
+   *  re-busca por filename:"…" — los resultados de búsqueda de Gmail son
+   *  por MENSAJE y su fila muestra la RECEPCIÓN (internalDate) de ese
+   *  mensaje — y se abre el MÁS RECIENTE (regla del usuario). Devuelve la
+   *  hora de esa fila, o null si no se consigue (se queda con la cabecera). */
+  async _horaFilaDelMensaje(archivo) {
+    try {
+      let conResultados = false;
+      for (const q of this._consultasFilename(archivo)) {
+        await this._buscar(`filename:"${q}"`);
+        if (!(await this._haySinResultados())) { conResultados = true; break; }
+      }
+      if (!conResultados) return null;
+      const orden = await this._ordenFilasPorFecha();
+      if (!orden.length) return null;
+      const abrio = await this.page.evaluate((idx) => {
+        const todas = document.querySelectorAll('tr.zA');
+        const filas = todas.length ? todas : document.querySelectorAll('[role="row"]');
+        if (!filas[idx]) return false;
+        filas[idx].click();
+        return true;
+      }, orden[0].idx);
+      if (!abrio) return null;
+      await this.page.waitForTimeout(1500);
+      await this._esperarAdjuntos();
+      /* la vista abierta debe seguir trayendo el adjunto (v3.2.27): si no,
+         esa fila no es la de este archivo */
+      if (!adjuntoCoincide(archivo, await this._adjuntosAbiertos())) return null;
+      const hora = orden[0].fecha || null;
+      return (hora && /\d{1,2}:\d{2}/.test(hora)) ? hora : null;
+    } catch (_) { return null; }
+  }
+
   async _resultadoDeCorreoAbierto(archivo, copiar) {
     const delMensaje = await this._extraerHoraMensajeAdjunto(archivo);
     if (delMensaje) {
-      const eleccion = this._decidirHoraCorreo(delMensaje.hora, delMensaje.esUltimo, this._horaFilaAbierta);
+      let eleccion = this._decidirHoraCorreo(delMensaje.hora, delMensaje.esUltimo, this._horaFilaAbierta);
+      if (eleccion.fuente === 'mensaje-del-adjunto') {
+        /* v3.2.36 — el adjunto está en un mensaje ANTERIOR del hilo (o la
+           fila no traía hora): la fila de la bandeja es de OTRO correo más
+           nuevo y la cabecera es la hora de ENVÍO del remitente. Se
+           re-busca por filename: para leer la RECEPCIÓN del mensaje del
+           archivo en su propia fila de resultados; si no se consigue, se
+           queda con la cabecera (comportamiento 3.2.31). */
+        const filaMsj = await this._horaFilaDelMensaje(archivo);
+        if (filaMsj) eleccion = { hora: filaMsj, fuente: 'fila-recepcion' };
+      }
       const meta = await this._extraerMeta();
       const copiado = copiar ? await this.copiarAlPortapapeles(eleccion.hora) : false;
       this.opts.onProgress(`Hora obtenida: ${eleccion.hora} (${eleccion.fuente === 'fila-recepcion' ? 'hora de RECEPCIÓN de la lista de Gmail' : 'del mensaje que trae el adjunto'})`);

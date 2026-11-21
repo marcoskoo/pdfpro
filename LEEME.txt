@@ -1,7 +1,37 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.35 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.36 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.36 (recepción del MENSAJE del adjunto dentro de un HILO de Gmail)
+──────────────────────────────────────────────────────────────────────────────
+  1. Nuevo reporte del usuario con el log de progreso completo: el
+     pv2066 seguía en 10:22. El log lo aclaró todo: el correo con el
+     pv2066 no es un correo suelto — es un mensaje ANTERIOR de un hilo
+     grande de Gmail («ATC JAP 7161 211126», cuyo ÚLTIMO mensaje llegó
+     el 21/11 a las 5:03 p. m. y arrastra ~60 adjuntos de toda la
+     conversación). En ese caso la 3.2.35 no podía aplicar su regla:
+     la fila de la bandeja marca la recepción del ÚLTIMO del hilo (otro
+     correo), y la cabecera del mensaje del adjunto es su Date header
+     (hora de ENVÍO del AIS: 20/11 5:22) — se capturaba 10:22 en vez
+     de la RECEPCIIÓN real (5:34).
+  2. Ahora, cuando el adjunto está en un mensaje ANTERIOR del hilo, la
+     app RE-BUSCA por filename:"…" : los resultados de búsqueda de
+     Gmail son por MENSAJE (no por hilo) y la fila de cada uno muestra
+     la RECEPCIÓN de ese mensaje. Se abre el más reciente y su fila ES
+     la hora de recepción del correo que trae el archivo (5:34 →
+     10:34 UTC), con verificación de que el adjunto sigue a la vista.
+  3. Si la re-búsqueda no da resultados, se queda con la cabecera del
+     mensaje (comportamiento 3.2.31, mejor opción disponible). Correos
+     sueltos o con el adjunto en el último mensaje usan la fila de la
+     bandeja directamente (regla 3.2.35, sin re-buscar).
+  4. Para el pv2066: cargar el archivo (o «🔄 Re-buscar hora del
+     correo») debe capturar 20/11 10:34 UTC (05:34 Lima) — el aviso
+     dirá «hora de RECEPCIÓN de la lista de Gmail · v3.2.36».
+  5. Verificado: 15/15 casos del escenario del hilo (fila del mensaje
+     5:34 vs cabecera 5:22 → gana la fila → 10:34 UTC; sin re-búsqueda
+     cuando el adjunto está en el último; fallback a cabecera), más
+     las regresiones completas en verde.
 
 NOVEDADES DE LA VERSIÓN 3.2.35 (la hora capturada es la de RECEPCIÓN de la lista de Gmail, no la de envío del remitente)
 ──────────────────────────────────────────────────────────────────────────────
