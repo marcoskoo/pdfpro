@@ -1,7 +1,28 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.9 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.29 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.29 (varias pestañas: cada archivo completa SU hora)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: al abrir varias pestañas con archivos
+     distintos, la hora de recepción del correo quedaba sin actualizarse
+     en algunas de ellas.
+  2. La causa: la re-búsqueda automática (cuando el correo aún no llegó)
+     tenía UN solo temporizador global — cada archivo que fallaba CANCELABA
+     la re-búsqueda del anterior, y cuando cualquier archivo recibía su
+     hora se cancelaban las re-búsquedas pendientes de todos los demás.
+  3. Ahora cada pestaña tiene SU propia cadena de re-búsqueda (cada 60 s,
+     hasta 4 rondas por archivo, con presupuesto propio): las N pestañas
+     se reintentan de forma independiente y una hora aplicada ya no
+     corta las que faltan. La pestaña que reciba su hora limpia solo SU
+     cadena; cerrar una pestaña termina la suya sin tocar a las demás.
+  4. Además, las consultas a la API de Gmail ahora van en COLA (de a
+     una, en la web y en el escritorio): al abrir varios archivos a la
+     vez ya no se agota la cuota por segundo (error 429), que hacía que
+     un correo existente figurase como «todavía no llegado» porque sus
+     mensajes quedaban salteados. Si aun así aparece un 429, la consulta
+     espera 1,5 s y se reintenta una vez.
 
 NOVEDADES DE LA VERSIÓN 3.2.28 (vuelos que NO son tipo «S»: matrícula + EOBT + iniciales)
 ────────────────────────────────────────────────────────────────────────────────────────

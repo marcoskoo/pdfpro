@@ -550,9 +550,18 @@ ipcMain.handle('gmail:desconectar', () => {
   return { ok: true };
 });
 
+/* v3.2.29 — COLA de barridos OAuth (uno a la vez): al abrir varios archivos
+   en ráfaga, cada pestaña disparaba su gmail:buscar-por-adjunto / gmail:barrer
+   a la vez y la cuota por segundo de la API de Gmail se agotaba (error 429);
+   los correos salteados hacían que el del archivo figurase como «no llegado».
+   Mismo patrón que _gmailHoraCadena (búsqueda asistida). */
+let _gmailApiCadena = Promise.resolve();
+
 ipcMain.handle('gmail:barrer', async (_e, query, maxResults) => {
+  const tarea = _gmailApiCadena.then(() => gmail.poll(app.getPath('userData'), query, maxResults));
+  _gmailApiCadena = tarea.then(() => undefined, () => undefined);
   try {
-    const mensajes = await gmail.poll(app.getPath('userData'), query, maxResults);
+    const mensajes = await tarea;
     return { ok: true, mensajes };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -563,8 +572,10 @@ ipcMain.handle('gmail:barrer', async (_e, query, maxResults) => {
    nuevo al más viejo comparando el nombre de cada adjunto con el del
    archivo cargado; el primer match entrega su hora (corta ahí). */
 ipcMain.handle('gmail:buscar-por-adjunto', async (_e, archivo, maxResults) => {
+  const tarea = _gmailApiCadena.then(() => gmail.pollOrdenado(app.getPath('userData'), String(archivo || '').trim(), maxResults || 50));
+  _gmailApiCadena = tarea.then(() => undefined, () => undefined);
   try {
-    const mensaje = await gmail.pollOrdenado(app.getPath('userData'), String(archivo || '').trim(), maxResults || 50);
+    const mensaje = await tarea;
     return { ok: true, mensaje };
   } catch (e) {
     return { ok: false, error: e.message };
