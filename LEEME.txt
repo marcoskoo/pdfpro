@@ -25,13 +25,19 @@ NOVEDADES DE LA VERSIÓN 3.2.36 (recepción del MENSAJE del adjunto dentro de un
      mensaje (comportamiento 3.2.31, mejor opción disponible). Correos
      sueltos o con el adjunto en el último mensaje usan la fila de la
      bandeja directamente (regla 3.2.35, sin re-buscar).
-  4. Para el pv2066: cargar el archivo (o «🔄 Re-buscar hora del
-     correo») debe capturar 20/11 10:34 UTC (05:34 Lima) — el aviso
+  4. Aclaración del usuario: el 20/11 existe un correo con el pv2066
+     (05:22) pero el 21/11 llegó OTRO correo con el MISMO nombre de
+     archivo — la prioridad es del MÁS RECIENTE, y así lo hace la
+     re-búsqueda por filename: (lista los dos como filas por mensaje,
+     ordena del más nuevo al más viejo y abre el primero).
+  5. Para el pv2066: cargar el archivo (o «🔄 Re-buscar hora del
+     correo») debe capturar 21/11 10:34 UTC (05:34 Lima) — el aviso
      dirá «hora de RECEPCIÓN de la lista de Gmail · v3.2.36».
-  5. Verificado: 15/15 casos del escenario del hilo (fila del mensaje
-     5:34 vs cabecera 5:22 → gana la fila → 10:34 UTC; sin re-búsqueda
-     cuando el adjunto está en el último; fallback a cabecera), más
-     las regresiones completas en verde.
+  6. Verificado: 17/17 casos del escenario del hilo (incluida la regla
+     del usuario: dos correos con el mismo archivo, 20/11 05:22 y 21/11
+     → gana el del 21/11 → 10:34 UTC; fila del mensaje vs cabecera;
+     sin re-búsqueda cuando el adjunto está en el último; fallback a
+     cabecera), más las regresiones completas en verde.
 
 NOVEDADES DE LA VERSIÓN 3.2.35 (la hora capturada es la de RECEPCIÓN de la lista de Gmail, no la de envío del remitente)
 ──────────────────────────────────────────────────────────────────────────────

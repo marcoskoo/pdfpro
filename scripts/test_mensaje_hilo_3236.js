@@ -114,6 +114,34 @@ const iso = (ms) => (ms == null ? null : new Date(ms).toISOString());
     { hora: 'vie, 20 nov 2026, 5:22 a.m.', fuente: 'mensaje-del-adjunto' });
 }
 
-console.log(fallos ? '✗ ' + fallos + ' fallo(s)' : '✓ MENSAJE-EN-HILO OK (15/15)');
+  /* 7) LA REGLA DEL USUARIO (reporte pv2066): el MISMO archivo llegó en
+        DOS correos — 20 nov 05:22 y 21 nov — GANA EL MÁS RECIENTE. La
+        re-búsqueda filename: los lista como filas POR MENSAJE (aunque el
+        DOM los traiga viejo-primero, como los «Resultados principales»):
+        el orden real (_ordenarInfoPorFecha) pone el del 21/11 primero y
+        ese es el que se abre */
+  {
+    const svc = new GmailHoraService({ onProgress: () => {} });
+    svc._buscar = async () => {};
+    svc._haySinResultados = async () => false;
+    svc.page = {
+      evaluate: async (fn, ...args) => {
+        if (typeof args[0] === 'number') return true;      /* click de la fila */
+        return [                                            /* filas como el DOM: viejo primero */
+          { idx: 0, fecha: 'vie, 20 nov 2026, 5:22 a.m.' },
+          { idx: 1, fecha: 'sáb, 21 nov 2026, 5:34 a.m.' }
+        ];
+      },
+      waitForTimeout: async () => {},
+      title: async () => 'Gmail'
+    };
+    svc._esperarAdjuntos = async () => {};
+    svc._adjuntosAbiertos = async () => ['pv2066 1200.pdf'];
+    const r = await svc._horaFilaDelMensaje('pv2066 1200 (2).pdf');
+    chk('dos correos con el MISMO archivo: gana el del 21/11 (el más reciente)', r, 'sáb, 21 nov 2026, 5:34 a.m.');
+    chk('→ 21/11 10:34 UTC (no 20/11 10:22 del viejo)', iso(parseHoraGmail(r)), '2026-11-21T10:34:00.000Z');
+  }
+
+console.log(fallos ? '✗ ' + fallos + ' fallo(s)' : '✓ MENSAJE-EN-HILO OK (17/17)');
 process.exit(fallos ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });
