@@ -22,7 +22,7 @@ chk('fix por pestaña dentro del asar (_gmailReintentoTabs)', idx.includes('_gma
 chk('cola de barridos dentro del asar (_gmailWebEnCola)', idx.includes('_gmailWebEnCola'));
 chk('429 no amplifica: guard de cuota (_cuota)', idx.includes('var _cuota=false'));
 chk('backoff de la cadena (300000)', idx.includes('e.n<=4?60000:300000'));
-chk('versión en los avisos (_HORA_VER v3.2.30)', idx.includes(\"_HORA_VER='v3.2.30'\")&&idx.includes('· '+\"_HORA_VER\"));
+chk('versión en los avisos (_HORA_VER v3.2.30, declarada y usada en los 4 avisos)', idx.includes(\"_HORA_VER='v3.2.30'\")&&(idx.match(/_HORA_VER/g)||[]).length>=5);
 chk('registro forense (_gmailHoraLog/_ghlog)', idx.includes('_gmailHoraLog')&&idx.includes('function _ghlog'));
 chk('pie de página v3.2.30', idx.includes('CORPAC AIS/ARO Platform v3.2.30'));
 chk('main.js: pausa de la cola (350)', main.includes('_gmailApiPausa(350)'));
