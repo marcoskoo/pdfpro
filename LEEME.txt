@@ -1,7 +1,32 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.33 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.34 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.34 (botón «🔄 Re-buscar hora del correo»: recaptura una hora capturada mal)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «SIGUE CAPTURANDO 10:22» tras el fix de la
+     3.2.33. Auditoría completa: todas las vías ya eligen el correo más
+     reciente y el valor mostrado siempre es la fecha real de recepción
+     (internalDate). La causa de que NO cambie: una pestaña con la hora
+     ya capturada y firmada para ese archivo NUNCA vuelve a buscar
+     («ya hay hora: no se toca») — la 10:22 capturada antes del fix
+     queda congelada, y ninguna búsqueda (ni siquiera manual) podía
+     pisar un campo ya lleno. No existía forma de forzar la re-captura.
+  2. Nuevo botón «🔄 Re-buscar hora del correo» junto a Hora Recepción
+     (UTC): vuelve a buscar en Gmail (API + vía asistida, con el orden
+     por fecha de la 3.2.33) y REEMPLAZA la hora capturada
+     automáticamente por el programa. La hora escrita A MANO por el
+     usuario jamás se pisa (el botón avisa y no la toca).
+  3. Para el caso pv2066: abre el archivo, pulsa «🔄» y la hora debe
+     recapturarse como 10:34 UTC (05:34 Lima). El aviso (toast) muestra
+     la hora aplicada y la VERSIÓN que la capturó — si no dice v3.2.34,
+     la instalación no se actualizó.
+  4. Verificado: 4/4 en el flujo completo (la búsqueda automática con
+     hora firmada sigue sin re-buscar; «🔄» recaptura y pisa la
+     programática aunque la API devuelva el viejo primero; la pestaña
+     queda firmada con la nueva hora; la manual no se pisa), más las
+     regresiones de orden y cuota en verde.
 
 NOVEDADES DE LA VERSIÓN 3.2.33 (la búsqueda API ordena por fecha real: gana el correo MÁS RECIENTE con ese adjunto)
 ──────────────────────────────────────────────────────────────────────────────

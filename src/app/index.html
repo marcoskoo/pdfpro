@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.33 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK, admite la hora con dos puntos «SPHI 18:50») · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida; con varias pestañas abiertas cada archivo mantiene SU propia cadena de re-búsqueda (60 s × 4 + 5 min × 4, sin cortarse entre sí), las consultas a la API van en cola con respiro entre barridos y un 429 espera y reintenta en vez de quemar más cuota; el aviso de la hora muestra la versión que la capturó; en un hilo de Gmail la hora es la del MENSAJE que trae el adjunto, no la del último correo del hilo; el recorrido de la bandeja va por FECHA, del correo más reciente al penúltimo y sucesivos, aunque Gmail pinche secciones no cronológicas; la búsqueda API ordena por fecha real de recepción y gana el correo MÁS RECIENTE con ese adjunto aunque Gmail devuelva el viejo primero dentro de un hilo) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.34 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK, admite la hora con dos puntos «SPHI 18:50») · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida; con varias pestañas abiertas cada archivo mantiene SU propia cadena de re-búsqueda (60 s × 4 + 5 min × 4, sin cortarse entre sí), las consultas a la API van en cola con respiro entre barridos y un 429 espera y reintenta en vez de quemar más cuota; el aviso de la hora muestra la versión que la capturó; en un hilo de Gmail la hora es la del MENSAJE que trae el adjunto, no la del último correo del hilo; el recorrido de la bandeja va por FECHA, del correo más reciente al penúltimo y sucesivos, aunque Gmail pinche secciones no cronológicas; la búsqueda API ordena por fecha real de recepción y gana el correo MÁS RECIENTE con ese adjunto aunque Gmail devuelva el viejo primero dentro de un hilo; botón «🔄 Re-buscar hora del correo» que recaptura pisando la hora automática anterior, sin tocar nunca la escrita a mano) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1302,6 +1302,12 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
               <input class="f-input" id="selloRxTime" inputmode="numeric" maxlength="4" placeholder="ahora" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px" oninput="selloHoraEditada();this.value=this.value.replace(/\D/g,'').slice(0,4);updateSelloPreview()">
             </div>
           </div>
+          <!-- v3.2.34 — re-búsqueda FORZADA de la hora: una hora ya capturada
+               (programática) nunca se re-busca sola; si salió mal (capturada
+               por una versión anterior, correo duplicado/reenviado…), este
+               botón la recaptura con el motor actual. Respeta SIEMPRE la
+               hora escrita a mano. -->
+          <button class="btn btn-ghost btn-sm btn-full" style="margin:0 0 8px" onclick="gmailHoraForzar()" title="Vuelve a buscar en Gmail la hora del correo de este archivo y reemplaza la capturada automáticamente (no toca una hora escrita a mano)">🔄 Re-buscar hora del correo</button>
           <!-- v3.2.3 — reintento manual del login de Gmail: visible SOLO
                cuando el último intento quedó sin sesión (LoginCancelado /
                SesionNoTransferida); el reintento automático solo ocurre al
@@ -11014,15 +11020,20 @@ async function _gmailWebBarridoOrdenadoInt(nombre,maxResults){
   return null;
 }
 
-/* aplica la hora del hit de la API: nunca pisa una hora escrita a mano */
-function gmailAplicarHitApi(hit,nombre,tab){
+/* aplica la hora del hit de la API: nunca pisa una hora escrita a mano.
+   v3.2.34 — `forzar` (botón «🔄 Re-buscar»): una hora PROGRAMÁTICA
+   (capturada por el programa y firmada con este archivo) SÍ se puede
+   pisar con la búsqueda fresca; la escrita a mano jamás. */
+function gmailAplicarHitApi(hit,nombre,tab,forzar){
   /* v3.2.26 — «se llenó a mano mientras» solo se puede leer del campo si
      la pestaña buscada es la ACTIVA: para una pestaña en segundo plano el
      campo muestra la hora de OTRA pestaña y el guard bloquearía para
      siempre su captura. En segundo plano se mira SU propio estado. */
   var _act=true;try{var _aT=docTabGet(activeTabId);_act=(!_aT||!tab||_aT===tab);}catch(e){}
-  if(_act){var rxT=document.getElementById('selloRxTime');if(rxT&&rxT.value)return true;}
-  else if(tab&&tab.selloHora)return true;   // la pestaña en segundo plano ya tiene su hora: no pisar
+  if(_act){var rxT=document.getElementById('selloRxTime');if(rxT&&rxT.value&&(!forzar||_gmailHoraManual))return true;}
+  /* 2.º plano: hora firmada con este archivo = programática (se puede
+     forzar); sin firma = escrita a mano (nunca se pisa) */
+  else if(tab&&tab.selloHora&&!(forzar&&tab.selloHoraArchivo))return true;   // la pestaña en segundo plano ya tiene su hora: no pisar
   gmailAplicarHora(hit.recibidoMs,'correo de '+(hit.de||'Gmail')+' · adjunto «'+((hit.adjuntos||[])[0]||nombre)+'»',gmailHoraLimaTxt(hit.recibidoMs),tab);
   return true;
 }
@@ -11239,7 +11250,7 @@ var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailAsistidaSe
    hora», la captura de pantalla dice sin duda qué build estaba corriendo
    (el instalador no reemplaza un PDFPro que seguía ABIERTO: el proceso viejo
    sigue vivo con el código viejo). */
-var _HORA_VER='v3.2.33';
+var _HORA_VER='v3.2.34';
 /* v3.2.30 — registro forense de la captura de la hora (consola y
    window.__gmailHoraLog): qué pestaña buscó, qué falló y qué se aplicó.
    Ante un reporte basta volcarlo para ver la causa exacta. */
@@ -11277,6 +11288,24 @@ function gmailLoginManual(){
   toast('🔐 Abriendo Gmail para iniciar sesión… (si no aparece la ventana, mira detrás de la app)','warn',9000);
   gmailHoraArchivo(true);
 }
+/* v3.2.34 — re-búsqueda FORZADA de la hora de recepción (botón «🔄
+   Re-buscar hora del correo»): la captura automática solo llena campos
+   vacíos y una pestaña con hora firmada para su archivo nunca re-busca
+   — si esa hora salió mal (capturada por una versión anterior, correo
+   reenviado/duplicado…), no existía forma de recapturarla. Este botón
+   pisa la hora PROGRAMÁTICA de la pestaña activa con una búsqueda
+   fresca (API + asistida, orden por fecha del más reciente); la hora
+   escrita a MANO por el usuario se respeta siempre. */
+function gmailHoraForzar(){
+  var _tab=null;try{_tab=docTabGet(activeTabId);}catch(e){}
+  var nombre=(_tab&&_tab.fileName)||fileName||'';
+  if(!nombre){toast('📄 Carga primero un archivo para re-buscar su hora','warn',9000);return;}
+  var t=document.getElementById('selloRxTime');
+  if(t&&t.value&&_gmailHoraManual){toast('✍️ La hora actual fue escrita a mano: bórrala si quieres recapturarla del correo','warn',10000);return;}
+  try{_ghlog('forzar',_tab,nombre);}catch(e){}
+  toast('🔄 Re-buscando la hora de recepción del correo de «'+nombre+'»…','info',9000);
+  gmailHoraArchivo(true,null,_tab,true);
+}
 /* v3.2.6 — hora del correo A PARTIR DEL ARCHIVO CARGADO, por la API de
    Gmail (OAuth): consulta dirigida con el nombre del archivo (filename:…)
    en lugar de esperar al barrido de 5 minutos. Funciona en WEB y en
@@ -11313,7 +11342,7 @@ function gmailBuscarHitPorAdjunto(msgs,nombre){
   }
   return null;
 }
-async function gmailHoraApiPorArchivo(nombre,tab){
+async function gmailHoraApiPorArchivo(nombre,tab,forzar){
   var base=String(nombre||'').replace(/\.[^.]+$/,'').trim();
   if(!base)return false;
   /* v3.2.14 — ORDEN EXIGIDO POR EL USUARIO: primero se recorren los
@@ -11332,7 +11361,7 @@ async function gmailHoraApiPorArchivo(nombre,tab){
     if(gmailIsDesktop()){
       var ro=await window.pdfproDesktop.gmailBuscarPorAdjunto(nombre,50);
       if(ro&&ro.ok&&ro.mensaje&&ro.mensaje.recibidoMs){
-        if(gmailAplicarHitApi(ro.mensaje,nombre,tab))return true;
+        if(gmailAplicarHitApi(ro.mensaje,nombre,tab,forzar))return true;
       }
       if(ro&&!ro.ok&&/429/.test(String((ro.error||'')))){_cuota=true;_ghlog('api_429',tab,'');}
     }else{
@@ -11340,7 +11369,7 @@ async function gmailHoraApiPorArchivo(nombre,tab){
       if(!(to&&to.access_token))return false;  // web sin conectar: nada que buscar
       var hitO=await gmailWebBarridoOrdenado(nombre,50);
       if(hitO&&hitO.recibidoMs){
-        if(gmailAplicarHitApi(hitO,nombre,tab))return true;
+        if(gmailAplicarHitApi(hitO,nombre,tab,forzar))return true;
       }
     }
   }catch(e){/* la vía ordenada falló (sin sesión/conexión): respaldo filename: */}
@@ -11364,7 +11393,7 @@ async function gmailHoraApiPorArchivo(nombre,tab){
     if(!msgs||!msgs.length)continue;           // sin resultados: consulta siguiente
     var hit=gmailBuscarHitPorAdjunto(msgs,nombre);
     if(hit){
-      if(gmailAplicarHitApi(hit,nombre,tab))return true;
+      if(gmailAplicarHitApi(hit,nombre,tab,forzar))return true;
     }
     /* hubo resultados pero ninguno con ese adjunto: la consulta siguiente
        es más amplia (filename sin extensión → texto libre) */
@@ -11375,7 +11404,7 @@ async function gmailHoraApiPorArchivo(nombre,tab){
    si «Hora Recepción» está vacío (no pisa lo escrito a mano).
    v3.2.6: 1.ª vía API de Gmail (OAuth, web y escritorio); 2.ª vía
    asistida con Playwright (solo escritorio, sin OAuth) */
-async function gmailHoraArchivo(manual,reintento,tabForzado){
+async function gmailHoraArchivo(manual,reintento,tabForzado,forzar){
   var nombre='';var _tab=null;
   if(tabForzado)_tab=tabForzado;                // v3.2.26: búsqueda de ESA pestaña (aunque ya no sea la activa)
   else{try{_tab=docTabGet(activeTabId);}catch(e){}}
@@ -11420,7 +11449,7 @@ async function gmailHoraArchivo(manual,reintento,tabForzado){
     return;   // v3.2.26: la pestaña en segundo plano ya tiene su hora (propia o manual): no se rebusca
   }
   try{
-    if(await gmailHoraApiPorArchivo(nombre,_tab)){gmailLoginBtnOcultar();return;}
+    if(await gmailHoraApiPorArchivo(nombre,_tab,forzar)){gmailLoginBtnOcultar();return;}
   }catch(e){/* la API falló (sin conexión/sin sesión): se prueba la vía asistida */}
   if(!gmailHoraPuede()){
     /* v3.2.10 — sin vía asistida disponible (web, o escritorio sin el
