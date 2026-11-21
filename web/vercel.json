@@ -1,0 +1,17 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/oauth/gmail-callback", "destination": "/oauth/gmail-callback.html" },
+    { "source": "/pdfpro/:path*", "destination": "/:path*" },
+    { "source": "/pdfpro", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/vendor/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ]
+}

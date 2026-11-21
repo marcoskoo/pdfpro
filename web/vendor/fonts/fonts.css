@@ -1,0 +1,6 @@
+/* PDFPro — fuentes UI (woff2, cargadas localmente) */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;src:url('gf-000.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;src:url('gf-001.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;src:url('gf-002.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-style:normal;font-weight:700;src:url('gf-003.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;src:url('jbm-400.woff2') format('woff2');font-display:swap}

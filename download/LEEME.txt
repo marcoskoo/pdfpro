@@ -1,738 +1,737 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro 2.9.21 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.9 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
-NOVEDADES DE LA VERSIÓN 2.9.21 (matrícula del casillero 7 primero)
+NOVEDADES DE LA VERSIÓN 3.2.28 (vuelos que NO son tipo «S»: matrícula + EOBT + iniciales)
+────────────────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: en un plan de vuelo tipo G el campo «Matrícula
+     (Aeronave / Espacio)» quedó «OB2147 MK» — le faltaba la hora (EOBT),
+     que debía ser «OB2147 1850 MK».
+  2. La causa: el formulario traía la hora de salida como «18:50» (con
+     dos puntos, junto al aeródromo de salida) y el detector del EOBT
+     solo entendía 4 dígitos seguidos («1850»). Al no encontrarla, se
+     armaba el campo sin la hora.
+  3. Ahora la hora con dos puntos se entiende en TODAS las vías: texto
+     del PDF, OCR, formulario electrónico y télex («SPHI 18:50» → 1850,
+     «8:30» → 0830), y también en la lectura por geometría de casillas
+     («18:50» entero, «18» «50» partido o el «:» suelto).
+  4. Los vuelos tipo «S» no cambian: ID de vuelo + REG/ + iniciales
+     («SRU2226 OB2176P MK»), igual que antes.
+
+NOVEDADES DE LA VERSIÓN 3.2.27 (la hora que se aplica es del correo de ESE archivo)
+─────────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «solo buscó la hora de recepción de 1, y lo
+     repite en las demás pestañas/archivos». La causa: al encolarse las
+     búsquedas de varios archivos sobre el mismo navegador invisible, la
+     página no se recargaba de verdad entre consultas — la 2.ª, 3.ª y
+     4.ª terminaban leyendo el correo que quedaba abierto (el del 1.er
+     archivo) y repetían SU hora en todas las pestañas.
+  2. Ahora cada consulta recarga la página de verdad: lo que aparece en
+     pantalla pertenece siempre a la consulta de ESE archivo.
+  3. Y la doble verificación final: si el correo abierto no trae el
+     archivo como adjunto, SU HORA NO SE USA (se reintenta solo). Ya no
+     es posible que un archivo reciba la hora del correo de otro.
+
+NOVEDADES DE LA VERSIÓN 3.2.26 (todas las pestañas buscan su hora)
 ────────────────────────────────────────────────────────────────────
-  Lo que reportaste: «se carga el archivo FlightPlan SPHI-SPST.pdf,
-  el sistema muestra "FLIGT"; debería mostrar "Matrícula (Aeronave /
-  Espacio)": OB1630. Cuando la matrícula ya está en el casillero 7,
-  ya no es necesario buscarla en el casillero 18».
+  1. Reporte del usuario: «solo actualizó la hora de recepción en dos
+     pestañas/archivos de las 04 que cargué». La causa: al abrir varios
+     archivos en ráfaga, cargar el siguiente CANCELABA la búsqueda
+     pendiente del anterior — solo el último archivo era buscado (y
+     otro, si lo visitabas, porque cambiar de pestaña re-dispara la
+     búsqueda).
+  2. Ahora CADA pestaña agenda su propia búsqueda: los N archivos que
+     cargues reciben cada uno la hora de su correo, uno tras otro (se
+     ejecutan en cola, de a una). Ya no importa cuántos abras ni en qué
+     orden.
+  3. La re-búsqueda automática (correo que aún no llega) también
+     pertenece al archivo que la necesita, no a la pestaña que esté
+     abierta.
+  4. Una hora ESCRITA A MANO (ficha de escritorio o móvil) queda
+     blindada: jamás se borra ni se rebusca.
 
-  INVESTIGACIÓN OACI (base de la corrección):
-  · Doc 4444 (PANS-ATM), Apéndice 2, casillero 7 «IDENTIFICACIÓN DE
-    AERONAVE»: es BIEN la MATRÍCULA (Anexo 7: marca de nacionalidad +
-    marca de matrícula; Perú = OB, RAP 45.205) BIEN el designador de
-    la empresa + nº de vuelo (Doc 8585: CMP468, LPE1234, FAP211).
-  · Casillero 18, ítem REG/: lleva la matrícula «si difiere de la
-    identificación del casillero 7» — o sea: el REG/ solo hace falta
-    cuando el casillero 7 trae el designador del vuelo.
-
-  CORREGIDO — el orden de búsqueda ahora sigue esa doctrina:
-  1) CASILLERO 7 PRIMERO: si la identificación ES una matrícula
-     (OB… de Perú; CC/HC/CP/HK/XA/LV… de vecinos; N… de EE.UU.),
-     ESA es la matrícula y ya no se mira el casillero 18 (OB1630
-     aunque el formulario también traiga REG/).
-  2) Si el casillero 7 trae designador + nº de vuelo (CMP468,
-     LPE1234, FAP211), la matrícula sale del REG/ del 18 — y el
-     aviso dice el vuelo: «casillero 18 (REG/) · vuelo CMP468».
-  3) Sin casillero 7 reconocible → REG/ del casillero 18.
-
-  EL BUG DE «FLIGHT/FLIGT» — en los formularios impresos (una casilla
-  por carácter) la etiqueta «Aircraft Identification» va seguida de la
-  etiqueta «Flight Rules», y el escáner tomaba esa palabra como si
-  fuera la matrícula. Ahora todo valor capturado se valida (una
-  matrícula nunca es «FLIGHT», «RULES», «REG», «EET»… ni un código de
-  aeródromo como SPST/SPJC) y las casillas del casillero 7 se leen
-  por GEOMETRÍA: con las coordenadas de cada casilla se reconstruye
-  la fila en orden visual izquierda→derecha, porque el texto interno
-  del PDF llega revuelto («4 6 8 … C M P»).
-
-VERIFICADO PUNTO A PUNTO (2.9.21):
-  · 129 pruebas unitarias del escáner (antes 77): doctrina OACI,
-    designadores del Doc 8585 (OBC/OBJ/OBK/OBS/OBT no se hacen pasar
-    por OB…), matrícula provisional OB1234P y de traslado OB1234T
-    (RAP 45), rechazo de FLIGHT/FLIGT y de aeródromos SPST-SPJC-SKBQ ✓
-  · Con el FPL REAL «ATC CM468 11NOV.pdf»: matrícula HP1520, vuelo
-    CMP468, origen «casillero 18 (REG/) · vuelo CMP468» ✓
-  · E2E en la app real con una réplica fiel del «FlightPlan
-    SPHI-SPST.pdf» (casillero 7 con OB1630 en casillas, sin REG/):
-    campo OB1630, aviso «casillero 7», sin rastro de FLIGHT/FLIGT ✓
-  · E2E aerolínea (casillero 7 = CMP468 + REG/HP1520): HP1520 ✓
-  · Regresiones: télex FAP211+REG/OB1630 → OB1630 · formulario con
-    etiqueta OB-2147 → OB2147 · oficio → campo limpio · nombre de
-    archivo de registro «OB1630 EV.pdf» ✓
-  · Smoke de la app de escritorio empaquetada: appVersion 2.9.21,
-    escáner OACI OK, archivado real en REGISTROS FPL NOTAM con la
-    fecha UTC ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.25 (la hora ya no viaja a la pestaña nueva)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.20 (iniciales KM → MK corregido)
+  1. Reporte del usuario: «Hora Recepción (UTC) no actualiza cuando se
+     cambia de pestaña/archivo dentro de la app, sigue mostrando la hora
+     de recepción del primer pestaña/archivo». La causa: al abrir un
+     archivo con otro documento ya cargado, la app crea una pestaña
+     nueva — pero el formulario seguía mostrando la fecha/hora del
+     documento anterior, el sistema la daba por buena y no buscaba la
+     del archivo nuevo (y al alternar pestañas, la hora ajena quedaba
+     guardada como suya).
+  2. Ahora la pestaña nueva nace limpia: fecha, hora y matrícula en
+     blanco (la matrícula la detecta el auto-OCR del nuevo archivo) y se
+     busca la hora del correo de ESE archivo. Al alternar entre
+     pestañas, cada una muestra su propia hora.
+
+NOVEDADES DE LA VERSIÓN 3.2.24 (la hora de recepción pertenece al archivo, no a la pestaña)
 ────────────────────────────────────────────────────────────────────
-  Lo que reportaste: «inicio de sesión Marcos Koo, el sistema muestra
-  iniciales KM, debería mostrar MK».
+  1. Reporte del usuario tras el acceso exitoso: «ahora ya carga la
+     hora, pero al cargar otro archivo la hora de recepción no se
+     actualiza de acuerdo al archivo seleccionado». La causa: al abrir
+     otro PDF en la misma pestaña, la fecha/hora del archivo ANTERIOR
+     quedaban puestas en la ficha y el sistema las respetaba («ya hay
+     hora: no se toca») — se corría el riesgo de sellar con la hora del
+     correo de OTRO vuelo.
+  2. Ahora la hora queda firmada con el archivo al que pertenece: al
+     cargar un archivo distinto la ficha se limpia y se busca la hora
+     del correo de ESE archivo. Recargar el MISMO archivo conserva su
+     hora (no se rebusca sin necesidad) y una hora escrita a mano se
+     respeta como siempre.
 
-  CAUSA — el formulario de registro/editar pedía el nombre completo
-  como «Apellidos y Nombres», así que tu cuenta quedó guardada con el
-  nombre al revés («Koo Paz Marcos Roberto» o «Koo Marcos»). Con la
-  regla de la 2.9.19 (4 palabras = nombres + PATERNO + materno) eso
-  daba K de «Koo» + M de «Marcos» = KM.
-
-  CORREGIDO — ahora el cálculo de iniciales TAMBIÉN entiende el orden
-  «Apellidos y Nombres», lo Detecta y lo voltea:
-  · «Koo Paz, Marcos Roberto» (con coma)  → MK
-  · «Koo Paz Marcos Roberto» (sin coma)   → MK
-  · «Koo Marcos»                           → MK
-  · «Koo Paz Marcos» / «Koo Marcos Roberto» → MK
-  · «Asian Castro, Frank Dave»  → FA · «Chumpitaz Court Francessca
-    Michelle» → FC
-  El orden normal sigue igual: «Marcos Roberto Koo Paz» → MK · tus 5
-  ejemplos (MK, FA, RC, JV, FC) sin cambios.
-
-  ADEMÁS — el formulario de registro y el editor de usuarios ahora
-  piden «Nombres y Apellidos (ej. Marcos Roberto Koo Paz)» para que
-  las cuentas nuevas se guarden en el orden correcto desde el inicio.
-
-  No necesitas editar tu usuario: aunque el nombre siga guardado al
-  revés, las iniciales ya salen bien (MK).
-
-VERIFICADO PUNTO A PUNTO (2.9.20):
-  · 77 pruebas unitarias del escáner: 12 nuevas del orden «Apellidos
-    y Nombres» (incluye anti-falsos-positivos: «Ana María Torres»
-    sigue AT, «José Ramírez Díaz» sigue JR) ✓
-  · E2E en la app real: sesión «Koo Paz, Marcos Roberto», «Koo Paz
-    Marcos Roberto», «Koo Marcos», «Marcos Koo», «Marcos Roberto Koo
-    Paz» → todas MK (campo + espejo móvil) · «Asian Castro, Frank
-    Dave» → FA · «Chumpitaz Court Francessca Michelle» → FC ✓
-  · E2E 2.9.19: tus 5 ejemplos siguen OK (MK, FA, RC, JV, FC) ✓
-  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
-    oficio → campo limpio · Excel real ATC CM468 → HP1520 · cambio
-    de usuario → iniciales nuevas al instante ✓
-  · Smoke de la app de escritorio empaquetada: 11 nombres de prueba
-    (incluidos los invertidos) = true ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.23 (Google ya no deniega el acceso en la ventana de Chrome)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.19 (iniciales — ejemplos verificados)
+  1. Su captura de las 09:27 mostró el paso exacto que fallaba: la
+     ventana de Chrome se abrió, usted ingresó cuenta y clave, y Google
+     DENEGÓ el acceso con «este navegador o aplicación no es seguro»:
+     el Chrome que abre la app viajaba marcado como automatizado. Se
+     quitó esa marca — Google ahora ve un Chrome normal.
+  2. El plazo para completar el acceso sube de 5 a 10 minutos
+     (credenciales + verificación en dos pasos toman su tiempo) y el
+     límite global de la búsqueda pasa de 7 a 20 minutos: antes el
+     acceso quedaba cortado a mitad.
+  3. La ventana de respaldo dentro de la app muere en <2 s en su
+     equipo desde siempre (mientras las demás ventanas viven): síntoma
+     de almacén interno dañado. Se le asignó un almacén nuevo y limpio.
+
+NOVEDADES DE LA VERSIÓN 3.2.22 (inicio de sesión en una ventana de Chrome real)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste (tus ejemplos exactos):
-  · «Marcos Roberto Koo Paz»           = MK
-  · «Frank Dave Asian Castro»          = FA
-  · «Ruswel Melciades Cacho Paredes»   = RC
-  · «Jacqueline Cristina Vílchez Aguirre»    = JV
-  · «Francessca Michelle Chumpitaz Court»    = FC
+  1. Sus capturas revelaron la causa raíz de una vez: la ventana de
+     Gmail con su buzón que veía era SU Chrome normal — la app no
+     puede usar esa sesión. La ventana de login interna de la app se
+     cerraba sola en menos de 2 segundos (algo en el equipo la mataba)
+     y el acceso nunca se completaba.
+  2. Ahora, cuando Gmail pide sesión, la app abre una VENTANA DE
+     CHROME/EDGE REAL (del sistema) con el perfil propio del buscador:
+     inicie sesión ahí UNA sola vez. La sesión queda guardada en ese
+     perfil — no se transfiere ninguna cookie y sobrevive a reinicios
+     de la app: los siguientes PDF buscan la hora solos, sin ventanas.
+  3. La ventana interna de la app queda solo como respaldo si la
+     ventana real no puede abrirse.
 
-  CORREGIDO — la 2.9.18 se confundía con los segundos nombres: con
-  «Marcos Roberto Koo Paz» salía «MR» (la «R» de Roberto, que es
-  segundo NOMBRE, no apellido). Ahora la regla es la convención de la
-  oficina: con 4 palabras el nombre completo es
-  «nombre1 + nombre2 + APELLIDO PATERNO + apellido materno» y el
-  paterno es la TERCERA palabra:
-  · «Marcos Roberto Koo Paz»   → MK (paterno «Koo»)
-  · «Frank Dave Asian Castro»  → FA (paterno «Asian»)
-  · «Ruswel Melciades Cacho Paredes» → RC (paterno «Cacho»)
-  · «Jacqueline Cristina Vílchez Aguirre» → JV (paterno «Vílchez»)
-  · «Francessca Michelle Chumpitaz Court» → FC (paterno «Chumpitaz»)
-
-  La regla completa (todas las longitudes):
-  · 1.ª letra = inicial del PRIMER NOMBRE · 2.ª = APELLIDO PATERNO
-  · 4+ palabras → paterno = 3.ª palabra (convención de la oficina)
-  · 3 palabras → si la 2.ª es un segundo nombre típico o partícula,
-    el paterno es la 3.ª: «Ana María Torres» → AT · «Luis Alberto
-    Ccahuana» → LC · «Ruswel Melciades Cacho» → RC; si no, es la 2.ª:
-    «José Ramírez Díaz» → JR
-  · 2 palabras → «Marcos Koo» → MK
-  · Partículas del nombre: «María del Carmen Rojas» → MR · «San/Santa»
-    inicia el apellido: «Juan San Martín Palacios» → JS
-  · Títulos ignorados («Sr.», «Ing.») · lo que escribas a mano en el
-    campo se respeta tal cual
-
-VERIFICADO PUNTO A PUNTO (2.9.19):
-  · 65 pruebas unitarias del escáner: los 5 ejemplos del usuario
-    (MK, FA, RC, JV, FC) + variantes sin materno + 3 palabras ✓
-  · E2E en la app real: sesión con cada uno de los 5 nombres →
-    iniciales correctas en el campo Y en el espejo móvil ✓
-  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
-    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
-    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
-  · Smoke de la app de escritorio empaquetada: los 5 ejemplos del
-    usuario = true ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.21 (el botón «Conectar Gmail» ya no abre una ventana rota)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.18 (iniciales: primer nombre + apellido paterno)
+  1. Su captura reveló que el botón «CONECTAR GMAIL» abría un
+     consentimiento de Google que moría con «Error 400: Missing
+     required parameter: client_id»: las credenciales de ese monitor
+     no viajan en el instalador. Ahora el botón avisa la verdad SIN
+     abrir nada — y aclara que PARA LA HORA DE RECEPCIÓN NO HACE
+     FALTA: basta cargar el PDF (la sesión de Gmail se usa directa).
+  2. La ventana de progreso ahora muestra la versión en su título
+     («PDFPro — Progreso Gmail (v3.2.21)»): toda captura delata qué
+     build corre.
+  3. La comprobación de sesión previa queda SIEMPRE anotada en el
+     log de diagnóstico (gmail-hora.log): «previa: N cookies» o
+     «sin sesión en el almacén».
+  4. El aviso de «ningún navegador disponible» ya no remite al botón
+     del monitor (callejón sin salida): pide instalar Chrome/Edge.
+
+NOVEDADES DE LA VERSIÓN 3.2.20 (la sesión activa ya no necesita ventana)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste: «corregir primera letra (inicial del primer nombre),
-  segunda letra (inicial del apellido paterno)».
+  1. Usted lo vio: la ventana de inicio de sesión abría con el buzón
+     YA visible (la sesión de Gmail estaba activa) y aun así la
+     búsqueda fallaba con «ventana cerrada» — la sesión solo se
+     aprovechaba si esa ventana sobrevivía unos segundos. Ahora, al
+     pedir Gmail la sesión, el programa comprueba PRIMERO su almacén
+     interno: si la sesión ya está activa, transfiere las cookies
+     DIRECTAMENTE y sigue buscando SIN abrir ninguna ventana.
+  2. Con sesión activa ya no se abre (ni se cierra) ventana alguna:
+     no hay nada que pueda cerrarse solo ni cancelar la búsqueda.
+  3. Un cierre de la ventana a los <5 segundos se considera anómalo
+     (antivirus/bloqueador) la haya visto o no: se reintenta una vez
+     y no bloquea los archivos siguientes.
+  4. El cierre normal de la ventana tras completar el acceso ya no
+     se anota como fallo en el log de diagnóstico.
 
-  CORREGIDO — la segunda letra era la inicial equivocada con nombres
-  compuestos: antes se tomaba la PENÚLTIMA palabra del nombre y con
-  «Ana María Torres» salía «AM» (la «M» de María, que es segundo
-  nombre, NO el apellido). Ahora el apellido paterno es la palabra que
-  SIGUE a los nombres de pila:
-  · «Ana María Torres»      → AT (antes AM ✗) — nombres «Ana María» + paterno «Torres»
-  · «Luis Alberto Ccahuana» → LC (antes LA ✗)
-  · «Rosa María Flores»     → RF (antes RM ✗)
-  · «Juan Carlos Morales»   → JM (antes JC ✗)
-  · «María del Carmen Rojas»→ MR (antes MC ✗) — «del» no es apellido
-  · «José Ramírez Vega Silva» → JR — el paterno es la 2.ª palabra,
-    no la materna
-  · «Juan San Martín Palacios» → JS — «San» inicia el apellido
-    compuesto «San Martín»
-  · «José Ramírez Díaz»     → JR (sin cambio) — nombre simple + paterno + materno
-  · «Ana María Torres Vega» → AT (sin cambio) — 4 palabras
-  · «Marcos Koo»            → MK (sin cambio) — 2 palabras
-  · «Sr. Marcos Koo»        → MK — títulos ignorados
-  La regla completa: 1.ª letra = inicial del PRIMER NOMBRE · 2.ª letra
-  = inicial del APELLIDO PATERNO. Se saltan las partículas («de»,
-  «del», «la»…) y los segundos nombres típicos («María», «Luis»,
-  «Alberto», «Carmen»…) para encontrar el paterno. Si escribes tus
-  iniciales a mano en el campo, se respetan tal cual.
-
-VERIFICADO PUNTO A PUNTO (2.9.18):
-  · 55 pruebas unitarias del escáner: 18 de iniciales con nombres
-    compuestos y partículas reales ✓
-  · E2E en la app real: sesión «Ana María Torres» → AT · «Luis
-    Alberto Ccahuana» → LC · «María del Carmen Rojas» → MR (campo +
-    espejo móvil) ✓
-  · Regresión completa: télex → OB1630 · formulario → OB2147 ·
-    oficio → campo limpio · «OB2147 EV.pdf» · Excel real ATC CM468 →
-    HP1520 · cambio de usuario → iniciales nuevas al instante ✓
-  · Smoke de la app de escritorio empaquetada: fplScanIniciales con
-    los 5 nombres compuestos = true ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.19 (blindaje del inicio de sesión en Gmail)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.17 (correcciones al escaneo FPL)
+  1. La ventana de inicio de sesión se estaba cerrando «sola» en
+     menos de 1 segundo y el programa lo reportaba como «ventana
+     cerrada», bloqueando el login de TODOS los archivos siguientes.
+     Ahora se distingue un cierre REAL del usuario de uno ANÓMALO
+     (antivirus, bloqueador, fallo del navegador): el anómalo se
+     REINTENTA una vez y ya no bloquea los archivos siguientes.
+  2. Todo el ciclo de la ventana queda anotado en el log de
+     diagnóstico (gmail-hora.log): a los cuántos segundos se cerró,
+     si llegó a verse y, si el navegador falló, la causa exacta.
+  3. La carga de Gmail reintenta sola: la primera redirección de
+     Google podía abortarla sin que nada estuviera roto.
+  4. Mensajes honestos: una sesión completada ya nunca se reporta
+     como «ventana cerrada», y tras un fallo la ventana de progreso
+     indica el paso siguiente (botón «🔗 Iniciar sesión en Gmail»).
+
+NOVEDADES DE LA VERSIÓN 3.2.18 (corrección de la ventana de progreso)
 ────────────────────────────────────────────────────────────────────
-  Lo que reportaste: «he cargado 3 planes de vuelo y solo detecto una
-  sola matrícula, habiendo errores en la identificación de los otros 2.
-  Al cambiar de usuario aún se visualizan las iniciales del usuario
-  anterior».
+  1. CORRECCIÓN CRÍTICA: la ventana de progreso quedaba VACÍA («no
+     indica nada») — el puente interno usaba una asignación que, con
+     el aislamiento de contextos de Electron, nunca llegaba a la
+     página. Ahora sí se ven todos los pasos en texto, en vivo.
+  2. Las líneas ya no se duplican: solo se añaden las nuevas.
+  3. Más detalle por consulta: «Bandeja: N correos traídos», «sin
+     resultados para esta consulta» y un aviso si Gmail no responde
+     tras 12 segundos (antes ese caso era invisible).
+  4. GUARDIA GLOBAL DE 7 MINUTOS: si algo se cuelga de verdad, la
+     búsqueda se cancela, se cierra el navegador y la siguiente
+     arranca limpia — antes la cola de búsquedas podía quedar
+     bloqueada para siempre: cada PDF cargado se encolaba detrás y
+     «no pasaba nada».
 
-  CORREGIDO — matrícula en los FPL de Excel:
-  · Los FPL que llegan en .xlsx/.xls (los formularios ATC de las líneas
-    aéreas) NO se escaneaban: ahora se leen todas las hojas del libro y
-    la matrícula se detecta igual que en PDF/Word.
-  · Verificado con tus archivos reales «ATC CM468 11NOV»:
-    el .xlsx y el .pdf detectan HP1520 (casillero 18, ítem REG/HP1520).
-
-  CORREGIDO — la matrícula del FPL anterior ya no se arrastra:
-  · Al abrir otro archivo, el campo «Matrícula» parte de cero: si el
-    nuevo archivo no trae matrícula, queda VACÍO (antes mostraba la del
-    FPL anterior y podías sellar con la matrícula equivocada).
-  · Si el archivo ES un FPL pero no se reconoce la matrícula, aparece
-    el aviso «⚠ FPL sin matrícula reconocida — escríbela…» para que la
-    escribas a mano. Con documentos que no son FPL (oficios, NOTAM) el
-    campo simplemente queda limpio, sin avisos.
-  · Los formularios con UNA CASILLA POR CARÁCTER («C M P 4 6 8» en
-    casillero 7, típico de las aerolíneas) ahora se compactan antes de
-    buscar: «O B 2 1 4 7» → OB2147.
-
-  CORREGIDO — iniciales al cambiar de usuario:
-  · Al cambiar de usuario, las iniciales del campo cambian INMEDIATO a
-    las del nuevo usuario con sesión (antes quedaban las del anterior
-    aunque el campo mostrara otro nombre).
-  · Al cerrar sesión se limpian las iniciales y la matrícula: el
-    siguiente usuario empieza de cero.
-  · Si escribes tus iniciales a mano durante la sesión, se respetan.
-
-VERIFICADO PUNTO A PUNTO (2.9.17):
-  · 45 pruebas unitarias del escáner (27 anteriores + 6 de casillas por
-    carácter + 4 del aviso «FPL sin matrícula» + 8 de iniciales) ✓
-  · E2E con TUS ARCHIVOS REALES ATC CM468: .xlsx → HP1520 · .pdf →
-    HP1520 · oficio → campo limpio · FPL sin matrícula → aviso y campo
-    vacío · cambio de usuario → iniciales «AT» al instante y matrícula
-    limpia · recarga con el mismo usuario → la matrícula se conserva ✓
-  · Regresión completa del escaneo: télex → OB1630 · formulario →
-    OB2147 · nombre final «OB2147 EV.pdf» ✓
-  · Smoke de la app de escritorio empaquetada: fplScanCompacta y
-    fplScanAviso = true ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.17 (ventana de progreso de la búsqueda)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.16 (iniciales del operador de 2 letras)
+  1. NUEVA VENTANA DE PROGRESO: una ventana pequeña, independiente
+     y minimizable que muestra EN TEXTO los pasos que va ejecutando
+     la búsqueda de la hora de recepción — qué navegador usa, el
+     estado del inicio de sesión, las cookies, cada consulta EXACTA
+     a Gmail y el recorrido de la bandeja CORREO POR CORREO, hasta
+     el resultado final (✔ hora obtenida / ✖ causa del fallo).
+  2. Se abre sola con cada búsqueda (sin robar el foco de la app);
+     minimizarla o cerrarla NO cancela la búsqueda — es solo un
+     visor, y el historial completo se reenvía al volver a abrirse.
+  3. Los pasos con marca de hora (hora de Lima) y colores: normales
+     en blanco, inicio de sesión en amarillo, resultado en verde y
+     errores en rojo. Botón «Limpiar» para vaciar la vista.
+
+NOVEDADES DE LA VERSIÓN 3.2.16 (match con archivos «(1) (1)»)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste: «solo 2 (letras) iniciales del operador (inicial del
-  primer nombre e inicial del apellido paterno)».
+  1. CAUSA RAÍZ de que la hora no se capturara con archivos
+     descargados dos veces: el archivo queda «ATC CM468 11NOV
+     (1) (1).pdf» y la comparación solo quitaba UN «(1)» → el
+     nombre nunca hacía match con el adjunto del correo. Ahora
+     se quitan TODOS los «(n)» finales, en las tres vías (Google
+     web, Google escritorio y buscador asistido).
+  2. La búsqueda filename:/texto libre también reintenta con el
+     nombre SIN los «(n)» (el correo menciona el adjunto
+     original, no la copia renombrada).
+  3. El año de la hora, cuando Gmail no lo muestra, se toma de
+     la hora de Lima (antes de la de UTC: el 31 dic por la noche
+     daba un año de más).
 
-  · Las iniciales del operador ahora son SIEMPRE 2 letras: la inicial
-    del PRIMER NOMBRE + la inicial del APELLIDO PATERNO.
-      - «Marcos Koo»            → MK
-      - «Ana María Torres Vega» → AT  (Ana + Torres)
-      - «José Ramírez Díaz»     → JR  (José + Ramírez)
-      - «Ana Torres»            → AT
-    Con 3 o más palabras se aplica la convención peruana «nombres +
-    apellido paterno + apellido materno»: el paterno es la penúltima
-    palabra. Con una sola palabra solo hay inicial de nombre.
-  · El campo «Iniciales del Operador» (escritorio y panel móvil) ahora
-    admite como máximo 2 letras, sin puntos ni espacios.
-  · Se rellenan solas igual que antes: al entrar a la app y al cargar
-    cada FPL, con las del dueño del sello activo (usuario con sesión).
-  · El nombre del archivo sigue «MATRÍCULA INICIALES» (ej. OB2147 MK)
-    y el sello muestra «OPR: MK».
-
-VERIFICADO PUNTO A PUNTO (2.9.16):
-  · 35 pruebas unitarias: 27 del escáner de matrícula (sin cambios) +
-    8 de iniciales con la regla nueva (MK, AT, JR, EV, 1 letra, vacío,
-    minúsculas) ✓
-  · E2E en navegador: iniciales auto «EV» al entrar; nombre compuesto
-    «Ana María Torres Vega» → campo «AT» y nombre final «OB2147 AT.pdf»;
-    campos limitados a 2 letras (escritorio y móvil); «A.B» se sanea a
-    «AB»; escritas a mano se respetan ✓
-  · Regresión del escaneo FPL intacta: télex → OB1630, formulario →
-    OB2147, oficio → campo intacto, aviso y espejo móvil ✓
-  · Smoke de la app de escritorio empaquetada: fplScanIniciales = true ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.15 (fin del aviso en bucle del inicio de sesión)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.15 (escaneo FPL automático al cargar)
+  1. El aviso «No se completó el inicio de sesión en Gmail» ya no
+     sale en bucle: si cierras la ventana de inicio de sesión, la
+     app NO la vuelve a abrir sola (antes se reabría cada 30 s con
+     cada PDF cargado). Se abre solo cuando TÚ lo pidas con el botón
+     «🔗 Iniciar sesión en Gmail».
+  2. El aviso ahora dice el MOTIVO real: «ventana cerrada», «tiempo
+     agotado» o «no se pudo cargar Gmail» — antes no decía nada y no
+     se podía saber qué pasó.
+  3. La ventana de inicio de sesión ya no puede quedar escondida
+     detrás de otras ventanas (siempre queda a la vista).
+  4. Si ya conectaste Google («Conectar Gmail» o el botón «🔗»), la
+     ventana del buscador NO se abre nunca: la búsqueda por Google es
+     la vía autorizada y se re-intenta sola hasta que el correo
+     llegue.
+
+NOVEDADES DE LA VERSIÓN 3.2.14 (búsqueda en el ORDEN correcto)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste: «que al cargar el archivo se realice el escaneo para
-  recolección de los datos de matrícula, que podría obtenerse del
-  casillero 7 o del casillero 18 (ejemplo: REG/OB2147), y se copie de
-  manera automática a "Matrícula (Aeronave / Espacio)"… sabemos a
-  quienes pertenecen los sellos, entonces esto nos permite obtener las
-  iniciales, las cuales se copiarán de manera automática en "Iniciales
-  del Operador"».
+  1. La hora de recepción ahora se busca EXACTAMENTE en el orden
+     pedido: se verifica primero el ÚLTIMO correo recibido y se
+     compara el nombre de su adjunto con el del archivo cargado;
+     si hacen match, esa es la hora; si no, se repite con el
+     penúltimo correo y así sucesivamente (hasta los 40 más
+     recientes; después, respaldo por nombre de archivo).
+  2. La comparación de nombres es estricta pero tolerante: no
+     importan mayúsculas, espacios múltiples, signos, la extensión
+     ni el «(1)» que Gmail añade a adjuntos duplicados.
+  3. El mismo orden y la misma comparación en las dos vías: por
+     Google (con «Conectar Gmail», sin navegador) y por el buscador
+     invisible de la app. En ambas se toma el correo MÁS RECIENTE
+     que tenga el adjunto.
 
-  · AL CARGAR EL ARCHIVO (PDF, Word o foto/escaneo) PDFPro lo escanea
-    y copia la MATRÍCULA sola al campo «Matrícula (Aeronave / Espacio)»:
-      - Casillero 18 — ítem «REG/» (ej. REG/OB2147): tiene prioridad
-        porque es la matrícula explícita (aunque el casillero 7 traiga
-        un callsign distinto, ej. FAP211).
-      - Casillero 7 — identificación de aeronave: tanto del mensaje
-        télex OACI «(FPL-OB1630-IS…» (también CHG/CNL/DEP/DLA/ARR)
-        como de la etiqueta del formulario impreso «IDENTIFICACIÓN DE
-        AERONAVE» / «AIRCRAFT IDENTIFICATION».
-      - Acepta OB1630, OB-1630, OB 1630 → se normaliza a OB1630 (como
-        en tu ejemplo); también matrículas extranjeras (REG/HC-COAS,
-        REG/N123AB, REG/9V-OJK…). Si el OCR confunde la O con un cero
-        (0B1630) se corrige sola.
-      - PDF y Word con texto → lectura instantánea (1-2 s). FOTO o PDF
-        ESCANEADO (sin capa de texto) → OCR automático de la primera
-        página en español (unos segundos; verás «🔎 Escaneando FPL…»).
-  · INICIALES DEL OPERADOR: se rellenan solas con las del dueño del
-    SELLO ACTIVO (el usuario con sesión iniciada, ej. «Marcos Koo» →
-    «MK»), al entrar a la app y al cargar cada FPL. Si ya escribiste
-    iniciales a mano, se respetan.
-  · Aviso «📋 Matrícula detectada: OB1630 — casillero 18 (REG/)» al
-    detectarla; el panel móvil del sello recibe el mismo dato.
-  · Si el archivo NO es un FPL (oficio, NOTAM…) no toca los campos:
-    lo que ya escribiste se mantiene.
-  · Al guardar/exportar sigue el flujo de siempre: el archivo se
-    nombra «MATRÍCULA INICIALES» (ej. OB1630 MK.pdf) y se archiva solo
-    en la carpeta del día UTC.
-
-VERIFICADO PUNTO A PUNTO (2.9.15):
-  · 31 pruebas unitarias del extractor: REG/ con guion/espacio,
-    prioridad sobre callsign, télex (FPL/CHG/CNL/DEP), formulario
-    español/inglés, OCR sucio (0B→OB), y SIN falsas alarmas (PROB40,
-    «OBSTÁCULO», oficios) ✓
-  · Extracción real con el mismo pdf.js de la app sobre PDFs de
-    prueba: télex → OB1630, formulario → OB2147, oficio → nada ✓
-  · E2E en navegador (flujo completo de usuario): FPL télex con
-    callsign FAP211 + REG/OB1630 → campo «OB1630» en 1 s; formulario
-    → «OB2147»; oficio → campo intacto; iniciales «EV» auto al
-    entrar; aviso visible; espejo móvil; nombre final «OB2147 EV.pdf» ✓
-  · Smoke de la app de escritorio empaquetada: fpl-scan.js cargado
-    vía app:// y extractor correcto dentro de la app ✓
-
+NOVEDADES DE LA VERSIÓN 3.2.13 (captura de la hora: navegador garantizado)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.14 (carpeta por fecha UTC + auto-actualización)
+  1. CAUSA RAÍZ corregida: en el instalador el buscador invisible
+     dependía de unos archivos (navegadores de Playwright) que NO van
+     dentro del instalador y no siempre están en el PC. Si faltaban,
+     la búsqueda del correo moría sin explicación. Ahora se intenta
+     en orden: Chrome del sistema → Edge del sistema (presente en
+     TODO Windows 10/11) → Chromium empaquetado → ruta manual de
+     diagnóstico.
+  2. Si aun así no hay navegador, se avisa con la causa real y se
+     ofrece conectar Gmail con «Conectar Gmail» (panel 📧): por Google
+     la hora se busca sin navegador.
+  3. La cadena se verificó de verdad contra gmail.com (lanzamiento →
+     búsqueda por nombre de archivo → detección del inicio de sesión).
+
+NOVEDADES DE LA VERSIÓN 3.2.12 (panel de Gmail restaurado)
 ────────────────────────────────────────────────────────────────────
+  1. VUELVE el panel «📧 Monitoreo Gmail» a la ficha del sello:
+     estado de la conexión (punto de color + texto), botones
+     «Conectar Gmail» / «Desconectar», «🔄 Barrer ahora (últimos
+     7 días)» y la lista de correos con adjunto. Se había retirado
+     en la 3.2.9 y con él se perdieron las funciones visibles de
+     conexión — sin ellas no había forma de ver si Gmail estaba
+     conectado ni de conectarlo a mano.
+  2. La captura de la hora de recepción sigue siendo 100 %
+     automática al cargar el documento, y al pulsar «Conectar
+     Gmail» la hora del archivo cargado se rebusca sola.
+  3. Se conservan TODAS las correcciones de captura de las
+     versiones 3.2.10 y 3.2.11 (espera real a que Gmail renderice,
+     relectura de la hora, re-búsquedas cada 60 s, avisos en vez
+     de silencios).
 
-NOVEDADES DE LA VERSIÓN 2.9.14 (carpeta por fecha UTC + auto-actualización)
+NOVEDADES DE LA VERSIÓN 3.2.11 (captura de la hora: causa raíz corregida)
 ────────────────────────────────────────────────────────────────────
-  1) REGISTRO FPL POR FECHA UTC (corrección): «ese archivo debió
-     guardarse en la carpeta del día 13, ya que en aviación trabajamos
-     con hora UTC». La carpeta del registro usa ahora la fecha UTC
-     (hora zulú), la misma del sello de recepción:
-       ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
-     Un FPL recibido a las 23:30Z del día 13 va a la carpeta 13;
-     a las 01:30Z del día 14 va a la carpeta 14.
+  1. Causa raíz de que «la captura no se da»: la búsqueda en Gmail
+     esperaba 2,5 segundos fijos a que la lista de resultados
+     apareciera. Gmail es una aplicación web y en arranque en frío
+     (primer uso del día, máquina lenta, antivirus) la lista aún no
+     existía: la app concluía «no hay correo con este archivo»
+     aunque el correo SÍ estaba. Ahora espera hasta 12 s a que la
+     lista o el aviso de «sin resultados» aparezca de verdad.
+  2. Lo mismo al leer la hora del correo abierto: antes una sola
+     lectura (fallaba en silencio si el mensaje aún renderizaba);
+     ahora reintenta hasta 8 s y, si no logra leerla, lo AVISA y
+     reintenta la captura completa.
+  3. La re-búsqueda automática cada 60 s ya no depende de OAuth:
+     si la sesión de Gmail respondió, también rebusca por la vía
+     asistida (antes solo usaba la API y sin OAuth las rondas no
+     hacían nada). Nunca abre ventanas de login sin que estés
+     delante de la app.
 
-  2) LA APP INSTALADA SE ACTUALIZA SOLA:
-     · Al arrancar (y cada 4 horas) PDFPro comprueba en GitHub si hay
-       versión nueva. Si la hay, avisa, la DESCARGA en segundo plano
-       (el progreso se ve en el título de la ventana) y al terminar
-       ofrece «Reiniciar e instalar»: un clic y queda actualizada.
-       Si prefieres no molestar, «Instalar al salir» la aplica sola
-       al cerrar la app.
-     · Tus ajustes, sesión y la carpeta de registro FPL se conservan.
-     · Menú «Ayuda → Buscar actualizaciones…» para comprobarlo cuando
-       quieras (te dice «está al día» si no hay nada nuevo).
-     · La versión PORTABLE no puede reemplazarse a sí misma (limitación
-       técnica de los ejecutables de un solo archivo): avisa de la
-       novedad y abre la página de descargas con un clic.
-     · NOTA: la 2.9.12/2.9.13 que ya tienes instalada NO se actualiza
-       sola — instala esta 2.9.14 una última vez manualmente y a
-       partir de ella ya se actualizará automáticamente.
-
-VERIFICADO PUNTO A PUNTO (2.9.14):
-  · 23 pruebas del módulo de registro con fecha UTC: 14-nov 01:00Z →
-    carpeta 14 (ya NO se usa la hora de Lima); 13-nov 23:30Z → 13;
-    1-ene 00:05Z → 01 Enero del año nuevo; 31-dic 23:30Z → 31.
-  · Smoke de Electron con archivado REAL a las 03:47Z del 13-nov:
-    el archivo se escribió en ...\FPL\2026\11 Noviembre\13\ — la
-    carpeta exacta del ejemplo (con 2.9.13 habría ido a la 12).
-  · Comparador de versiones (para el aviso de la portable): 6 casos
-    OK (v-prefijo, 2.10.0 > 2.9.99, 3.0.0 > 2.9.14, igual versión…).
-  · Empaquetado con auto-actualización: app-update.yml dentro del
-    instalador y latest.yml + blockmap publicados en el release de
-    GitHub (lo que el actualizador descarga).
-
+NOVEDADES DE LA VERSIÓN 3.2.10 (la captura de la hora, garantizada)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.13 (Registro FPL automático)
+  1. Se cerraron los puntos por los que la captura de la hora de
+     recepción podía quedar sin cumplirse:
+       - En la WEB (o en el escritorio sin el servicio asistido), la
+         búsqueda terminaba en silencio si no había sesión de Google.
+         Ahora aparece el botón «🔗 Iniciar sesión en Gmail» con un
+         aviso claro, y al conectar se rebusca sola la hora.
+       - En el escritorio sin el servicio asistido, ese botón caía de
+         nuevo en la misma vía bloqueada; ahora conecta por OAuth con
+         el navegador del sistema.
+  2. Si el correo con el archivo todavía no llegó a Gmail cuando
+     abres el PDF, la app lo vuelve a buscar sola cada 60 s (hasta 4
+     veces, en silencio, sin abrir ventanas) y avisa que lo
+     reintentará.
+  3. Al capturarse la hora, la re-búsqueda se cancela sola; cada
+     carga de documento o cambio de pestaña la renueva.
+
+NOVEDADES DE LA VERSIÓN 3.2.9 (interfaz más limpia)
 ────────────────────────────────────────────────────────────────────
+  1. Se retiró el panel «📧 Monitoreo Gmail» de la ficha del sello
+     (estado «Sin conectar», botones «Conectar Gmail» / «Desconectar»,
+     «🔄 Barrer ahora (últimos 7 días)» y la lista de correos) —
+     pedido del usuario. Todo lo demás sigue igual.
+  2. La búsqueda de la hora de recepción del correo sigue siendo
+     100 % automática al cargar el documento (por el nombre del
+     archivo adjunto, +5 h → UTC), igual que antes.
+  3. El inicio de sesión pasa por el botón «🔗 Iniciar sesión en
+     Gmail y buscar la hora» (junto a Hora Recepción): en el
+     escritorio abre Gmail dentro de la app, como siempre; en la web
+     inicia la conexión de Google. Tras conectar se vuelve a buscar
+     sola la hora del archivo cargado.
+  4. La caja para pegar el código de Google (si el flujo lo pide)
+     vive ahora junto a ese botón, oculta; solo aparece cuando una
+     conexión la necesita.
 
-NOVEDADES DE LA VERSIÓN 2.9.13 (Registro FPL automático)
+NOVEDADES DE LA VERSIÓN 3.2.8 (múltiples archivos: la ficha sigue a
+la pestaña activa)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste: «al guardar o exportar el archivo ya editado y/o
-  ya con el sello de recepción, que le asigne un nuevo nombre con la
-  matrícula de la aeronave/espacio y las iniciales del operador
-  (ejemplo: OB2147 MK, de Marcos Koo) y que se guarde en la carpeta
-  FPL (C:\Users\...\Desktop\REGISTROS FPL NOTAM\FPL) por fecha:
-  ...\FPL\2026\11 Noviembre\13, creando la carpeta nueva al iniciar
-  cada día/mes/año». (Fecha: Lima en 2.9.13; corregida a UTC en 2.9.14.)
+  1. NUEVO: «Hora Recepción (UTC)» y «Matrícula (Aeronave / Espacio)»
+     son ahora POR PESTAÑA. Al cambiar de archivo o pestaña la ficha
+     del sello se actualiza automáticamente con los valores del
+     documento activo (antes conservaba los del documento anterior).
+  2. Si el documento de la pestaña a la que cambias aún no tiene hora
+     de recepción, se busca automáticamente en Gmail la de SU correo
+     (la búsqueda usa el archivo de esa pestaña). La hora viaja con la
+     pestaña: alternar entre archivos no repite búsquedas ya hechas ni
+     pisa horas — si la respuesta de Gmail llega cuando ya cambiaste
+     de pestaña, la hora se guarda en SU pestaña y no toca la ficha
+     del documento que estás viendo.
+  3. La matrícula detectada al cargar también queda guardada en su
+     pestaña, y los valores escritos a mano se conservan al alternar.
+  4. Al cerrar la última pestaña la ficha queda limpia (sin documento
+     → sin hora ni matrícula), coherente con que el campo refleja
+     siempre el documento cargado.
 
-  · NUEVO CAMPO «Matrícula (Aeronave / Espacio)» en la ficha del
-    sello (pestaña SELLO, junto a las iniciales del operador; también
-    en el panel móvil). Escribe ahí la matrícula (ej. OB2147).
-  · Al GUARDAR o EXPORTAR (PDF, Word, Excel, imagen en su formato
-    original, imagen→PDF, exportación a Drive), el archivo se nombra
-    automáticamente «MATRÍCULA INICIALES» → OB2147 MK.pdf
-    (las iniciales salen del campo del sello; si está vacío, se
-    calculan del usuario con sesión iniciada). Sin matrícula → se
-    mantiene el nombre habitual, sin sorpresas.
-  · En la versión de ESCRITORIO el archivo se archiva SOLO en:
-      <Escritorio>\REGISTROS FPL NOTAM\FPL\<año>\<MM Mes>\<día>
-    Ej. de hoy: ...\FPL\2026\11 Noviembre\13\OB2147 MK.pdf
-    La fecha era la de LIMA (UTC-5) → CORREGIDO EN 2.9.14: ahora es
-    UTC (hora zulú), la misma del sello de recepción.
-    Las carpetas del día/mes/año se crean automáticamente (también al
-    arrancar la app), y al cerrar aparece un aviso con la ruta exacta.
-  · Si ya existe «OB2147 MK.pdf» ese día, no se sobreescribe: se
-    guarda como «OB2147 MK (2).pdf», «(3)», …
-  · Menú «Archivo»: casilla «Guardar exportaciones en la carpeta FPL»
-    (para desactivarlo y descargar con el nombre nuevo donde quieras)
-    y «Abrir carpeta de registro FPL…».
-  · En la WEB no se puede escribir carpetas del PC (seguridad de los
-    navegadores): la descarga llega con el nombre nuevo
-    (OB2147 MK.pdf) para que la archives con un clic.
-
-VERIFICADO PUNTO A PUNTO (2.9.13):
-  · 20 pruebas del módulo de registro: fecha Lima correcta (14-nov
-    01:00Z → carpeta del 13; 1-ene 02:00Z → 31 Diciembre del año
-    anterior), ruta exacta del ejemplo, colisiones (2), (3), saneo
-    de caracteres prohibidos en Windows.
-  · E2E en navegador con el puente simulado: OB2147+MK → guarda
-    «OB2147 MK.pdf» SIN abrir descarga y con aviso de ruta;
-    archivado desactivado → descarga «OB2147 MK.pdf»; cadena
-    completa: foto FPL abierta → guardar en formato original →
-    «OB2147 MK.jpg» (102 KB reales); campo sincronizado en móvil.
-  · Smoke de Electron 2.9.13 con archivado REAL: la app escribió
-    «SMOKE OB2147 MK.pdf» dentro de REGISTROS FPL NOTAM\FPL\<año>\
-    <MM Mes>\<día> creada al vuelo; arranca, puente y librerías OK,
-    captura con contenido, sin errores nuevos.
-
+NOVEDADES DE LA VERSIÓN 3.2.7 (caso real SRU2226 — «PV CIX LIM
+2226» con espacios múltiples)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.12 (Windows ofrece abrir archivos con PDFPro)
+  1. CORREGIDO: con planes cuyo nombre de archivo trae ESPACIOS
+     MÚLTIPLES (como «PV CIX LIM        2226.pdf» del SRU2226) Gmail
+     no devolvía resultados con filename:"…" tal cual y la hora NO se
+     capturaba. Ahora la búsqueda prueba, en orden: filename con los
+     espacios colapsados («PV CIX LIM 2226.pdf») → el nombre tal cual
+     llegó → sin extensión (ambas formas) → texto libre con
+     has:attachment. El emparejamiento sigue siendo ESTRICTO: solo se
+     acepta el correo cuyo ADJUNTO coincide con el archivo cargado.
+     Aplica a la vía API de Gmail (web y escritorio) y también a la
+     vía asistida (Playwright) del escritorio.
+  2. La conversión de la hora se muestra completa en el aviso al
+     aplicar: «Gmail: «16:00» (hora Lima) +5 h → UTC». Ejemplo real
+     del SRU2226: Gmail muestra 04:00 pm (= 16:00 Lima) → la app
+     presenta 21:00 en «Hora Recepción (UTC)» (16:00 + 5 h), con la
+     fecha UTC correspondiente (cruza la medianoche si toca).
+
+NOVEDADES DE LA VERSIÓN 3.2.6 (hora de recepción del correo: se busca
+A PARTIR DEL ARCHIVO CARGADO)
 ────────────────────────────────────────────────────────────────────
+  1. AL CARGAR UN DOCUMENTO la app busca en Gmail el correo que trae
+     ese archivo como adjunto y llena sola «Hora Recepción»: consulta
+     dirigida filename:"nombre del archivo" (y luego texto libre si no
+     aparece), por la API de Gmail — funciona en la WEB y en el
+     ESCRITORIO. Solo se acepta un correo cuyo ADJUNTO coincida con el
+     archivo cargado (nunca uno al azar) y no se pisa una hora escrita
+     a mano. Antes: en la web cargar un documento NO buscaba nada y en
+     el escritorio dependía de la vía asistida (Playwright).
+  2. La vía asistida (Playwright, sin OAuth) sigue de respaldo en el
+     escritorio cuando la API no está conectada.
+  3. Se quitaron los 4 textos de ayuda de la ficha del sello
+     (monitoreo Gmail, recepción, iniciales, armado de la matrícula):
+     los campos funcionan igual, sin las explicaciones debajo.
 
-NOVEDADES DE LA VERSIÓN 2.9.12 (Windows ofrece abrir los archivos con PDFPro)
+NOVEDADES DE LA VERSIÓN 3.2.5 (plan StarPerú SRU 2226: el campo
+«Matrícula» ahora muestra «SRU2226 OB2176P MK»)
 ────────────────────────────────────────────────────────────────────
-  Lo que pediste: «que al abrir un archivo Windows pregunte si deseo
-  abrir el archivo con esta aplicación, y que ofrezca hacerlo de
-  manera predeterminada».
+  Regla OACI aplicada (Doc 4444, Apéndice 2): en los vuelos de
+  aerolínea (tipo S = programado) el casillero 7 lleva el designador
+  ICAO + número de vuelo (SRU2226) y la matrícula viaja en REG/ del
+  casillero 18; el campo compone AMBOS más las iniciales. Cuando el
+  casillero 7 ya ES la matrícula (OB2134), sigue mostrándose
+  matrícula + hora + iniciales («OB2134 1120 MK»).
+  1. PLAN SRU 2226: la identificación «SRU 2226» viene como un solo
+     texto con espacio, 19 puntos bajo el rótulo — la geometría del
+     casillero 7 ahora la captura (antes el campo terminaba en
+     «OB-2176P 0145 MK», robando la matrícula del REG/).
+  2. REG/ CON PUNTO («REG./OB-2176P», formulario CORPAC): el patrón
+     ahora tolera puntos y espacios alrededor de la barra.
+  3. MATRÍCULA DEL REG/ SIN GUION: como la escribe el Doc 4444
+     («OB2176P», no «OB-2176P»), también en el nombre al exportar.
+  Los planes JAP 7361 («JAP7361 CCDIU MK») y los de casillero 7 con
+  matrícula propia no cambian (probados con los PDF reales).
 
-  · El instalador registra PDFPro para 17 formatos: PDF (.pdf),
-    Word (.docx/.doc), Excel (.xlsx/.xlsm/.xls/.csv) e imágenes
-    (.jpg/.jpeg/.jfif/.png/.gif/.bmp/.webp/.avif/.ico/.svg).
-    Al abrir un archivo de esos tipos, Windows muestra a PDFPro en
-    «¿Cómo quieres abrir este archivo?» y en el clic derecho →
-    «Abrir con → Elegir otra aplicación» (con la casilla «Usar
-    siempre esta aplicación»).
-  · Al primer arranque, la app PREGUNTA si quieres hacerla la
-    aplicación predeterminada: un botón abre la configuración de
-    Windows «Aplicaciones predeterminadas» para que marques los
-    formatos con un clic. (Windows 10/11 exige esa confirmación:
-    ninguna aplicación puede cambiarse a sí misma de forma
-    predeterminada por su cuenta — es una medida de seguridad del
-    sistema). La opción queda siempre disponible en el menú
-    «Ayuda → Hacer de PDFPro la aplicación predeterminada…».
-  · Doble clic en un archivo (o «Abrir con → PDFPro») → la app lo
-    abre directamente como pestaña. Ahora también con IMÁGENES
-    (antes solo PDF/Word/Excel; y las imágenes abiertas así se
-    guardan ya en su formato correcto, p. ej. JPG→JPG).
-  · «Archivo → Abrir archivo…» ahora incluye las imágenes en sus
-    filtros.
-  · Al desinstalar, las asociaciones se limpian del registro (no
-    quedan entradas huérfanas de PDFPro en «Abrir con»).
-
-  IMPORTANTE: usa el instalador PDFPro-Setup-2.9.12.exe para tener
-  las asociaciones (la versión Portable no registra nada en el
-  sistema, es su naturaleza). Si ya tenías PDFPro instalado,
-  ejecuta el Setup encima: se actualiza conservando tus datos.
-
-VERIFICADO PUNTO A PUNTO (2.9.12):
-  · Script real del instalador compilado (capturado del
-    empaquetador): las 17 asociaciones APP_ASSOCIATE presentes
-    (PDF→PDFPro.Document.PDF, docx/doc→Word, xlsx/xlsm/xls/csv→
-    Excel, 10 formatos de imagen→PDFPro.Image) con comando de
-    apertura «PDFPro.exe "%1"» e iconos instalados en resources.
-  · Desinstalador compilado con las 17 limpiezas APP_UNASSOCIATE.
-  · Flujo «abrir desde Windows» simulado en navegador con el
-    desktop-bridge real: imagen JPG → pestaña de imagen con tipo
-    image/jpeg y hoja=foto completa; PDF → cargado (1 página,
-    2 pestañas); saludo del puente (ready) correcto.
-  · Smoke de Electron con el main.js 2.9.12: app arranca, puente
-    presente, todas las librerías cargan, protocolo app:// OK,
-    captura de pantalla con contenido (no en blanco).
-  · Sin errores de consola nuevos.
-
+NOVEDADES DE LA VERSIÓN 3.2.4 (corrige «la ventana de Gmail se cerró
+al segundo» y la matrícula de planes de aerolínea como SRU 2226)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.11 (la hoja ES la foto completa)
+  1. VENTANA DE GMAIL: YA NO SE CIERRA SOLA ANTES DE TIEMPO. Gmail
+     muestra su pantalla de carga en mail.google.com durante 1-3
+     segundos TAMBIÉN SIN sesión (antes de saltar al formulario de
+     acceso) y la app tomaba eso por «sesión lista»: cerraba la
+     ventana al segundo y el inicio de sesión nunca se completaba.
+     Ahora exige sesión real (cookies SID/SAPISID de Google) con la
+     página terminada de cargar, confirmada dos veces; sin sesión la
+     ventana queda ABIERTA esperando a que inicies sesión.
+  2. MATRÍCULA DE PLANES DE AEROLÍNEA (SRU 2226, JAP 7163…): el
+     casillero 7 con designador de empresa + número de vuelo ahora se
+     reconoce también cuando el rótulo del formulario llega revuelto
+     por el texto interno del PDF.
+  3. EL CAMPO «MATRÍCULA» SIEMPRE REFLEJA EL DOCUMENTO CARGADO: si la
+     detección no encuentra nada se LIMPIA (antes conservaba la
+     matrícula del documento ANTERIOR — un «OB-2176P…» viejo en un
+     plan SRU 2226 — y terminaba en el nombre del archivo exportado) y
+     se avisa con «✈ Matrícula no detectada».
+
+NOVEDADES DE LA VERSIÓN 3.2.3 (corrige «No se completó el inicio de
+sesión en Gmail»)
 ────────────────────────────────────────────────────────────────────
+  1. CAUSA RAÍZ: GOOGLE BLOQUEABA EL LOGIN DENTRO DE LA APP. La ventana
+     interna de Gmail usaba el User-Agent de Electron y Google rechaza
+     iniciar sesión desde navegadores embebidos («Este navegador o
+     aplicación podría no ser seguro»): por eso el inicio nunca
+     completaba y la hora no aparecía. Ahora la ventana se presenta con
+     un User-Agent de Chrome REAL y el login completa con normalidad.
+  2. BOTÓN «🔗 INICIAR SESIÓN EN GMAIL Y BUSCAR LA HORA». Si el inicio
+     de sesión queda sin completar, aparece junto a «Hora Recepción» un
+     botón para reintentarlo en el momento (antes había que cargar otro
+     documento). El reintento manual no espera los 30 s de espera.
+  3. La ventana de login toma el FOCO al abrirse (antes podía quedar
+     detrás) y si dos búsquedas piden login a la vez comparten la misma
+     ventana (antes la segunda se reportaba como «cancelada»).
 
-NOVEDADES DE LA VERSIÓN 2.9.11 (la hoja ES la foto COMPLETA)
+NOVEDADES DE LA VERSIÓN 3.2.2 (conversión Lima→UTC verificada y visible)
 ────────────────────────────────────────────────────────────────────
-  Corrige lo que reportaste: «se ve la imagen al tamaño del formato
-  A4, pero no permite ver el resto de la hoja, solo se visualiza
-  más o menos un 60% de la foto».
+  1. LA HORA DE GMAIL SE CONVIERTE A UTC SUMANDO 5 HORAS. Gmail muestra
+     la hora local de Lima (UTC−5): al llenar «Hora Recepción (UTC)» se
+     le suman 5 h — un correo recibido a las 07:00 queda como 12:00; si
+     cruza la medianoche (20:30 Lima), el campo pasa a 01:30 UTC del día
+     siguiente y la FECHA también avanza. (Regla aeronáutica +05.)
+  2. LA CONVERSIÓN AHORA SE VE. El toast de confirmación muestra la hora
+     tal como la presentó Gmail y la hora UTC aplicada, para verificarla
+     de un vistazo: «Gmail: «7:00 a. m.» (hora Lima) +5 h → UTC».
 
-  · La hoja ahora SE ADAPTA A LA FOTO: se ve la foto COMPLETA al
-    tamaño máximo que permite el A4 (la hoja adopta las proporciones
-    exactas de la foto). Nada recortado, nada de fondo blanco.
-    Ejemplo: una foto alta de celular (972×2160) se muestra entera
-    en una hoja de 505×1123 px; antes, al «llenar A4», solo se veía
-    el 63% de la foto.
-  · El botón de la cinta ahora ALTERNA TRES presentaciones:
-      1. «Hoja = foto» (por defecto) — foto completa, sin recortes
-         ni fondo blanco, al tamaño máximo A4.
-      2. «A4 exacto» — hoja A4 literal 794×1123 (o apaisada), la
-         foto la llena por completo recortando lo que sobra.
-      3. «Con margen» — foto completa centrada sobre hoja A4
-         blanca con un pequeño margen.
-    El guardado SIEMPRE respeta la presentación activa: lo que ves
-    es lo que se descarga (a 300 dpi, formato original de la foto).
-  · Los sellos colocados se REUBICAN solos al cambiar de
-    presentación (si la hoja se hace más pequeña, los sellos entran
-    dentro de ella; ninguno queda fuera).
-  · Además corrige un detalle de precisión presente desde la
-    2.9.9: la hoja se estaba encogiendo un poco a la altura de la
-    pantalla (p. ej. 1123 px se veían como 810), por lo que los
-    sellos podían caer un poco más arriba de donde hiciste clic.
-    Ahora la hoja se muestra a su tamaño real y el sello cae
-    EXACTAMENTE donde haces clic.
-
-VERIFICADO PUNTO A PUNTO (2.9.11), flujo completo automatizado:
-  · Foto alta 972×2160 (el caso del 60%) → hoja 505×1123 con la
-    foto OCUPÁNDOLA por completo (rectángulo de la foto = rectángulo
-    de la hoja, sin recorte) y modo «Hoja = foto» activo por defecto.
-  · Guardar → JPEG real 1578×3509 (505×1123 a 300 dpi) con las 4
-    esquinas tomadas de la foto (0 blancas: sin fondo blanco) y el
-    sello de recepción grabado encima (20 909 píxeles de su marco).
-  · Alternar a «A4 exacto» → hoja 794×1123, la foto la llena
-    (cover). Alternar a «Con margen» → foto completa centrada con
-    margen (746 px de ancho dentro de la hoja). Volver a «Hoja =
-    foto» → 505×1123 de nuevo.
-  · Dos sellos colocados en hoja A4 exacta (uno abajo-derecha);
-    al volver a «Hoja = foto» (hoja más angosta) el sello se
-    reubicó automáticamente dentro de la hoja (de x=574 a x=283).
-  · Segunda foto 1200×1600 → hoja 794×1059, foto completa visible.
-  · Sin errores de consola durante todo el flujo.
-
+NOVEDADES DE LA VERSIÓN 3.2.1 (corrección de la 3.2.0)
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.10 (la foto llena la hoja A4, recortando)
+  1. LA BÚSQUEDA YA NO FALLA EN SILENCIO. En la 3.2.0, si algo fallaba
+     después de iniciar sesión en Gmail (sesión no transferida, u hora
+     leída en un formato no reconocido), no aparecía NADA y parecía que
+     la búsqueda no ocurría. Ahora todo fallo real se muestra en
+     pantalla con su causa.
+  2. TRANSFERENCIA DE SESIÓN MÁS ROBUSTA. Las cookies se inyectan una
+     por una (una rechazada ya no arrastra a las demás) y las
+     SameSite=None viajan con Secure forzado, como exige Chrome. Si
+     Gmail sigue pidiendo sesión se hace una segunda ronda automática
+     (Google rota algunas cookies al validar).
+  3. LA VENTANA DE LOGIN SE CIERRA SOLA al completar el inicio de
+     sesión (antes quedaba abierta).
+  4. REGISTRO DE DIAGNÓSTICO. Todo el flujo queda anotado en
+     %APPDATA%\PDFPro\gmail-hora.log — si algo vuelve a fallar, basta
+     enviar ese archivo para ver exactamente qué pasó.
+
+NOVEDADES DE LA VERSIÓN 3.2.0
 ────────────────────────────────────────────────────────────────────
+  1. HORA DEL CORREO 100% AUTOMÁTICA, SIN BOTÓN. Se retiró el botón
+     «🕐 Hora del correo del archivo cargado» y su casilla «Automático
+     al cargar»: ahora la búsqueda en Gmail se hace sola cada vez que
+     carga un documento, sin pasos intermedios. Si el archivo no vino
+     por correo, o ya hay una hora escrita a mano, no pasa nada
+     (silencioso, no molesta al operador).
+  2. INICIO DE SESIÓN DE GMAIL DENTRO DE LA APP. Antes, la primera vez
+     se abría una ventana aparte de Chrome para iniciar sesión. Ahora
+     Gmail se abre DENTRO de la propia aplicación (ventana hija): usted
+     inicia sesión ahí — una sola vez — y la sesión se transfiere
+     automáticamente al buscador invisible. Solo ocurre la primera vez;
+     después ya no vuelve a pedir sesión.
 
-NOVEDADES DE LA VERSIÓN 2.9.10 (la foto ES la hoja A4)
+NOVEDADES DE LA VERSIÓN 3.1.9
 ────────────────────────────────────────────────────────────────────
-  Corrige lo que reportaste: «la foto se visualiza sobre un fondo
-  blanco; lo que se quiere es que la foto se muestre del tamaño A4».
+  1. HORA DE RECEPCIÓN DEL CORREO POR ARCHIVO CARGADO (Gmail
+     asistido, SIN OAuth — integra el módulo «gmail-hora-recepcion»
+     que usted proveyó). Al cargar un FPL, licencia o cualquier
+     documento, la app busca en Gmail el correo que trajo ESE archivo
+     y llena sola la «Fecha/Hora Recepción (UTC)» de la ficha del
+     sello.
+     · Cómo funciona: abre Gmail con su Chrome (perfil persistente).
+       La PRIMERA vez se abre una ventana para que inicie sesión en
+       sphiaisaro@gmail.com — una sola vez; después todo es invisible
+       (headless) y la sesión queda guardada en el perfil.
+     · No necesita las credenciales OAuth de Google (siguen siendo
+       opcionales para el «Barrer ahora»).
+     · Búsqueda: filename:"nombre sin extensión" y, si no hay nada,
+       texto libre — en texto libre NUNCA abre un correo que no
+       mencione el archivo (el original abría el primero de la lista).
+     · La hora que muestra Gmail está en hora de Lima (UTC−5): se
+       convierte a UTC antes de llenar el sello (también se corrigió
+       la ruta OAuth, que llenaba hora local en un campo rotulado
+       UTC — al cruzar medianoche cambiaba el día).
+     · Panel «Correo»: botón «🕐 Hora del correo del archivo cargado»
+       y casilla «Automático al cargar el documento» (activada por
+       defecto; si ya hay hora escrita no se toca).
+     · Requisito: tener Google Chrome instalado (no descarga
+       Chromium). El portapapeles ya no se usa (el original copiaba
+       la hora automáticamente).
 
-  · Ahora la foto LLENA TODA LA HOJA A4 por defecto: es la propia
-    página, sin fondo blanco ni márgenes. Lo que sobra del encuadre
-    se recorta (como al imprimir a página completa).
-  · Nuevo botón «Ver completa» en la cinta de la pestaña de imagen:
-    un clic muestra la foto ENTERA con un pequeño margen (el
-    comportamiento anterior), por si alguna foto no debe recortarse.
-    El botón alterna entre ambos modos («Ver completa» ⇄ «Llenar
-    hoja») y el guardado SIEMPRE respeta el modo que estás viendo:
-    lo que ves es lo que se descarga.
-  · El tamaño de salida no cambia: hoja A4 a 300 dpi (2481×3509 o
-    3509×2481 si es apaisada), en el formato original de la foto
-    (JPG→JPG, PNG→PNG, WebP→WebP; otros → PNG con aviso).
-
-VERIFICADO PUNTO A PUNTO (2.9.10), flujo completo automatizado:
-  · Foto vertical con esquinas rojas → hoja A4 vertical 794×1123,
-    modo «cover» activo por defecto, foto llenando el papel.
-  · Guardar → JPEG real (cabecera JPEG) 2481×3509 con las CUATRO
-    esquinas del archivo tomadas de la foto (0 esquinas blancas:
-    sin fondo blanco) y el sello de recepción grabado encima.
-  · Botón «Ver completa» → la foto pasa a verse entera con margen;
-    guardar en ese modo produce el archivo con las 4 esquinas
-    blancas (margen de hoja) — el modo activo se respeta en la
-    descarga.
-  · Toggle de vuelta a «Llenar hoja» → la foto vuelve a llenar el
-    A4, el sello colocado sigue en su sitio.
-  · Sin errores de consola durante todo el flujo.
-
+NOVEDADES DE LA VERSIÓN 3.1.8
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.9 (fotos e imágenes en página A4)
+  1. CORREGIDO EL REG/ DE LOS FORMULARIOS ELECTRÓNICOS (StarPerú y
+     similares). Con un FPL de vuelo programado (tipo S) el campo
+     «Matrícula (Aeronave / Espacio)» armaba «SRU2226 MK» y perdía la
+     matrícula del casillero 18 (REG/ OB-2176P); el valor correcto es
+     «SRU2226 OB-2176P MK». Causa: estos formularios imprimen una
+     casilla por carácter y el guion de la matrícula quedaba suelto
+     tras compactar el texto («OB - 2176P»). Arreglos:
+     · REG/ reconstruido por GEOMETRÍA: la fila visual del rótulo se
+       reordena por posición (igual que las casillas del formulario
+       CORPAC impreso) y admite el rótulo arriba / valor abajo.
+     · La regex de texto ahora tolera el guion rodeado de espacios.
+     · El respaldo de forma exige dígitos: «REG/ GNSS» ya no se
+       acepta como matrícula.
+     · TIPO DE VUELO: la letra puede estar en su casilla DEBAJO del
+       rótulo (antes solo se miraba la línea del rótulo) y se separa
+       la lista de opciones (S N G M X contiguas) de campos distintos
+       (el tipo «S» y la categoría de estela «M» quedan lejos).
+     · EOBT: admite un rótulo intermedio («EOBT / TIME 0145»).
+
+NOVEDADES DE LA VERSIÓN 3.1.7
 ────────────────────────────────────────────────────────────────────
-  Ahora puedes cargar FOTOS o cualquier imagen (JPG, PNG, GIF, BMP,
-  WebP, AVIF, ICO, SVG) y la app la presenta sobre una página A4 en
-  blanco (apaisada si la foto es horizontal), lista para colocarle
-  el sello de recepción y el sello personal — igual que en Word y
-  Excel:
+  1. DETECCIÓN DE LA MATRÍCULA 100% AUTOMÁTICA — SE RETIRÓ EL BOTÓN
+     «✈ Detectar» dejó de existir: ahora el campo «Matrícula (Aeronave /
+     Espacio)» se llena solo al cargar CUALQUIER documento:
+     · PDF con texto → análisis instantáneo de todas las páginas
+     · PDF escaneado → OCR automático de la 1.ª página
+     · Imagen suelta (jpg/png) → OCR de la foto
+     · Word y Excel nativos → análisis del texto visible
+     Además la detección ahora SOBRESCRIBE: si cargas otro FPL, el
+     campo refleja el nuevo documento (antes solo llenaba si estaba
+     vacío y el valor del anterior se quedaba pegado). Si el documento
+     no tiene matrícula, no toca lo que hayas escrito a mano.
+     Las reglas de armado siguen en «ⓘ reglas de armado» (al pasar el
+     mouse bajo el campo).
 
-  · «Abrir» o arrastra la foto: se abre en su propia pestaña «IMG».
-  · «Sello Rec.» → haz clic sobre la foto: el sello queda colocado
-    en la hoja A4 (se arrastra para moverlo, doble clic edita su
-    hora, ✕ lo borra, Ctrl+Z quita el último).
-  · «Guardar imagen» descarga la hoja A4 (300 dpi, calidad de
-    impresión) con la foto y los sellos, EN EL FORMATO ORIGINAL:
-    un .jpg se guarda como .jpg, un .png como .png, un .webp como
-    .webp. Si el formato de origen no se puede volver a grabar en
-    el navegador (GIF/BMP/ICO/AVIF/SVG), se guarda como PNG sin
-    pérdida y se te avisa.
-  · «Exportar PDF» también funciona: la misma hoja A4 con tus
-    sellos, como PDF puro.
-  · Se pueden abrir varias imágenes a la vez: cada una en su
-    pestaña (mezcladas con PDF/Excel/Word en la misma carga).
-
-VERIFICADO PUNTO A PUNTO (2.9.9), con la app real, flujo completo
-automatizado en el navegador:
-  · Dos imágenes a la vez (JPG vertical 1600×2000 + PNG horizontal
-    1920×1080): dos pestañas IMG, A4 vertical 794×1123 y A4
-    apaisada 1123×794, foto centrada con margen.
-  · Sello de recepción colocado con un clic dentro de la hoja
-    (RECIBIDO/RECEIVED + fecha y hora UTC + AIS/ARO – CORPAC +
-    sede SPHI – Chiclayo), pestaña marcada como modificada.
-  · Guardar PNG → archivo PNG real (cabecera PNG) de 3509×2481
-    px (= A4 apaisado a 300 dpi) con el sello grabado encima.
-  · Guardar JPG → archivo JPEG real (cabecera JPEG) de 2481×3509
-    px (= A4 vertical a 300 dpi), misma extensión que la original.
-  · Exportar PDF → PDF puro (cabecera %PDF-1.7).
-  · GIF de prueba → guardado como PNG con aviso (comportamiento
-    documentado arriba).
-  · Sin errores de consola durante todo el flujo.
-
+NOVEDADES DE LA VERSIÓN 3.1.6
 ────────────────────────────────────────────────────────────────────
-  HISTORIAL — versión 2.9.8 (sellos también al guardar Word)
+  1. REGLAS DEL CAMPO «MATRÍCULA» — AHORA SÍ CON LOS FORMULARIOS
+     IMPRESOS CORPAC/ICAO (PLAN DE VUELO / FLIGHT PLAN)
+     Reporte del usuario: con el formulario impreso el campo quedaba
+     solo con la matrícula («OB2066») en vez de «OB2066 2020 MK».
+     Causa: esos formularios traen UNA CASILLA POR CARÁCTER y el orden
+     interno del texto llega revuelto («OB» lejos de «2 2 0 3», la
+     hora partida «1 3 … 0 … 0»), así que los patrones de texto no
+     veían nada. Solución (la del escáner v2.9.21, recuperada):
+     · GEOMETRÍA: con las coordenadas de pdf.js se reconstruye la fila
+       de casillas en orden visual (izquierda→derecha) → casillero 7
+       (identificación) y casillero 13 (EOBT, la fila de dígitos bajo
+       «Aeródromo de salida»).
+     · TEXTO COMPACTADO: se unen los caracteres sueltos («OB 2 2 0 3»
+       → «OB2203»); si el casillero 8 quedó pegado («OB2203YG») se
+       separa y de paso da el tipo de vuelo.
+     · Tipo de vuelo: letra bajo «TIPO DE VUELO / TYPE OF FLIGHT»;
+       si el formulario imprime la lista de opciones (S N G M X) se
+       busca la marcada (☒/✓/×) y si no se puede saber se aplica la
+       regla de matrícula+EOBT (nunca se asume «S» a ciegas).
+     · Validadores del escáner v2.9.21: «CCDII» (alfabética) ya se
+       acepta como matrícula de REG/; «JAP7163» se reconoce como
+       designador + nº de vuelo (no matrícula).
+     Ejemplo del reporte: OB2066, tipo G, salida SPHI 2020 → el
+     campo y el archivo quedan «OB2066 2020 MK».
+
+  2. AYUDA DEL CAMPO CONTRAÍDA
+     El texto con las reglas bajo «Matrícula (Aeronave / Espacio)»
+     quedó contraído en «ⓘ reglas de armado»: pasa el mouse (o toca)
+     y se muestra completo en un recuadro.
+
+NOVEDADES DE LA VERSIÓN 3.1.5
 ────────────────────────────────────────────────────────────────────
-  Corrige «abro un archivo excel/word, coloco sello, exporto, abro
-  el archivo exportado y no hay sello». Causa real encontrada:
+  1. INICIALES DEL OPERADOR — ORDEN «APELLIDOS Y NOMBRES» (MK, NO KM)
+     Se recuperó el fix de la v2.9.20 que se había perdido en la
+     reescritura v3.0.0: si la cuenta guardó el nombre al revés
+     («Koo Paz, Marcos Roberto», «Koo Paz Marcos Roberto»,
+     «Koo Marcos»), las iniciales ahora salen MK igual que con el
+     orden normal («Marcos Roberto Koo Paz» → MK). Regla del
+     usuario: inicial del primer nombre + inicial del primer
+     apellido, siempre 2 letras.
 
-  · WORD (.docx): al guardar, los sellos vivían solo en la capa
-    visual de la app y NUNCA se escribían dentro del archivo. Ahora
-    cada sello (de recepción y personal) se incrusta como imagen PNG
-    flotante anclada al párrafo más cercano a donde lo colocaste:
-    abre el .docx guardado en Word/LibreOffice y verás ambos sellos
-    en su sitio. La posición viaja con el párrafo: si editas el
-    texto, el sello acompaña al documento.
-  · EXCEL (.xlsx): ya funcionaba desde la 2.9.7 (imágenes ancladas
-    a su celda). Se re-verificó punto a punto en esta versión, sin
-    regresiones.
-  · Detalle técnico corregido: las imágenes ancladas dentro de
-    tablas no se dibujaban (layoutInCell). Ahora los sellos flotan
-    sobre el documento aunque el ancla caiga en una celda de tabla.
-  · Al colocar un sello en Word, la pestaña ahora se marca como
-    modificada (igual que en Excel).
+  2. CAMPO «MATRÍCULA (AERONAVE / ESPACIO)» — REGLAS DEL USUARIO
+     El botón ✈ Detectar (y la detección automática al cargar)
+     arma ahora el valor completo del campo según el plan de vuelo:
+     · Tipo de vuelo «S» (casillero 8): ID de vuelo (casillero 7)
+       + matrícula REG/ (casillero 18, sin el prefijo) + iniciales
+       → «JAP7163 CCDII MK».
+     · Otro tipo (matrícula en el casillero 7): matrícula + EOBT
+       (casillero 13 — hora propuesta fuera de calzos, la que
+       acompaña al aeródromo de salida: «SPHI 1100» → 1100) +
+       iniciales → «OB2032 1100 MK». Sin hora detectable:
+       «OB2032 MK».
+     Al guardar/exportar, el archivo se nombra con ese valor SIN
+     duplicar las iniciales («OB2032 1100 MK.pdf», no «… MK MK»).
+     El campo admite ahora 24 caracteres y su texto de ayuda
+     documenta las reglas.
 
-  IMPORTANTE — DE DÓNDE VIENE TU ARCHIVO SIN SELLO:
-  El «ATC CM468 11NOV (1) (1).xlsx» que nos compartiste fue generado
-  el 11-nov a las 23:50 por una versión ANTERIOR a la 2.9.7 (que se
-  entregó después, a la 01:49). Con 2.9.8:
-     1) Desinstala la versión vieja (Configuración → Aplicaciones →
-        PDFPro → Desinstalar) e instala PDFPro-Setup-2.9.8.exe.
-     2) Comprueba que el pie de la app diga «v2.9.8».
-     3) Abre el archivo ORIGINAL (no re-guardes el que exportó la
-        versión vieja), coloca los sellos y usa «Guardar .xlsx» /
-        «Guardar .docx».
+NOVEDADES DE LA VERSIÓN 3.1.4
+────────────────────────────────────────────────────────────────────
+  1. ABRIR PDF DESDE UNA URL CAÍDA — LECTOR CON RESPALDO
+     Si la app web se abre desde una URL vieja/en caché de un
+     deploy borrado (todos sus archivos dan 404), abrir un PDF
+     fallaba con «Setting up fake worker failed: Cannot load
+     script at …». Ahora el lector PDF reintenta con la raíz del
+     sitio y, como último recurso, con el CDN (misma versión
+     3.11.174 del vendor local): el PDF abre igual. Si nada
+     carga, el mensaje indica usar la URL vigente:
+     https://licencias-firmas.vercel.app
+  2. CAMPOS DE FORMULARIO WORD (CONTROLES DE TEXTO) EDITABLES
+     Los campos hechos con controles de contenido de texto ya se
+     pueden editar de verdad: lo escrito DENTRO del campo se
+     guarda dentro del campo (antes el guardado no veía esos
+     runs: la edición se perdía, se duplicaba o se partía entre
+     el campo y el texto de alrededor).
+     Los checkbox siguen intactos en su lugar exacto (v3.1.3).
 
-VERIFICADO PUNTO A PUNTO (2.9.8), con la app real (Electron, flujo
-completo automatizado):
-  · WORD: abrir .docx con tabla → sello de recepción (con sello
-    personal del usuario dentro) + sello personal «APROBADO» →
-    «Guardar .docx»: el archivo resultante contiene word/media con
-    las dos imágenes PNG y sus anclajes; abierto en LibreOffice se
-    ven AMBOS sellos exactamente donde se colocaron (x 77 pt y
-    x 367 pt). El resto del documento queda byte-idéntico.
-  · WORD: «Exportar PDF» de la misma pestaña: PDF puro (pdf-lib)
-    con los dos sellos dibujados.
-  · EXCEL: abrir el FPL real «ATC CM468 11NOV.xlsx» → sello de
-    recepción (fila 60, col 26) + «APROBADO» (fila 20, col 40) →
-    «Guardar .xlsx»: image2.png + image3.png ancladas; en
-    LibreOffice se ven el logo y los dos sellos.
-  · El documento guardado se re-abre correctamente (python-docx /
-    LibreOffice / Excel): 8 párrafos, 1 tabla — la estructura
-    original no se toca.
+NOVEDADES DE LA VERSIÓN 3.1.3
+────────────────────────────────────────────────────────────────────
+  CHECKBOX INCRUSTADOS DE WORD — SIEMPRE EN SU LUGAR ORIGINAL
+  Los formularios Word con casillas de verificación (controles de
+  contenido ☒/☐) ya no se distorsionan al guardar el .docx:
+  · Sin editar nada: el archivo queda idéntico byte a byte al
+    original (antes el guardado reportaba cambios falsos y duplicaba
+    los glifos ☒/☐ como texto suelto en otra posición).
+  · Al editar otro texto del documento: las casillas permanecen
+    exactamente donde estaban, con su formato y sin duplicados.
+  · Marcar/desmarcar (☒↔☐) en la vista actualiza el control real
+    (glifo + estado w14:checked) en su misma posición.
+  · Borrar una casilla en la vista la elimina limpiamente.
+  · Casillas dentro de celdas de tabla y bloques sdt completos:
+    soportados (antes esos párrafos se duplicaban o vaciaban).
+  (Verificado con suite de regresión: 19/19 casos.)
 
-CONTENIDO DE ESTE PAQUETE
-─────────────────────────
-  PDFPro-Setup-2.9.8.exe        Instalador (NSIS, un clic, por usuario)
-  PDFPro-Portable-2.9.8.exe     Versión portable (un solo archivo)
-  pdfpro-fuentes-v2.9.8.zip     Proyecto completo para recompilar
-  PRUEBA - Word con sellos guardado como DOCX (v2.9.8).docx
-                                Muestra real: ábrela en Word y verás
-                                el sello de recepción (con firma) y el
-                                sello APROBADO incrustados
-  PRUEBA - Word con sellos exportado a PDF (v2.9.8).pdf
-                                Muestra real: PDF puro con ambos sellos
-  PRUEBA - Excel con sellos guardado como XLSX (v2.9.8).xlsx
-                                Muestra real: sellos incrustados sobre
-                                el FPL ATC CM468 (ábrela en Excel)
-  ATC CM468 11NOV - REPARADO.xlsx  (de la entrega anterior) tu archivo
-                                de la 2.9.4 con los títulos restaurados
+NOVEDADES DE LA VERSIÓN 3.0.0
+────────────────────────────────────────────────────────────────────
+  1. INICIALES DEL OPERADOR — REGLA DE 2 LETRAS (AUTOMÁTICAS)
+     Las iniciales ahora se calculan solas al iniciar sesión y siguen
+     exactamente la regla pedida: 2 letras, la primera es la inicial
+     del PRIMER NOMBRE y la segunda es la inicial del PRIMER APELLIDO
+     (apellido paterno).
+       Ejemplo: el operador es Marcos Roberto Koo Paz → iniciales: MK
+     (Antes salían mal: tomaba las iniciales de las dos primeras
+     palabras, «MR», y hasta 4 letras.)
+     · Se muestran en la CABECERA del editor junto al nombre.
+     · En «Mi Cuenta» (con la regla explicada).
+     · Se precargan en la ficha del SELLO (pestaña SELLO) y en el
+       panel móvil; el campo admite máximo 2 letras.
+     · Se usan al nombrar el archivo guardado: «MATRÍCULA INICIALES»
+       (ej. OB2147 MK.pdf).
+     · Nombres con «de/del/la/las/los» se tratan bien: Pedro de la
+       Cruz Villa → PC.
 
-INSTALACIÓN (PDFPro-Setup-2.9.8.exe)
-────────────────────────────────────
-  1. Doble clic al archivo. No pide permisos de administrador
-     (instala en C:\Users\<usuario>\AppData\Local\Programs\PDFPro).
-  2. Se instalan automáticamente: acceso directo de escritorio,
-     acceso en el menú Inicio y entrada en «Abrir con» para PDF.
-  3. Incluye desinstalador estándar en Configuración → Aplicaciones.
-  4. La app se abre sola al terminar.
-  5. Si tenías la 2.9.4/2.9.5/2.9.6/2.9.7 instalada, desinstálala
-     primero; tus datos de sesión no se tocan.
+  2. MATRÍCULA (AERONAVE / ESPACIO) — DETECCIÓN AUTOMÁTICA POR OCR
+     Al cargar un documento (PDF, imagen escaneada o foto), PDFPro
+     analiza el contenido y rellena solo el campo «Matrícula
+     (Aeronave / Espacio)» de la ficha del sello:
+     · PDF con texto: se lee el texto embebido (instantáneo).
+     · PDF escaneado o imagen: OCR local (Tesseract, español, sin
+       internet) sobre la primera página/foto.
+     Reconoce los rótulos de plan de vuelo (REG/, AIRCRAFT
+     IDENTIFICATION, IDENTIFICACIÓN DE AERONAVE, MATRÍCULA), las
+     matrículas peruanas OB/EP/HP (con o sin guion, incluso con
+     letras espaciadas «O B - 2 1 4 7») y corrige errores típicos del
+     OCR (0B2147 → OB2147). También toma la matrícula del nombre del
+     archivo si lo trae (ej. «FPL OB2147.pdf»).
+     El botón «▶ Ejecutar OCR» de la pestaña EXPORTAR sigue
+     disponible para escanear cualquier página manualmente.
 
-VERSIÓN PORTABLE (PDFPro-Portable-2.9.8.exe)
-────────────────────────────────────────────
-  Un solo archivo ejecutable: no instala nada, no toca el registro.
-  Doble clic y listo. Ideal para memorias USB o equipos restringidos.
+  3. MONITOREO GMAIL — sphiaisaro@gmail.com (HORA DE RECEPCIÓN)
+     Nueva sección «📧 Monitoreo Gmail» en la pestaña SELLO:
+     · «Conectar Gmail» abre el consentimiento de Google (OAuth con
+       las credenciales del cliente Gmail creadas para PDFPro).
+       Autoriza el acceso a sphiaisaro@gmail.com una sola vez.
+     · Cada 5 minutos (o con «Barrer ahora») revisa la bandeja y
+       lista los correos CON ARCHIVO ADJUNTO de los últimos 7 días
+       con su HORA DE RECEPCIÓN exacta (la que registra Gmail).
+     · Si el archivo adjunto coincide con el documento cargado, el
+       correo se resalta («coincide con el archivo cargado»).
+     · Botón «Usar hora en el sello»: copia la fecha y hora de
+       recepción del correo a los campos «Fecha/Hora Recepción» del
+       sello de recepción.
+     · Cada correo se archiva en Supabase (tabla correos_gmail) si
+       ejecutas el script supabase_setup_v3.sql (incluido).
+     Nota: Google solo permite el redirect autorizado; si la ventana
+     nativa no cierra sola tras autorizar, la página
+     licencias-firmas.vercel.app muestra un código para pegar en el
+     cuadro «Pega el código» del panel Gmail.
 
-AVISO DE SMARTSCREEN (importante)
-─────────────────────────────────
-  Los ejecutables no están firmados digitalmente (la firma de código
-  cuesta ~200-400 USD/año). La primera vez Windows puede mostrar
-  «Windows protegió tu PC». Para continuar:
-     Clic en «Más información» → «Ejecutar de todas formas».
+  Además se conservan TODAS las funciones de la serie 2.9:
+  Word y Excel editables en su formato original, fotos con la hoja
+  como foto completa, sello de recepción + sello personal, guardado
+  en REGISTROS FPL NOTAM\FPL\año\mes\día con nombre
+  «MATRÍCULA INICIALES», Google Drive, OCR, comparador de PDFs,
+  METAR/TAF, apertura con doble clic desde Windows, etc.
 
-QUÉ FUNCIONA SIN INTERNET Y QUÉ NECESITA INTERNET
-─────────────────────────────────────────────────
-  ✓ 100% SIN INTERNET (todo va dentro del programa):
-    · Editor PDF completo (texto, párrafos, anotaciones, sellos,
-      firmas, marcas de agua, comparador de PDFs, sello de recepción)
-    · Edición nativa Word (.docx) y Excel (.xlsx/.xls) en pestañas,
-      con estilos reales (bordes, alineación, fuentes, imágenes)
-    · Sellos incrustados al guardar .xlsx Y .docx
-    · OCR en español e inglés (Tesseract + diccionarios incluidos)
-    · Exportar a PDF / Word / Excel / imágenes, impresión
-    · Decodificador aeronáutico (METAR/TAF/FPL...), gestor AIRAC,
-      METAR gráfico, lectura en voz alta (TTS)
-    · Todas las fuentes embebidas para exportar PDF
-  ⚠ REQUIEREN INTERNET (servicios en la nube de la plataforma):
-    · Inicio de sesión / registro / suscripciones (Supabase)
-    · Panel de administración y biblioteca de firmas remota
-    · Google Drive (conexión OAuth y subida de archivos)
-    · Mapas AIRAC (teselas de OpenStreetMap)
+INSTALACIÓN
+────────────────────────────────────────────────────────────────────
+  PDFPro-Setup-3.0.0.exe    Instalador de un clic (recomendado)
+                            Crea acceso directo y asocia .pdf, .docx,
+                            .xlsx e imágenes con PDFPro.
+  PDFPro-Portable-3.1.4.exe Versión portable sin instalación.
 
-RECOMPILAR O MODIFICAR (pdfpro-fuentes-v2.9.8.zip)
-──────────────────────────────────────────────────
-  1. Descomprime el ZIP en cualquier carpeta.
-  2. Instala Node.js LTS (https://nodejs.org) si no lo tienes.
-  3. Doble clic a build-windows.bat  →  genera ambos .exe en dist\.
+  La app funciona 100% offline para edición, sello, OCR y guardado.
+  Solo necesita internet para: iniciar sesión (Supabase), conectar
+  Gmail/Drive y guardar en la nube.
 
-  Estructura del proyecto:
-    src/main.js             Proceso principal Electron
-    src/preload.js          Puente seguro renderer↔Electron
-    src/app/index.html      La aplicación (estilos reales de .xlsx,
-                             sellos incrustados al guardar .xlsx y
-                             .docx, PDF puro, centrado de impresión)
-    src/app/desktop-bridge.js  Integraciones de escritorio
-    src/app/vendor/         Librerías incluidas (pdf.js, pdf-lib,
-                             xlsx, mammoth, jszip, docx-preview,
-                             fontkit, leaflet, tesseract + idiomas)
-    build/icon.ico          Icono de la aplicación
-    build/installer.nsi     Script NSIS del instalador
+SUPABASE (OPCIONAL, PARA EL REGISTRO DE CORREOS)
+────────────────────────────────────────────────────────────────────
+  1. Entra a https://supabase.com → tu proyecto → SQL Editor.
+  2. Pega el contenido de supabase_setup_v3.sql y ejecútalo (Run).
+  3. Crea la tabla correos_gmail con la hora de recepción de cada
+     correo con adjunto; la app la llena sola al barrer Gmail.
 
-PDFPro 2.9.8 · © 2026 CORPAC AIS/ARO SPHI
+COMPILAR DESDE EL CÓDIGO FUENTE
+────────────────────────────────────────────────────────────────────
+  Requiere Node.js LTS. En la carpeta del proyecto:
+     npm install
+     npm run dist          (genera dist\PDFPro-Setup-3.1.4.exe y
+                            dist\PDFPro-Portable-3.1.4.exe)
+  En Windows también puedes usar build-windows.bat.
+
+  © 2026 CORPAC AIS/ARO SPHI · PDFPro Suite 3.1.4
