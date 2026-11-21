@@ -54,6 +54,7 @@ class GmailHoraService {
     this.opts = { ...DEFAULTS, ...options };
     this.context = null;
     this.page = null;
+    this._horaFilaAbierta = null;   /* v3.2.35: hora de RECEPCIÓN de la última fila abierta */
   }
 
   /** Inicia el navegador (idempotente). Prefiere el Chrome del sistema,
@@ -334,32 +335,41 @@ class GmailHoraService {
       principales» que no son cronológicas). */
   async _abrirCorreo(base, estricto) {
     const orden = await this._ordenFilasPorFecha();
-    const abrio = await this.page.evaluate((args) => {
+    /* v3.2.35 — el evaluate devuelve el ÍNDICE de la fila clicada para
+       recordar su hora (la de RECEPCIÓN que muestra la lista) */
+    const idxClic = await this.page.evaluate((args) => {
       const norm = (s) => String(s || '').toLowerCase().replace(/[\s_\-.,;:()"'¿?¡!]+/g, '');
       const n = norm(args.txt);
-      if (!n) return false;
+      if (!n) return -1;
       const todas = document.querySelectorAll('tr.zA');
       const filas = todas.length ? todas : document.querySelectorAll('[role="row"]');
       const idxs = args.orden.length ? args.orden : Array.from(filas).map((_, i) => i);
       const fila = idxs.map((i) => filas[i]).find((r) => r && norm(r.innerText).indexOf(n) >= 0);
-      if (!fila) return false;
+      if (!fila) return -1;
       fila.click();
-      return true;
+      return idxs.find((i) => filas[i] === fila);
     }, { txt: base, orden: orden.map((o) => o.idx) });
 
-    if (!abrio) {
+    if (idxClic >= 0) {
+      const o = orden.find((e) => e.idx === idxClic);
+      this._horaFilaAbierta = (o && o.fecha) || null;   /* v3.2.35: hora de RECEPCIÓN de la fila */
+    }
+    if (idxClic < 0) {
       if (estricto) return false;
       /* con filename:"…" todos los resultados traen ese adjunto aunque el
          nombre no se vea en la fila: se abre el MÁS RECIENTE */
-      const primero = await this.page.evaluate((idx0) => {
+      const clicPrimero = await this.page.evaluate((idx0) => {
         const todas = document.querySelectorAll('tr.zA');
         const filas = todas.length ? todas : document.querySelectorAll('[role="row"]');
         const fila = (idx0 != null && filas[idx0]) ? filas[idx0] : document.querySelector('tr.zA, [role="row"]');
-        if (!fila) return false;
+        if (!fila) return -1;
         fila.click();
-        return true;
+        for (let j = 0; j < filas.length; j++) if (filas[j] === fila) return j;
+        return -1;
       }, orden.length ? orden[0].idx : null);
-      if (!primero) return false;
+      if (clicPrimero < 0) return false;
+      const o = orden.find((e) => e.idx === clicPrimero);
+      this._horaFilaAbierta = (o && o.fecha) || null;   /* v3.2.35: ídem */
     }
     await this.page.waitForTimeout(1800);
     return true;
@@ -582,6 +592,7 @@ class GmailHoraService {
         return true;
       }, i);
       if (!abrio) return false;                // no hay más correos que recorrer
+      this._horaFilaAbierta = orden[k].fecha || null;   /* v3.2.35: hora de RECEPCIÓN de la fila abierta */
       await this.page.waitForTimeout(1500);    // render del correo abierto
       await this._esperarAdjuntos();
       const adjuntos = await this._adjuntosAbiertos();
@@ -610,7 +621,15 @@ class GmailHoraService {
      ANTERIOR al último, y la hora del hilo (cabecera, último mensaje o el
      «Mostrar detalles» del primero que aparezca) NO es la de recepción del
      archivo — reporte real: tres archivos descargados de correos distintos
-     recibieron TODOS la hora del correo más nuevo del hilo. */
+     recibieron TODOS la hora del correo más nuevo del hilo.
+     v3.2.35 — la hora del MENSAJE es la de su cabecera, que Gmail pinta
+     del Date header del REMITENTE (hora de ENVÍO): si el sistema AIS
+     despacha con retraso o con la fecha del depósito (reporte: pv2066
+     recibido 21/11 10:34 UTC, Date header 20/11 10:22 UTC), esa hora NO
+     es la de recepción. Devuelve además `esUltimo`: si el adjunto está en
+     el ÚLTIMO mensaje del hilo (o es un correo suelto), la FILA de la
+     lista muestra la RECEPCIÓN de ESE mensaje y manda sobre la cabecera
+     (ver _decidirHoraCorreo). */
   async _extraerHoraMensajeAdjunto(archivo) {
     const objetivo = nombreComparable(archivo);
     if (!objetivo) return null;
@@ -655,7 +674,7 @@ class GmailHoraService {
            su cabecera. El hilo pinta los mensajes del más viejo (arriba) al
            más nuevo (abajo): se queda con el ÚLTIMO que resuelve = el más
            nuevo que trae el adjunto (la regla del usuario). */
-        let mejor = null;
+        let mejor = null, cont = null;
         for (const chip of chips) {
           let n = chip;
           while (n && n !== document.body) {
@@ -664,27 +683,61 @@ class GmailHoraService {
               .filter((x) => RE_HORA.test(x) && RE_ANIO.test(x));
             if (titulos.length) {
               mejor = titulos.sort((a, b) => b.length - a.length)[0];
+              cont = n;
               break;
             }
             n = n.parentElement;
           }
         }
-        return mejor;
+        if (!mejor) return null;
+        /* v3.2.35 — ¿el mensaje que trae el adjunto es el ÚLTIMO del hilo?
+           El último elemento del documento con fecha completa en [title]
+           debe estar DENTRO de su contenedor (los mensajes se pintan de
+           viejo a nuevo). Si lo es, la FILA de la lista muestra la
+           RECEPCIÓN de ese mismo mensaje y manda sobre su cabecera. */
+        const conFecha = Array.from(document.querySelectorAll('[title]'))
+          .filter((x) => {
+            const t = x.getAttribute('title') || '';
+            return RE_HORA.test(t) && RE_ANIO.test(t);
+          });
+        const ultimo = conFecha.length ? conFecha[conFecha.length - 1] : null;
+        const esUltimo = !!(ultimo && cont && (cont === ultimo || cont.contains(ultimo)));
+        return { hora: mejor, esUltimo };
       }, objetivo);
     } catch (_) { return null; }
+  }
+
+  /* v3.2.35 — LA HORA DE RECEPCIÓN ES LA DE LA FILA DE LA LISTA: Gmail
+   *  pinta en la bandeja la hora a la que RECIBIÓ el correo
+   *  (internalDate), que es la que el usuario llama «hora de recepción».
+   *  La cabecera del mensaje abierto, en cambio, es el Date header del
+   *  REMITENTE (hora de envío): con despachos retrasados o relojes
+   *  descuadrados del sistema AIS difieren (reporte: pv2066 recibido
+   *  21/11 10:34 UTC, Date header 20/11 10:22 UTC — se capturaba
+   *  10:22). Regla: si el adjunto está en el ÚLTIMO mensaje del hilo (o
+   *  es un correo suelto), la fila muestra la recepción de ESE mensaje y
+   *  manda siempre que traiga hora; si el adjunto está en un mensaje
+   *  ANTERIOR (regla 3.2.31), la fila marca la recepción de OTRO más
+   *  nuevo y se mantiene la hora de la cabecera de ese mensaje. */
+  _decidirHoraCorreo(delMensaje, esUltimo, horaFila) {
+    if (esUltimo && horaFila && /\d{1,2}:\d{2}/.test(horaFila)) {
+      return { hora: horaFila, fuente: 'fila-recepcion' };
+    }
+    return { hora: delMensaje, fuente: 'mensaje-del-adjunto' };
   }
 
   async _resultadoDeCorreoAbierto(archivo, copiar) {
     const delMensaje = await this._extraerHoraMensajeAdjunto(archivo);
     if (delMensaje) {
+      const eleccion = this._decidirHoraCorreo(delMensaje.hora, delMensaje.esUltimo, this._horaFilaAbierta);
       const meta = await this._extraerMeta();
-      const copiado = copiar ? await this.copiarAlPortapapeles(delMensaje) : false;
-      this.opts.onProgress(`Hora obtenida: ${delMensaje} (del mensaje que trae el adjunto)`);
+      const copiado = copiar ? await this.copiarAlPortapapeles(eleccion.hora) : false;
+      this.opts.onProgress(`Hora obtenida: ${eleccion.hora} (${eleccion.fuente === 'fila-recepcion' ? 'hora de RECEPCIÓN de la lista de Gmail' : 'del mensaje que trae el adjunto'})`);
       return {
         archivo,
         asunto: meta.asunto || (await this.page.title()),
-        horaRecepcion: delMensaje,
-        fuente: 'mensaje-del-adjunto',
+        horaRecepcion: eleccion.hora,
+        fuente: eleccion.fuente,
         remitente: meta.remitenteNombre,
         remitenteCorreo: meta.remitenteCorreo,
         archivoAdjunto: meta.archivoAdjunto,
@@ -709,6 +762,7 @@ class GmailHoraService {
 
   async _buscarYExtraer(archivo, copiar) {
     const base = baseDe(archivo);
+    this._horaFilaAbierta = null;   /* v3.2.35: la fila es de ESTE archivo (nada heredado del anterior) */
     /* v3.2.7 — el nombre real trae espacios múltiples («PV CIX LIM
        2226»): Gmail puede no devolver resultados con ellos; se
        reintenta con los espacios colapsados a uno solo antes de caer

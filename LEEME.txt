@@ -1,8 +1,37 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.34 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.35 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
 
+NOVEDADES DE LA VERSIÓN 3.2.35 (la hora capturada es la de RECEPCIÓN de la lista de Gmail, no la de envío del remitente)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario con captura: el pv2066 seguía en 10:22 UTC
+     aunque la bandeja muestra 5:34 a. m. La captura de pantalla reveló
+     la causa: el panel de Gmail estaba «Sin conectar» (sin OAuth), así
+     que la hora la capturaba la vía ASISTIDA (navegador) — y esa vía
+     leía la hora de la CABECERA del mensaje abierto, que Gmail pinta
+     del Date header del REMITENTE (la hora de ENVÍO). El sistema AIS
+     despachó ese correo con la cabecera descuadrada (20/11 10:22 UTC):
+     recibido el 21/11 a las 10:34 UTC (05:34 Lima), la app capturaba
+     20/11 10:22 — exactamente lo que mostraba la captura.
+  2. Ahora la hora de recepción es la de la FILA de la lista de Gmail
+     (la que la bandeja muestra al recibir, internalDate), que es la que
+     el usuario entiende por «hora de recepción». Regla completa: si el
+     adjunto está en el ÚLTIMO mensaje del hilo (o es un correo suelto),
+     manda la fila; si el adjunto está en un mensaje ANTERIOR de un hilo
+     (caso 3.2.31), se mantiene la hora de la cabecera de ese mensaje
+     (la fila marcaría otro correo más nuevo).
+  3. La vía API (OAuth) ya usaba la fecha real de recepción; con esto
+     las tres vías quedan alineadas: la hora es SIEMPRE la de
+     recepción, nunca la de envío del remitente.
+  4. Para el pv2066: cargar el archivo (o pulsar «🔄 Re-buscar hora del
+     correo») debe capturar 21/11 10:34 UTC (05:34 Lima). El aviso dice
+     «hora de RECEPCIÓN de la lista de Gmail» y la versión que capturó.
+  5. Verificado: 7/7 casos (incluido el reporte exacto: cabecera
+     20/11 10:22 vs fila 5:34 a. m. → gana la fila → 21/11 10:34 UTC);
+     regresiones de orden y cuota en verde y prueba de humo completa.
+
+NOVEDADES DE LA VERSIÓN 3.2.34 (botón «🔄 Re-buscar hora del correo»: recaptura una hora capturada mal)
 NOVEDADES DE LA VERSIÓN 3.2.34 (botón «🔄 Re-buscar hora del correo»: recaptura una hora capturada mal)
 ──────────────────────────────────────────────────────────────────────────────
   1. Reporte del usuario: «SIGUE CAPTURANDO 10:22» tras el fix de la
