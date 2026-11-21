@@ -1,7 +1,38 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.36 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.37 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.37 (la re-búsqueda por filename: tolera la página lenta de Gmail)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario (log 18:17): la 3.2.36 SÍ re-buscó (se ve
+     «Consultando Gmail: filename:"pv2066 1200 (2)"»), pero la primera
+     consulta — la base con «(2)» del duplicado descargado, que Gmail
+     NUNCA encuentra porque el adjunto real es «pv2066 1200.pdf» — no
+     mostró ni filas ni el aviso de «Ningún resultado» en 12 s («12 s sin
+     resultados ni aviso de Gmail — la página no cargó del todo»). La
+     cadena la dio por buena y NUNCA probó la consulta sin «(n)»
+     (filename:"pv2066 1200", la que trae los DOS correos del archivo):
+     se quedó con la cabecera 20/11 5:22 y el campo siguió en 1022.
+  2. Ahora una consulta sin filas NO se da por buena: se espera a que la
+     página termine de pintar (aviso de «Ningún resultado» o filas,
+     hasta 5 intentos de 2,5 s) y si no hay filas se pasa a la SIGUIENTE
+     consulta. Con el pv2066: la «(2)» se descarta y la sin «(n)» lista
+     los dos correos → se abre el MÁS RECIENTE (21/11 5:34 → 1034).
+  3. El asunto del resultado se captura ANTES de re-buscar: si la
+     re-búsqueda falla, la vista puede quedar en la página de resultados
+     y el asunto salía «Resultados de búsqueda - … — Gmail» (visto en el
+     log 18:17). Si la re-búsqueda abre otro correo (el más reciente con
+     el archivo), su asunto es el que va.
+  4. Para el pv2066: cargar el archivo (o «🔄 Re-buscar hora del
+     correo») debe capturar 21/11 10:34 UTC (05:34 Lima) — la recepción
+     del correo MÁS RECIENTE de los dos que traen el archivo.
+  5. Verificado: 11/11 casos de página lenta (la «(2)» sin filas NI
+     aviso → pasa a la siguiente consulta → 21/11 5:34; aviso a mitad
+     de espera → corta sin esperar de más; asunto correcto aunque la
+     re-búsqueda falle; asunto del correo re-abierto con éxito), más las
+     regresiones completas en verde (hilo 17/17, fila 7/7, órdenes 9/9 y
+     12/12, formatos 13/13, 429 3/3, humo completa).
 
 NOVEDADES DE LA VERSIÓN 3.2.36 (recepción del MENSAJE del adjunto dentro de un HILO de Gmail)
 ──────────────────────────────────────────────────────────────────────────────

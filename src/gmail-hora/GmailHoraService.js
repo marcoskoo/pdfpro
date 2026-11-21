@@ -749,16 +749,27 @@ class GmailHoraService {
    *  re-busca por filename:"…" — los resultados de búsqueda de Gmail son
    *  por MENSAJE y su fila muestra la RECEPCIÓN (internalDate) de ese
    *  mensaje — y se abre el MÁS RECIENTE (regla del usuario). Devuelve la
-   *  hora de esa fila, o null si no se consigue (se queda con la cabecera). */
+   *  hora de esa fila, o null si no se consigue (se queda con la cabecera).
+   *  v3.2.37 — la primera consulta (la base con «(n)» del duplicado
+   *  descargado) casi nunca tiene resultados, y con Gmail lento NO
+   *  aparece ni el aviso de «Ningún resultado» (reporte 18:17: «12 s sin
+   *  resultados ni aviso de Gmail — la página no cargó del todo»), así que
+   *  una consulta sin filas YA NO se da por buena: se espera a que la
+   *  página pinte (aviso o filas) y si no hay filas se pasa a la SIGUIENTE
+   *  consulta (la sin «(n)», que sí trae los correos del archivo). */
   async _horaFilaDelMensaje(archivo) {
     try {
-      let conResultados = false;
+      let orden = [];
       for (const q of this._consultasFilename(archivo)) {
         await this._buscar(`filename:"${q}"`);
-        if (!(await this._haySinResultados())) { conResultados = true; break; }
+        for (let i = 0; i < 5; i++) {
+          if (await this._haySinResultados()) break;          /* aviso → sin resultados */
+          orden = await this._ordenFilasPorFecha();
+          if (orden.length) break;                            /* filas → la lista está */
+          await this.page.waitForTimeout(2500);               /* aún pintándose */
+        }
+        if (orden.length) break;                              /* esta consulta sirvió */
       }
-      if (!conResultados) return null;
-      const orden = await this._ordenFilasPorFecha();
       if (!orden.length) return null;
       const abrio = await this.page.evaluate((idx) => {
         const todas = document.querySelectorAll('tr.zA');
@@ -782,6 +793,12 @@ class GmailHoraService {
     const delMensaje = await this._extraerHoraMensajeAdjunto(archivo);
     if (delMensaje) {
       let eleccion = this._decidirHoraCorreo(delMensaje.hora, delMensaje.esUltimo, this._horaFilaAbierta);
+      /* v3.2.37 — meta del correo emparejado ANTES de re-buscar: si la
+         re-búsqueda falla, la vista puede haber quedado en la página de
+         resultados y el asunto saldría «Resultados de búsqueda…» (reporte
+         18:17). Si la re-búsqueda abre OTRO correo (el más reciente con el
+         archivo), su meta es la que va en el resultado. */
+      let meta = await this._extraerMeta();
       if (eleccion.fuente === 'mensaje-del-adjunto') {
         /* v3.2.36 — el adjunto está en un mensaje ANTERIOR del hilo (o la
            fila no traía hora): la fila de la bandeja es de OTRO correo más
@@ -790,9 +807,11 @@ class GmailHoraService {
            archivo en su propia fila de resultados; si no se consigue, se
            queda con la cabecera (comportamiento 3.2.31). */
         const filaMsj = await this._horaFilaDelMensaje(archivo);
-        if (filaMsj) eleccion = { hora: filaMsj, fuente: 'fila-recepcion' };
+        if (filaMsj) {
+          eleccion = { hora: filaMsj, fuente: 'fila-recepcion' };
+          meta = await this._extraerMeta();
+        }
       }
-      const meta = await this._extraerMeta();
       const copiado = copiar ? await this.copiarAlPortapapeles(eleccion.hora) : false;
       this.opts.onProgress(`Hora obtenida: ${eleccion.hora} (${eleccion.fuente === 'fila-recepcion' ? 'hora de RECEPCIÓN de la lista de Gmail' : 'del mensaje que trae el adjunto'})`);
       return {
