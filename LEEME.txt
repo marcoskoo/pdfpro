@@ -1,7 +1,30 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.30 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.31 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.31 (hilos de Gmail: la hora del MENSAJE que trae el adjunto)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario: «se realiza la búsqueda pero la hora no
+     actualiza». Con las capturas y el registro de progreso se vio que la
+     hora SÍ se aplicaba (19:45 en las tres pestañas), pero SIEMPRE ERA
+     LA MISMA: la del correo más nuevo.
+  2. La causa: el correo era un HILO (conversación con respuestas y 58
+     adjuntos). El match del adjunto en el hilo es correcto, pero la hora
+     se leía de la cabecera del hilo (su ÚLTIMO mensaje, 2:45 p. m.)
+     aunque el adjunto estuviera en un mensaje ANTERIOR (p. ej. 10:15
+     a. m.) — todos los archivos del hilo recibían la hora del último.
+  3. Ahora la vía asistida expande el hilo, localiza el chip del adjunto
+     que coincide con el archivo cargado, sube hasta SU mensaje y lee la
+     fecha completa de la cabecera de ESE mensaje. Si hay varios mensajes
+     con el mismo adjunto, gana el más nuevo (la regla del usuario). Si
+     no se logra leer, queda la hora del hilo (comportamiento anterior,
+     nunca peor). La ventana de progreso lo indica: «Hora obtenida: …
+     (del mensaje que trae el adjunto)».
+  4. Verificado con una réplica del hilo real (3 mensajes con horas
+     9:02 / 10:15 / 2:45 y los adjuntos repartidos): cada archivo
+     resuelve la hora de SU mensaje (4/4 casos), y los 13 formatos de
+     fecha/hora de Gmail siguen interpretándose.
 
 NOVEDADES DE LA VERSIÓN 3.2.30 (hora de recepción: la captura ya no se rinde)
 ──────────────────────────────────────────────────────────────────────────────

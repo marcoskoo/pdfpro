@@ -527,7 +527,92 @@ class GmailHoraService {
   /* El correo ya está abierto en la página: extrae la hora y los metadatos
      y arma el resultado común a ambas vías (recorrido ordenado y
      búsqueda por filename:). */
+  /* v3.2.31 — PRIMERO la hora del MENSAJE que trae el adjunto: en un hilo
+     (conversación con respuestas) el adjunto puede estar en un mensaje
+     ANTERIOR al último, y la hora del hilo (cabecera, último mensaje o el
+     «Mostrar detalles» del primero que aparezca) NO es la de recepción del
+     archivo — reporte real: tres archivos descargados de correos distintos
+     recibieron TODOS la hora del correo más nuevo del hilo. */
+  async _extraerHoraMensajeAdjunto(archivo) {
+    const objetivo = nombreComparable(archivo);
+    if (!objetivo) return null;
+    try {
+      /* expandir el hilo completo: los mensajes colapsados no exponen la
+         fecha completa en su cabecera */
+      try {
+        const btn = this.page
+          .locator('[aria-label="Expandir todos"], [data-tooltip="Expandir todos"]')
+          .first();
+        if (await btn.count()) {
+          await btn.click({ timeout: 2000 });
+          await this.page.waitForTimeout(800);
+        }
+      } catch (_) { /* sin botón: hilo de un solo mensaje o ya expandido */ }
+      return await this.page.evaluate((obj) => {
+        const norm = (s) => String(s || '').toLowerCase().replace(/[\s_\-.,;:()"'¿?¡!]+/g, '');
+        const comparable = (s) =>
+          norm(String(s || '').replace(/\.[^.\\/]+$/, '').replace(/(?:\s*\(\d+\))+\s*$/, ''));
+        const RE_HORA = /\d{1,2}:\d{2}/;
+        const RE_ANIO = /\d{4}/;
+        /* chips de adjunto (mismas fuentes que _adjuntosAbiertos): el texto
+           COMPLETO del nombre visible o del title del chip (la comparación
+           comparable quita extensión, signos y «(n)»; una regex de recorte
+           partiría nombres con «:», como «PV SPHI - SPRU : PAUCAR .pdf»),
+           y para aria-labels la mención de archivo que contengan */
+        const chips = Array.from(
+          document.querySelectorAll('span.aV3, .brc[title], [aria-label]')
+        ).filter((e) => {
+          let txt = '';
+          if (e.matches('span.aV3')) txt = e.textContent || '';
+          else if (e.matches('.brc[title]')) txt = e.getAttribute('title') || '';
+          else if (e.getAttribute('aria-label')) {
+            const m = String(e.getAttribute('aria-label')).match(/[\w\sÁÉÍÓÚáéíóúÑñ().,'\-]+\.[A-Za-z0-9]{2,5}\b/);
+            txt = m ? m[0] : '';
+          }
+          return !!txt && comparable(txt) === obj;
+        });
+        if (!chips.length) return null;
+        /* de cada chip sube hasta el MENSAJE que lo contiene: el ancestro
+           más cercano con una fecha COMPLETA (año + hora) en un [title] de
+           su cabecera. El hilo pinta los mensajes del más viejo (arriba) al
+           más nuevo (abajo): se queda con el ÚLTIMO que resuelve = el más
+           nuevo que trae el adjunto (la regla del usuario). */
+        let mejor = null;
+        for (const chip of chips) {
+          let n = chip;
+          while (n && n !== document.body) {
+            const titulos = Array.from(n.querySelectorAll('[title]'))
+              .map((x) => x.getAttribute('title') || '')
+              .filter((x) => RE_HORA.test(x) && RE_ANIO.test(x));
+            if (titulos.length) {
+              mejor = titulos.sort((a, b) => b.length - a.length)[0];
+              break;
+            }
+            n = n.parentElement;
+          }
+        }
+        return mejor;
+      }, objetivo);
+    } catch (_) { return null; }
+  }
+
   async _resultadoDeCorreoAbierto(archivo, copiar) {
+    const delMensaje = await this._extraerHoraMensajeAdjunto(archivo);
+    if (delMensaje) {
+      const meta = await this._extraerMeta();
+      const copiado = copiar ? await this.copiarAlPortapapeles(delMensaje) : false;
+      this.opts.onProgress(`Hora obtenida: ${delMensaje} (del mensaje que trae el adjunto)`);
+      return {
+        archivo,
+        asunto: meta.asunto || (await this.page.title()),
+        horaRecepcion: delMensaje,
+        fuente: 'mensaje-del-adjunto',
+        remitente: meta.remitenteNombre,
+        remitenteCorreo: meta.remitenteCorreo,
+        archivoAdjunto: meta.archivoAdjunto,
+        copiadoAlPortapapeles: copiado
+      };
+    }
     const { hora, fuente } = await this._extraerHora();
     const meta = await this._extraerMeta();
     const copiado = copiar ? await this.copiarAlPortapapeles(hora) : false;
