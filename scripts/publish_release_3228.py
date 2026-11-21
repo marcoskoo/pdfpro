@@ -46,14 +46,17 @@ for a in json.loads(req(API + f'/releases/{rid}/assets')):
 
 # subir artefactos
 assets = [
-    ('/home/z/my-project/dist/PDFPro-Setup-3.2.28.exe', 'application/octet-stream'),
-    ('/home/z/my-project/dist/PDFPro-Setup-3.2.28.exe.blockmap', 'application/octet-stream'),
-    ('/home/z/my-project/dist/latest.yml', 'text/yaml'),
-    ('/home/z/my-project/dist/PDFPro-Portable-3.2.28.exe', 'application/octet-stream'),
-    ('/home/z/my-project/download/PDFPro-3.2.28-SHA256.txt', 'text/plain'),
+    ('/home/z/my-project/download/PDFPro-Setup-3.2.28.exe', 'PDFPro-Setup-3.2.28.exe', 'application/octet-stream'),
+    ('/home/z/my-project/download/PDFPro-Setup-3.2.28.exe', 'PDFPro-Setup-3.2.28.exe', 'application/octet-stream'),
+    ('/home/z/my-project/download/PDFPro-Setup-3.2.28.exe.blockmap', 'PDFPro-Setup-3.2.28.exe.blockmap', 'application/octet-stream'),
+    ('/home/z/my-project/download/latest-v3.2.28.yml', 'latest.yml', 'text/yaml'),
+    ('/home/z/my-project/download/PDFPro-Portable-3.2.28.exe', 'PDFPro-Portable-3.2.28.exe', 'application/octet-stream'),
+    ('/home/z/my-project/download/PDFPro-3.2.28-SHA256.txt', 'PDFPro-3.2.28-SHA256.txt', 'text/plain'),
 ]
-for path, ctype in assets:
-    name = os.path.basename(path)
+# v3.2.29 — los artefactos se toman de download/ (copias fijadas tras el
+# build): dist/ se sobreescribe con cada compilación nueva; latest.yml se
+# nombra explícito para que electron-updater lo encuentre tal cual
+for path, name, ctype in assets:
     size = os.path.getsize(path)
     t0 = time.time()
     data = open(path, 'rb').read()
