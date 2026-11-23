@@ -1,7 +1,34 @@
 ════════════════════════════════════════════════════════════════════
-  PDFPro Suite 3.2.38 — Versión de escritorio para Windows
+  PDFPro Suite 3.2.39 — Versión de escritorio para Windows
   PDF Editor Pro · CORPAC AIS/ARO SPHI
 ════════════════════════════════════════════════════════════════════
+
+NOVEDADES DE LA VERSIÓN 3.2.39 (EL SELLO DE TURNO SIGUE A LAS INICIALES DEL OPERADOR)
+──────────────────────────────────────────────────────────────────────────────
+  1. Reporte del usuario (ficha SKX5303 SPHI-SPJC): la sesión estaba
+     logueada con Marcos Koo (MK) y su sello «Koo_sello» quedaba activo
+     de turno, pero el operador de turno era Francessca Chumpitaz (FC) —
+     se cambiaban las iniciales a mano en la ficha y el sello de
+     recepción se colocaba con la FIRMA DE OTRA PERSONA (la de MK).
+  2. Ahora las iniciales del operador MANDAN sobre el sello personal:
+     al escribirlas (escritorio o móvil), la app busca el sello del
+     personal que les corresponde por su nombre — «FC_sello»,
+     «Francessca_Chumpitaz_sello», «Chumpitaz Court Francessca
+     Michelle», o el apellido del usuario logueado («Koo_sello» → MK) —
+     y lo ACTIVA de turno (también queda guardado en remoto).
+  3. Doble red de seguridad: la barra del «Sello activo de turno»
+     (escritorio y móvil) cambia a ámbar y avisa «⚠️ NO corresponde a
+     las iniciales FC (es de MK)» cuando el sello activo no es del
+     operador; y al pulsar «Colocar Sello de Recepción» (PDF, Word o
+     Excel) se pide CONFIRMACIÓN antes de estampar un sello que llevará
+     la firma de una persona distinta a las iniciales. Sin conflicto →
+     se sella como siempre, sin preguntar.
+  4. Verificado: 17/17 casos (iniciales por nombre del sello, cambio de
+     sello al teclear FC, sin sello que corresponda no toca nada, sin
+     re-activar cuando ya coincide, conflicto/confirmación, sello de
+     dueño desconocido no molesta), más las regresiones completas en
+     verde (respaldos 11/11, hilo 17/17, página lenta 11/11, fila 7/7,
+     órdenes 12/12 y 9/9, formatos 13/13) y prueba de humo.
 
 NOVEDADES DE LA VERSIÓN 3.2.38 (los caminos de RESPALDO ya no entregan una hora distinta de la de RECEPCIÓN)
 ──────────────────────────────────────────────────────────────────────────────

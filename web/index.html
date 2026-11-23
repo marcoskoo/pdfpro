@@ -763,7 +763,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
         </div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.38 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK, admite la hora con dos puntos «SPHI 18:50») · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida; con varias pestañas abiertas cada archivo mantiene SU propia cadena de re-búsqueda (60 s × 4 + 5 min × 4, sin cortarse entre sí), las consultas a la API van en cola con respiro entre barridos y un 429 espera y reintenta en vez de quemar más cuota; el aviso de la hora muestra la versión que la capturó; en un hilo de Gmail la hora es la del MENSAJE que trae el adjunto, no la del último correo del hilo; el recorrido de la bandeja va por FECHA, del correo más reciente al penúltimo y sucesivos, aunque Gmail pinche secciones no cronológicas; la búsqueda API ordena por fecha real de recepción y gana el correo MÁS RECIENTE con ese adjunto aunque Gmail devuelva el viejo primero dentro de un hilo; botón «🔄 Re-buscar hora del correo» que recaptura pisando la hora automática anterior, sin tocar nunca la escrita a mano; la hora capturada es la de RECEPCIÓN de la lista de Gmail, no la de envío del remitente) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3)">CORPAC AIS/ARO Platform v3.2.39 · Licencias del personal aeronáutico (DGAC) · Iniciales del operador automáticas (1er nombre + 1er apellido, entiende el orden «Apellidos y Nombres») · el sello de turno SIGUE a las iniciales del operador: al escribirlas se activa su sello personal (ej. FC → «Francessca_Chumpitaz_sello»), la barra avisa ⚠ si el sello activo no le corresponde y se pide confirmación antes de colocar un sello con la firma de otra persona · detección automática de matrícula al cargar (PDF/imagen/Word/Excel, sin botón) · FPL: tipo de vuelo S → ID de vuelo (c-7) + REG/ (c-18) + iniciales (SRU2226 OB2176P MK); matrícula en c-7 → + EOBT (c-13) + iniciales (OB2134 1120 MK, admite la hora con dos puntos «SPHI 18:50») · formularios impresos y electrónicos: casillas reconstruidas por geometría (texto interno revuelto o guion suelto «OB - 2176P») · hora de recepción del correo por archivo cargado 100% automática (API de Gmail: busca el correo por el nombre del archivo cargado; en escritorio además vía asistida; con varias pestañas abiertas cada archivo mantiene SU propia cadena de re-búsqueda (60 s × 4 + 5 min × 4, sin cortarse entre sí), las consultas a la API van en cola con respiro entre barridos y un 429 espera y reintenta en vez de quemar más cuota; el aviso de la hora muestra la versión que la capturó; en un hilo de Gmail la hora es la del MENSAJE que trae el adjunto, no la del último correo del hilo; el recorrido de la bandeja va por FECHA, del correo más reciente al penúltimo y sucesivos, aunque Gmail pinche secciones no cronológicas; la búsqueda API ordena por fecha real de recepción y gana el correo MÁS RECIENTE con ese adjunto aunque Gmail devuelva el viejo primero dentro de un hilo; botón «🔄 Re-buscar hora del correo» que recaptura pisando la hora automática anterior, sin tocar nunca la escrita a mano; la hora capturada es la de RECEPCIÓN de la lista de Gmail, no la de envío del remitente) · monitoreo Gmail · Word y Excel editables en su formato original · checkbox incrustados de Word: quedan en su lugar exacto del original al guardar (marcar ☒/☐ en la vista actualiza el control) · campos de formulario Word (controles de texto) editables: lo escrito DENTRO del campo se guarda dentro del campo · lector PDF con fuente de respaldo (CDN) si la página se abre desde una URL caída · fotos: la hoja ES la foto completa (tamaño máximo A4, sin recortes ni fondo blanco; sella y guarda en su formato original) · líneas y títulos del formulario fieles · sellos incrustados al guardar .xlsx y .docx · sello de la ficha (recepción + personal) directo sobre el documento</div>
   </div>
 </div>
 
@@ -1330,7 +1330,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
             </div>
             <div>
               <label class="f-label" style="font-size:10.5px;margin-bottom:3px">Iniciales del Operador</label>
-              <input class="f-input" id="selloTxInitials" maxlength="2" placeholder="MK" title="2 letras: inicial del primer nombre + inicial del primer apellido (ej. Marcos Roberto Koo Paz → MK)" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2);updateSelloPreview()">
+              <input class="f-input" id="selloTxInitials" maxlength="2" placeholder="MK" title="2 letras: inicial del primer nombre + inicial del primer apellido (ej. Marcos Roberto Koo Paz → MK)" style="font-size:12px;font-family:JetBrains Mono,monospace;padding:6px 8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2);updateSelloPreview();syncSelloDeTurno()">
             </div>
           </div>
           <!-- v2.9.13 — matrícula: nombra el archivo al guardar/exportar (ej. OB2147 MK) -->
@@ -2809,6 +2809,67 @@ var activeSigId=null;
 function getActiveSig(){if(!sigLibrary.length)return null;if(activeSigId){var s=sigLibrary.find(function(x){return x.id===activeSigId;});if(s)return s;}return sigLibrary[0];}
 async function setActiveSig(id){activeSigId=id;await setActiveSigIdRemote(id);renderSigLib();updateSelloPreview();var sig=getActiveSig();if(sig)toast('✅ Sello activo: '+sig.name,'ok');}
 
+/* ══ v3.2.39 — EL SELLO DE TURNO SIGUE A LAS INICIALES DEL OPERADOR ══
+   Reporte real (ficha SKX5303 SPHI-SPJC): usuario logueado MK (Marcos
+   Koo) con su sello «Koo_sello» activo de turno, pero el operador de
+   turno era Francessca Chumpitaz (FC) — se cambiaban las iniciales a
+   mano y el sello de recepción se colocaba con la FIRMA DE OTRO (la de
+   MK). Ahora: (1) al escribir las iniciales se BUSCA el sello del
+   personal que les corresponde y se activa; (2) si el sello activo no
+   corresponde, la barra del sello AVISA; (3) antes de armar la
+   colocación se CONFIRMA si se va a sellar con la firma de otra persona. */
+function sigIni(sig){
+  if(!sig||!sig.name)return null;
+  var ti=function(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+  var NOISE=/^(sello|sellos|firma|firmas|stamp|corpac|ais|aro|personal|oficial)$/;
+  var core=String(sig.name).replace(/[_\-\/]+/g,' ').split(/\s+/).filter(Boolean)
+    .filter(function(t){return !NOISE.test(ti(t));});
+  if(!core.length)return null;
+  /* «FC_sello» → único token de 2 letras: esas SON las iniciales */
+  if(core.length===1&&/^[a-zñ]{2}$/.test(ti(core[0])))return ti(core[0]).toUpperCase().replace('Ñ','N');
+  /* «Francessca_Chumpitaz_sello» → iniciales del nombre embebido */
+  if(core.length>=2){
+    var i2=inicialesDeNombreSmart(core.join(' '));
+    if(i2&&i2.length===2)return i2;
+  }
+  /* «Koo_sello» → apellido del usuario logueado: sus iniciales de sesión */
+  if(core.length===1&&currentUser&&currentUser.name){
+    var un=ti(currentUser.name).split(/\s+/);
+    if(un.indexOf(ti(core[0]))!==-1)return inicialesDeNombreSmart(currentUser.name);
+  }
+  return null;
+}
+function oprIniActual(){return normIni((document.getElementById('selloTxInitials')||{}).value||'');}
+/* ¿Cambia el sello activo para que coincida con las iniciales? true si ya
+   coincide o si pudo cambiarlo; false si no hay sello para esas iniciales. */
+function syncSelloDeTurno(silencioso){
+  var ini=oprIniActual();
+  if(!ini||!sigLibrary.length)return false;
+  var act=getActiveSig();
+  if(act&&sigIni(act)===ini)return true;              /* el activo ya coincide */
+  var m=sigLibrary.find(function(s){return sigIni(s)===ini;});
+  if(!m)return false;                                 /* no hay sello de esas iniciales */
+  activeSigId=m.id;
+  setActiveSigIdRemote(m.id);
+  renderSigLib();updateSelloPreview();
+  if(!silencioso)toast('🔄 Sello de turno: «'+m.name+'» — corresponde a las iniciales '+ini,'ok');
+  return true;
+}
+/* Conflicto comprobable: iniciales del operador ≠ dueño del sello activo */
+function selloTurnoDistinto(){
+  var ini=oprIniActual();
+  var act=getActiveSig();
+  var ai=act?sigIni(act):null;
+  if(!ini||!ai||ai===ini)return null;
+  return {ini:ini,act:act,actIni:ai};
+}
+/* true = seguir y sellar (sin conflicto o el usuario lo acepta) */
+function confirmarSelloTurno(){
+  var c=selloTurnoDistinto();
+  if(!c)return true;
+  return confirm('⚠️ El sello activo de turno («'+c.act.name+'») corresponde a '+c.actIni+', pero las iniciales del operador son '+c.ini+'.\n\nEl sello de recepción llevará la firma de '+c.actIni+' con OPR '+c.ini+'.\n\n¿Colocarlo así de todos modos?');
+}
+
 // ── INIT EDITOR ──
 async function initEditor(){
   await loadDB();
@@ -2818,6 +2879,7 @@ async function initEditor(){
   buildStampGrid();
   updateSelloPreview();
   renderSigLib();
+  syncSelloDeTurno(true);   /* v3.2.39 — si las iniciales ya están escritas, alineamos el sello de turno */
   updateDrivePathLabel();
   updateDriveConnectBtn();
   loadNotifications().catch(function(e){});
@@ -2853,6 +2915,7 @@ async function initEditor(){
         var _msi=document.getElementById('mobSelloTxInitials');
         if(_msi&&!_msi.value)_msi.value=_ini;
         updateSelloPreview();
+        syncSelloDeTurno(true);   /* v3.2.39 — al entrar, el sello de turno alineado a las iniciales */
       }
     }catch(e){console.warn('iniciales',e);}
   }
@@ -2965,10 +3028,11 @@ function renderSigLib(){
   grid.innerHTML='';
   var activeSig=getActiveSig();
   if(activeSig){
+    var _mm=selloTurnoDistinto();   /* v3.2.39 — avisar si el sello de turno no es del operador */
     var bar=document.createElement('div');
-    bar.style.cssText='display:flex;align-items:center;gap:9px;background:rgba(48,201,126,.1);border:1.5px solid rgba(48,201,126,.35);border-radius:8px;padding:9px 11px;margin-bottom:10px';
+    bar.style.cssText='display:flex;align-items:center;gap:9px;background:'+( _mm?'rgba(240,150,40,.12)':'rgba(48,201,126,.1)')+';border:1.5px solid '+(_mm?'rgba(240,150,40,.5)':'rgba(48,201,126,.35)')+';border-radius:8px;padding:9px 11px;margin-bottom:10px';
     bar.innerHTML='<img src="'+activeSig.src+'" style="width:40px;height:40px;object-fit:contain;background:#fff;border-radius:4px;border:1px solid #ddd;flex-shrink:0">'
-      +'<div style="flex:1;min-width:0"><div style="font-size:10.5px;font-weight:700;color:var(--ok)">✅ Sello activo de turno</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:10.5px;font-weight:700;color:'+(_mm?'#c47b17':'var(--ok)')+'">'+(_mm?'⚠️ Sello de turno NO corresponde a las iniciales '+_mm.ini+' (es de '+_mm.actIni+')':'✅ Sello activo de turno')+'</div>'
       +'<div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(activeSig.name)+'</div></div>';
     grid.appendChild(bar);
   }
@@ -3020,13 +3084,14 @@ function renderMobSigGridFull(){
   // ── Active sello indicator ──
   var activeSig=getActiveSig();
   if(activeSig){
+    var _mm=selloTurnoDistinto();   /* v3.2.39 — avisar si el sello de turno no es del operador */
     var bar=document.createElement('div');
-    bar.style.cssText='display:flex;align-items:center;gap:10px;background:rgba(48,201,126,.1);'
-      +'border:1.5px solid rgba(48,201,126,.35);border-radius:10px;padding:10px 13px;margin-bottom:12px';
+    bar.style.cssText='display:flex;align-items:center;gap:10px;background:'+( _mm?'rgba(240,150,40,.12)':'rgba(48,201,126,.1)')+';'
+      +'border:1.5px solid '+(_mm?'rgba(240,150,40,.5)':'rgba(48,201,126,.35)')+';border-radius:10px;padding:10px 13px;margin-bottom:12px';
     bar.innerHTML='<img src="'+activeSig.src+'" style="width:46px;height:46px;object-fit:contain;'
       +'background:#fff;border-radius:6px;border:1px solid #ddd;flex-shrink:0">'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12px;font-weight:700;color:var(--ok)">✅ Sello activo de turno</div>'
+        +'<div style="font-size:12px;font-weight:700;color:'+(_mm?'#c47b17':'var(--ok)')+'">'+(_mm?'⚠️ Sello de turno NO corresponde a '+_mm.ini+' (es de '+_mm.actIni+')':'✅ Sello activo de turno')+'</div>'
         +'<div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;'
           +'white-space:nowrap;margin-top:2px">'+escH(activeSig.name)+'</div>'
         +'<div style="font-size:11px;color:var(--t3);margin-top:1px">Se usa en el sello de recepción</div>'
@@ -10164,6 +10229,7 @@ function placeSelloRecepcion(){
   // sobre el propio documento que se está editando.
   var _t=docTabGet(activeTabId);
   if(_t&&_t.kind){ nvArmSello(); return; }
+  if(!confirmarSelloTurno())return;   /* v3.2.39 — no sellar con la firma de otra persona sin darse cuenta */
   pendingSello=true;setTool('sello-place');updateSelloPreview();toast('Haz clic en el documento para colocar el sello · doble clic sobre un sello edita su hora','ok');
 }
 
@@ -11250,7 +11316,7 @@ var _gmailHoraOk=false,_gmailHoraT=null,_gmailSesionToast=false,_gmailAsistidaSe
    hora», la captura de pantalla dice sin duda qué build estaba corriendo
    (el instalador no reemplaza un PDFPro que seguía ABIERTO: el proceso viejo
    sigue vivo con el código viejo). */
-var _HORA_VER='v3.2.38';
+var _HORA_VER='v3.2.39';
 /* v3.2.30 — registro forense de la captura de la hora (consola y
    window.__gmailHoraLog): qué pestaña buscó, qué falló y qué se aplicó.
    Ante un reporte basta volcarlo para ver la causa exacta. */
@@ -11995,6 +12061,7 @@ function mobSelloSync(fromMob){
     if(fromMob)c.value=m.value;else m.value=c.value;
   });
   if(fromMob)_gmailHoraManual=true;   /* v3.2.26 — escribió el usuario desde la ficha móvil: se respeta */
+  if(fromMob)syncSelloDeTurno();      /* v3.2.39 — el sello de turno sigue a las iniciales escritas */
   updateSelloPreview();
   var pv=document.getElementById('mobSelloPreview');
   if(!pv)return;
@@ -12786,6 +12853,7 @@ function nvStampH(s){
   return ((s.txTime||s.txInitials)?103:90)+6+120;
 }
 function nvArmSello(){
+  if(!confirmarSelloTurno())return;   /* v3.2.39 — confirmar antes de sellar con la firma de otra persona */
   nvPendingSello=true; nvPendingStamp=null;
   document.body.classList.add('nv-arm');
   updateSelloPreview();
